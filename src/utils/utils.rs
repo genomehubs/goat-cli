@@ -1,3 +1,22 @@
+use std::{
+    fs::File,
+    io::{BufRead, BufReader},
+    path::Path,
+};
+
+use crate::error::error::FileError;
+use anyhow::Result;
+
+// read taxids or binomials from file.
+pub fn lines_from_file(filename: impl AsRef<Path>) -> Result<Vec<String>> {
+    let file = File::open(filename).map_err(|_| FileError::FileOpenError)?;
+    let buf = BufReader::new(file);
+    Ok(buf
+        .lines()
+        .map(|l| l.map_err(|_| FileError::FileOpenError).unwrap())
+        .collect())
+}
+
 // taxids should be comma separated
 // remove whitespace from beginning and end of each element of the vec.
 // also remove duplicates
@@ -33,14 +52,17 @@ pub fn make_goat_search_urls(
     summarise_values_by: &str,
     result: &str,
     taxonomy: &str,
+    size: &str,
 ) -> Vec<String> {
     let mut res = Vec::new();
     for el in taxids {
         let url = format!(
-        "{}search?query=tax_{}%28{}%29&includeEstimates={}&includeRawValues={}&summaryValues={}&result={}&taxonomy={}",
-        goat_url, tax_tree, el, include_estimates, include_raw_values, summarise_values_by, result, taxonomy
+        "{}search?query=tax_{}%28{}%29&includeEstimates={}&includeRawValues={}&summaryValues={}&result={}&taxonomy={}&size={}",
+        goat_url, tax_tree, el, include_estimates, include_raw_values, summarise_values_by, result, taxonomy, size
     );
         res.push(url);
     }
     res
 }
+
+// parse a file with tax-id or names

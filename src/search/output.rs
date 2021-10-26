@@ -18,8 +18,7 @@ pub fn print_raw_output(
     assembly: bool,
     gs: bool,
     cvalues: bool,
-    chromosome: bool,
-    haploid: bool,
+    karyotype: bool,
 ) -> Result<()> {
     // this may be the jankiest work-around to date...
     // I have to allocate each field of AggFetches
@@ -120,7 +119,7 @@ pub fn print_raw_output(
         }
     }
 
-    if all || chromosome {
+    if all || karyotype {
         println!("--- Chromosome Numbers ---");
         println!(
             "{}\t{}\t{}\t{}",
@@ -152,7 +151,7 @@ pub fn print_raw_output(
         }
     }
 
-    if all || haploid {
+    if all || karyotype {
         println!("--- Haploid Numbers ---");
         println!(
             "{}\t{}\t{}\t{}",
@@ -176,8 +175,7 @@ pub fn print_agg_output(
     assembly: bool,
     gs: bool,
     cvalues: bool,
-    chromosome: bool,
-    haploid: bool,
+    karyotype: bool,
     busco: bool,
 ) -> Result<()> {
     let mut assembly_span_vec = Vec::new();
@@ -397,7 +395,7 @@ pub fn print_agg_output(
         }
     }
 
-    if all || chromosome {
+    if all || karyotype {
         println!("--- Chromosome Numbers ---");
         println!(
             "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
@@ -467,7 +465,7 @@ pub fn print_agg_output(
         }
     }
 
-    if all || haploid {
+    if all || karyotype {
         println!("--- Haploid Chromosome Number ---");
         println!(
             "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",

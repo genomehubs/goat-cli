@@ -6,7 +6,7 @@ use goat::search::run;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let matches = App::new("goater")
+    let matches = App::new("goat")
         .version(clap::crate_version!())
         .author("Max Brown <mb39@sanger.ac.uk>")
         .about("GoaTs on a terminal.")
@@ -18,8 +18,16 @@ async fn main() -> Result<()> {
                         .short("t")
                         .long("tax-id")
                         .takes_value(true)
-                        .required(true)
+                        .required_unless("file")
                         .help("The tax-id. Can be NCBI taxonomy ID, or a binomial name."),
+                )
+                .arg(
+                    Arg::with_name("file")
+                        .short("f")
+                        .long("file")
+                        .takes_value(true)
+                        .required_unless("tax-id")
+                        .help("A file of NCBI taxonomy ID's (tips) and/or binomial names.\nEach line should contain a single entry."),
                 )
                 .arg(
                     Arg::with_name("raw")
@@ -46,22 +54,16 @@ async fn main() -> Result<()> {
                         .help("This flag indicates C-value data should be printed."),
                 )
                 .arg(
-                    Arg::with_name("chromosome")
-                        .short("e")
-                        .long("chromosome")
-                        .help("This flag indicates chromosome number data should be printed."),
+                    Arg::with_name("karyotype")
+                        .short("k")
+                        .long("karyotype")
+                        .help("This flag indicates karyotype data should be printed."),
                 )
                 .arg(
                     Arg::with_name("genome-size")
                         .short("g")
                         .long("genome-size")
                         .help("This flag indicates genome size data should be printed."),
-                )
-                .arg(
-                    Arg::with_name("haploid")
-                        .short("h")
-                        .long("haploid")
-                        .help("This flag indicates haploid chromosome number data should be printed."),
                 )
                 .arg(
                     Arg::with_name("url")
@@ -82,7 +84,16 @@ async fn main() -> Result<()> {
                         .short("b")
                         .long("busco")
                         .help("Include BUSCO estimates?"),
+                )
+                .arg(
+                    Arg::with_name("size")
+                        .long("size")
+                        .default_value("50")
+                        .help("The number of results to return."),
                 ),
+                // these are all the common options
+                // TODO: --mito flag for mitochondial span, assembly & GC
+                // --plastid for plastid span, assembly & GC.
         )
         .get_matches();
 
@@ -93,7 +104,7 @@ async fn main() -> Result<()> {
             run::search(&matches).await?;
         }
         _ => {
-            bail!(goat::error::error::NotYetImplemented::NotYetImplemented)
+            bail!(goat::error::error::NotYetImplemented::CLIError)
         }
     }
 

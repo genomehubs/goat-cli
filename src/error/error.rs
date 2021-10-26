@@ -16,4 +16,14 @@ pub enum RetrieveRecordError {
 pub enum NotYetImplemented {
     #[error("[-]\tThis feature is not yet implemented :(")]
     NotYetImplemented,
+    #[error("[-]\tPlease use `goat search`. Other subcommands are not implemented yet.")]
+    CLIError,
+}
+
+#[derive(Error, Debug)]
+pub enum FileError {
+    #[error("[-]\tCould not parse the line.")]
+    ReadLineError,
+    #[error("[-]\tCould not open the file.")]
+    FileOpenError,
 }

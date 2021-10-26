@@ -1,5 +1,5 @@
 use crate::utils::url::{GOAT_URL, TAXONOMY};
-use crate::utils::utils::{make_goat_search_urls, parse_multiple_taxids};
+use crate::utils::utils::{lines_from_file, make_goat_search_urls, parse_multiple_taxids};
 use crate::{
     search::agg_values::{get_results, Records},
     search::output::*,
@@ -17,17 +17,20 @@ use serde_json::Value;
 pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
     // should do some checking on the name,
     // and also parse comma separated names/taxids
-    let tax_name = matches.value_of("tax-id").unwrap();
     let include_raw_values = matches.is_present("raw");
     let assembly = matches.is_present("assembly");
     let cvalues = matches.is_present("c-values");
-    let chromosome = matches.is_present("chromosome");
+    let karyotype = matches.is_present("karyotype");
     let gs = matches.is_present("genome-size");
-    let haploid = matches.is_present("haploid");
     let all = matches.is_present("all");
     let print_url = matches.is_present("url");
     let tax_tree_bool = matches.is_present("tree");
     let busco = matches.is_present("busco");
+
+    let size = matches.value_of("size").unwrap();
+
+    let tax_name_op = matches.value_of("tax-id");
+    let filename_op = matches.value_of("file");
 
     // tree includes all descendents of a node
     let tax_tree = match tax_tree_bool {
@@ -40,17 +43,16 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
     let summarise_values_by = "count";
     let include_estimates = true;
 
-    let url = format!(
-        "{}search?query=tax_{}%28{}%29&includeEstimates={}&includeRawValues={}&summaryValues={}&result={}&taxonomy={}",
-        *GOAT_URL, tax_tree, tax_name, include_estimates, include_raw_values, summarise_values_by, result, *TAXONOMY
-    );
-
-    if print_url {
-        println!("GoaT API URL: {}", url);
-        std::process::exit(0);
+    let url_vector: Vec<String>;
+    // if -t use this
+    match tax_name_op {
+        Some(s) => url_vector = parse_multiple_taxids(s),
+        None => match filename_op {
+            Some(s) => url_vector = lines_from_file(s)?,
+            None => bail!("[-]\tOne of -f or -t should be specified."),
+        },
     }
 
-    let url_vector = parse_multiple_taxids(tax_name);
     let url_vector_api = make_goat_search_urls(
         url_vector,
         &*GOAT_URL,
@@ -60,8 +62,17 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
         summarise_values_by,
         result,
         &*TAXONOMY,
+        size,
     );
+
     let url_vector_api_len = url_vector_api.len();
+
+    if print_url {
+        for (index, url) in url_vector_api.iter().enumerate() {
+            println!("{}.\tGoaT API URL: {}", index, url);
+        }
+        std::process::exit(0);
+    }
 
     let fetches = futures::stream::iter(url_vector_api.into_iter().map(|path| async move {
         match reqwest::get(&path).await {
@@ -131,23 +142,14 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
     let awaited_fetches = fetches.await;
 
     match include_raw_values {
-        true => print_raw_output(
-            awaited_fetches,
-            all,
-            assembly,
-            gs,
-            cvalues,
-            chromosome,
-            haploid,
-        )?,
+        true => print_raw_output(awaited_fetches, all, assembly, gs, cvalues, karyotype)?,
         false => print_agg_output(
             awaited_fetches,
             all,
             assembly,
             gs,
             cvalues,
-            chromosome,
-            haploid,
+            karyotype,
             busco,
         )?,
     }
