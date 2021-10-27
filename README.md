@@ -6,7 +6,7 @@ Concurrently query the GoaT API, and receive tabular data back. In progress and 
 
 ## Usage
 
-```bash
+```
 goat-search 
 Query the search API.
 
@@ -34,4 +34,12 @@ OPTIONS:
     -t, --tax-id <tax-id>    The tax-id. Can be NCBI taxonomy ID, or a binomial name.
 ```
 
-There are quite a few flags.
+### Examples
+
+To get all of the (basic) raw assembly statistics for <i>Arabidopsis thaliana</i>:
+
+`goat search -ra -t "Arabidopsis thaliana"`
+
+To get aggregated assembly statistics across all <i>Arabidopsis</i> in NCBI:
+
+`goat search -pa -t "Arabidopsis"`
