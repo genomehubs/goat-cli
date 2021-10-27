@@ -1,13 +1,6 @@
 use crate::utils::url::{GOAT_URL, TAXONOMY};
 use crate::utils::utils::{lines_from_file, make_goat_search_urls, parse_multiple_taxids};
-use crate::{
-    search::agg_values::{get_results, Records},
-    search::output::*,
-    search::raw_values::{
-        get_raw_assembly, AggRawFetches, RawAssembly, RawCValues, RawChromosomeNumbers, RawGSs,
-        RawHaploidNumbers,
-    },
-};
+use crate::{search::agg_values::Records, search::output::*, search::raw_values::RawRecords};
 
 use anyhow::{bail, Result};
 use futures::StreamExt;
@@ -49,7 +42,7 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
         Some(s) => url_vector = parse_multiple_taxids(s),
         None => match filename_op {
             Some(s) => url_vector = lines_from_file(s)?,
-            None => bail!("[-]\tOne of -f or -t should be specified."),
+            None => bail!("[-]\tOne of -f (--file) or -t (--tax-id) should be specified."),
         },
     }
 
@@ -65,6 +58,8 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
         size,
     );
 
+    // so we can make as many concurrent requests
+    // as there are taxa
     let url_vector_api_len = url_vector_api.len();
 
     if print_url {
@@ -83,46 +78,17 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
 
                     match include_raw_values {
                         true => {
-                            // might segregate this code out later to make more readable.
-                            // get taxon name and tax-id for all future printing.
-                            // TODO: should really get this from inside the json more
-                            let taxon_name = &v["results"][0]["result"]["scientific_name"]
-                                .as_str()
-                                .unwrap_or("No taxon name found.");
-                            let taxon_ncbi = &v["results"][0]["result"]["taxon_id"]
-                                .as_str()
-                                .unwrap_or("No taxon ID found.");
-
-                            let mut raw_assembly = RawAssembly::new();
-                            get_raw_assembly(&v, &mut raw_assembly, "assembly_level")?;
-                            get_raw_assembly(&v, &mut raw_assembly, "assembly_span")?;
-                            // merge assembly records and print
-                            let merged = raw_assembly.merge(taxon_name, taxon_ncbi);
-                            // now for the rest of the traits
-                            // add taxon name and ID here too.
-                            let mut c_values = RawCValues::new();
-                            c_values.populate(&v, taxon_name, taxon_ncbi);
-                            let mut chrom_nums = RawChromosomeNumbers::new();
-                            chrom_nums.populate(&v, taxon_name, taxon_ncbi);
-                            let mut genome_sizes = RawGSs::new();
-                            genome_sizes.populate(&v, taxon_name, taxon_ncbi);
-                            let mut haploid_numbers = RawHaploidNumbers::new();
-                            haploid_numbers.populate(&v, taxon_name, taxon_ncbi);
+                            let mut records = RawRecords::new();
+                            records.get_results(&v)?;
 
                             Ok(CombinedValues {
-                                raw: Some(AggRawFetches {
-                                    combined_raw: merged,
-                                    c_values: c_values,
-                                    chrom_nums: chrom_nums,
-                                    genome_sizes: genome_sizes,
-                                    haploid: haploid_numbers,
-                                }),
+                                raw: Some(records),
                                 agg: None,
                             })
                         }
                         false => {
                             let mut records = Records::new();
-                            get_results(&v, &mut records)?;
+                            records.get_results(&v)?;
                             // records.
                             Ok(CombinedValues {
                                 raw: None,

@@ -19,7 +19,7 @@ pub fn lines_from_file(filename: impl AsRef<Path>) -> Result<Vec<String>> {
 
 // taxids should be comma separated
 // remove whitespace from beginning and end of each element of the vec.
-// also remove duplicates
+// TODO: check structure of each element in vec.
 pub fn parse_multiple_taxids(taxids: &str) -> Vec<String> {
     let res: Vec<&str> = taxids.split(",").map(|s| s).collect();
 
@@ -31,7 +31,7 @@ pub fn parse_multiple_taxids(taxids: &str) -> Vec<String> {
             let new_len = len.saturating_sub(" ".len());
             str = &str[..new_len];
         }
-        // sort the rights
+        // sort the lefts
         let mut index = 0;
         while str.starts_with(" ") {
             index += 1;
@@ -39,10 +39,18 @@ pub fn parse_multiple_taxids(taxids: &str) -> Vec<String> {
         }
         res2.push(str.to_string());
     }
+    res2.sort_unstable();
+    res2.dedup();
     res2
 }
 
 // make the GoaT API URLs
+// potentially add ranks
+// ranks=species%2Cgenus%2Cfamily%2Corder%2Cclass%2Cphylum%2Ckingdom%2Csuperkingdom
+// or the mitochondrial/plastid genome attributes
+// fields=assembly_level%2Cassembly_span%2CBUSCO%20completeness%2Cmitochondrion_assembly_span%2Cmitochondrion_gc_percent%2Cplastid_assembly_span%2Cplastid_gc_percent%2Cchromosome_number%2Chaploid_number%2Cc_value%2Cgenome_size
+//
+
 pub fn make_goat_search_urls(
     taxids: Vec<String>,
     goat_url: &str,

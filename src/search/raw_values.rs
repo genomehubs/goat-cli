@@ -1,219 +1,47 @@
-use crate::error::error;
-use anyhow::{bail, Result};
+// change all of the .expect()'s
+// also potentially change the API here to
+// be more in line with agg_values
+
+use anyhow::Result;
 use serde_json::Value;
 // These structs are all very copy-heavy.
 // I think this is fine for the small (ish) data
 // coming from GoaT.
+#[derive(Clone)]
 pub struct RawAssemblyLevel {
+    pub taxon_name: String,
+    pub taxon_ncbi: String,
     pub source_id: String,
     pub source: String,
     pub value: String,
 }
+#[derive(Clone)]
 pub struct RawAssemblySpan {
-    pub source_id: String,
-    pub source: String,
-    pub value: u64,
-}
-pub struct RawAssembly {
-    pub level: Vec<RawAssemblyLevel>,
-    pub span: Vec<RawAssemblySpan>,
-}
-
-#[derive(Clone)]
-pub struct CombinedRawAssembly {
     pub taxon_name: String,
     pub taxon_ncbi: String,
     pub source_id: String,
     pub source: String,
-    pub assembly_type: String,
-    pub span: u64,
+    pub value: u64,
 }
-
-impl RawAssembly {
-    pub fn new() -> Self {
-        RawAssembly {
-            level: Vec::new(),
-            span: Vec::new(),
-        }
-    }
-    // I think sorting should be quicker.
-    pub fn merge(&mut self, taxon_name: &str, taxon_ncbi: &str) -> Vec<CombinedRawAssembly> {
-        // sort the vecs
-        &self.level.sort_by(|a, b| a.source_id.cmp(&b.source_id));
-        &self.span.sort_by(|a, b| a.source_id.cmp(&b.source_id));
-
-        let mut res = Vec::new();
-
-        for (el1, el2) in self.level.iter().zip(&self.span) {
-            res.push(CombinedRawAssembly {
-                taxon_name: taxon_name.to_string(),
-                taxon_ncbi: taxon_ncbi.to_string(),
-                source_id: el1.source_id.clone(),
-                source: el1.source.clone(),
-                assembly_type: el1.value.clone(),
-                span: el2.value,
-            });
-        }
-        res
-    }
-}
-
-pub fn get_raw_assembly(v: &Value, assembly: &mut RawAssembly, variable: &str) -> Result<()> {
-    // there might be more than one hit in 'results'.
-    // this panics on the unwrap - fix this.
-    let results_len_op = v["results"].as_array();
-
-    let results_len = match results_len_op {
-        Some(r) => r.len(),
-        None => 0,
-    };
-
-    // iterate over the raw values and add to `assembly`
-    match variable {
-        "assembly_level" => {
-            for index in 0..results_len {
-                for i in v["results"][index]["result"]["fields"][variable]["rawValues"].as_array() {
-                    for j in i {
-                        assembly.level.push(RawAssemblyLevel {
-                            source_id: j["source_id"]
-                                .as_str()
-                                .expect(&format!("{}", error::RetrieveRecordError::CastToStr))
-                                .to_string(),
-                            source: j["source"]
-                                .as_str()
-                                .expect(&format!("{}", error::RetrieveRecordError::CastToStr))
-                                .to_string(),
-                            value: j["value"]
-                                .as_str()
-                                .expect(&format!("{}", error::RetrieveRecordError::CastToStr))
-                                .to_string(),
-                        });
-                    }
-                }
-            }
-        }
-        "assembly_span" => {
-            for index in 0..results_len {
-                for i in v["results"][index]["result"]["fields"][variable]["rawValues"].as_array() {
-                    for j in i {
-                        assembly.span.push(RawAssemblySpan {
-                            source_id: j["source_id"]
-                                .as_str()
-                                .expect(&format!("{}", error::RetrieveRecordError::CastToStr))
-                                .to_string(),
-                            source: j["source"]
-                                .as_str()
-                                .expect(&format!("{}", error::RetrieveRecordError::CastToStr))
-                                .to_string(),
-                            value: j["value"]
-                                .as_u64()
-                                .expect(&format!("{}", error::RetrieveRecordError::CastToU64)),
-                        });
-                    }
-                }
-            }
-        }
-        other => bail!(format!(
-            "{}: found {}",
-            error::RetrieveRecordError::MatchingRawValueError,
-            other
-        )),
-    }
-    Ok(())
-}
-
-// It's kind of lazy, but I am going to keep these as all separate structs
-// (as they all have the same structure)
-// in case the GoaT API changes dramatically.
 
 #[derive(Clone)]
-pub struct RawChromosomeNumberRecord {
+pub struct RawChromosomeNumber {
     pub taxon_name: String,
     pub taxon_ncbi: String,
     pub source: String,
     pub value: u64,
 }
-#[derive(Clone)]
-pub struct RawChromosomeNumbers(pub Vec<RawChromosomeNumberRecord>);
-
-impl RawChromosomeNumbers {
-    pub fn new() -> Self {
-        RawChromosomeNumbers(Vec::new())
-    }
-
-    pub fn populate(&mut self, v: &Value, taxon_name: &str, taxon_ncbi: &str) {
-        let results_len_op = v["results"].as_array();
-
-        let results_len = match results_len_op {
-            Some(r) => r.len(),
-            None => 0,
-        };
-        for index in 0..results_len {
-            for i in
-                v["results"][index]["result"]["fields"]["chromosome_number"]["rawValues"].as_array()
-            {
-                for j in i {
-                    self.0.push(RawChromosomeNumberRecord {
-                        taxon_name: taxon_name.to_string(),
-                        taxon_ncbi: taxon_ncbi.to_string(),
-                        source: j["source"]
-                            .as_str()
-                            .unwrap_or("Unknown source.")
-                            .to_string(),
-                        // TODO: better error handling here.
-                        value: j["value"].as_u64().unwrap_or(0),
-                    });
-                }
-            }
-        }
-    }
-}
 
 #[derive(Clone)]
-pub struct RawHaploidNumberRecord {
+pub struct RawHaploid {
     pub taxon_name: String,
     pub taxon_ncbi: String,
     pub source: String,
     pub value: u64,
 }
-#[derive(Clone)]
-pub struct RawHaploidNumbers(pub Vec<RawHaploidNumberRecord>);
-
-impl RawHaploidNumbers {
-    pub fn new() -> Self {
-        RawHaploidNumbers(Vec::new())
-    }
-
-    pub fn populate(&mut self, v: &Value, taxon_name: &str, taxon_ncbi: &str) {
-        let results_len_op = v["results"].as_array();
-
-        let results_len = match results_len_op {
-            Some(r) => r.len(),
-            None => 0,
-        };
-        for index in 0..results_len {
-            for i in
-                v["results"][index]["result"]["fields"]["haploid_number"]["rawValues"].as_array()
-            {
-                for j in i {
-                    self.0.push(RawHaploidNumberRecord {
-                        taxon_name: taxon_name.to_string(),
-                        taxon_ncbi: taxon_ncbi.to_string(),
-                        source: j["source"]
-                            .as_str()
-                            .unwrap_or("Unknown source.")
-                            .to_string(),
-                        // TODO: better error handling here.
-                        value: j["value"].as_u64().unwrap_or(0),
-                    });
-                }
-            }
-        }
-    }
-}
 
 #[derive(Clone)]
-pub struct RawCValueRecord {
+pub struct RawCValue {
     pub taxon_name: String,
     pub taxon_ncbi: String,
     pub source: String,
@@ -221,92 +49,230 @@ pub struct RawCValueRecord {
 }
 
 #[derive(Clone)]
-pub struct RawCValues(pub Vec<RawCValueRecord>);
-
-impl RawCValues {
-    pub fn new() -> Self {
-        RawCValues(Vec::new())
-    }
-
-    pub fn populate(&mut self, v: &Value, taxon_name: &str, taxon_ncbi: &str) {
-        let results_len_op = v["results"].as_array();
-
-        let results_len = match results_len_op {
-            Some(r) => r.len(),
-            None => 0,
-        };
-        for index in 0..results_len {
-            for i in v["results"][index]["result"]["fields"]["c_value"]["rawValues"].as_array() {
-                for j in i {
-                    self.0.push(RawCValueRecord {
-                        taxon_name: taxon_name.to_string(),
-                        taxon_ncbi: taxon_ncbi.to_string(),
-                        source: j["source"]
-                            .as_str()
-                            .unwrap_or("Unknown source.")
-                            .to_string(),
-                        value: j["value"]
-                            .as_f64()
-                            .expect(&format!("{}", error::RetrieveRecordError::CastToF64)),
-                    });
-                }
-            }
-        }
-    }
-}
-
-#[derive(Clone)]
-pub struct RawGSRecord {
+pub struct RawGenomeSize {
     pub taxon_name: String,
     pub taxon_ncbi: String,
     pub source: String,
     pub value: u64,
 }
 
+// this is the struct to gather the concurrent results for the raw values.
 #[derive(Clone)]
-pub struct RawGSs(pub Vec<RawGSRecord>);
+pub struct RawRecords {
+    pub level: Vec<RawAssemblyLevel>, // make better struct
+    pub span: Vec<RawAssemblySpan>,
+    // pub busco_completeness: Vec<_>
+    pub c_value: Vec<RawCValue>,
+    pub chromosome_number: Vec<RawChromosomeNumber>,
+    pub genome_size: Vec<RawGenomeSize>,
+    pub haploid: Vec<RawHaploid>,
+}
 
-impl RawGSs {
+impl RawRecords {
     pub fn new() -> Self {
-        RawGSs(Vec::new())
+        RawRecords {
+            level: Vec::new(),
+            span: Vec::new(),
+            c_value: Vec::new(),
+            chromosome_number: Vec::new(),
+            genome_size: Vec::new(),
+            haploid: Vec::new(),
+        }
     }
 
-    pub fn populate(&mut self, v: &Value, taxon_name: &str, taxon_ncbi: &str) {
+    pub fn get_results(&mut self, v: &Value) -> Result<()> {
+        // how many results are there?
         let results_len_op = v["results"].as_array();
-
+        // safely get the number of results.
         let results_len = match results_len_op {
             Some(r) => r.len(),
             None => 0,
         };
+
+        // loop over the indexes of these results
         for index in 0..results_len {
-            for i in v["results"][index]["result"]["fields"]["genome_size"]["rawValues"].as_array()
-            {
-                for j in i {
-                    self.0.push(RawGSRecord {
-                        taxon_name: taxon_name.to_string(),
-                        taxon_ncbi: taxon_ncbi.to_string(),
-                        source: j["source"]
-                            .as_str()
-                            .unwrap_or("Unknown source.")
-                            .to_string(),
-                        value: j["value"]
-                            .as_u64()
-                            .expect(&format!("{}", error::RetrieveRecordError::CastToU64)),
-                    });
+            // TODO: make the unwrap safer here.
+            let taxon_name = v["results"][index]["result"]["scientific_name"]
+                .as_str()
+                .unwrap();
+            let taxon_id = v["results"][index]["result"]["taxon_id"].as_str().unwrap();
+
+            // get a map of each field
+            let map_of_fields_op = v["results"][index]["result"]["fields"].as_object();
+
+            match map_of_fields_op {
+                Some(r) => {
+                    for (key, value) in r {
+                        match &key[..] {
+                            "assembly_level" => {
+                                let raw_values = value["rawValues"].as_array();
+                                match raw_values {
+                                    Some(rv) => {
+                                        for el in rv {
+                                            self.level.push(RawAssemblyLevel {
+                                                taxon_name: taxon_name.to_string(),
+                                                taxon_ncbi: taxon_id.to_string(),
+                                                source_id: el["source_id"]
+                                                    .as_str()
+                                                    .unwrap()
+                                                    .to_string(),
+                                                source: el["source"].as_str().unwrap().to_string(),
+                                                value: el["value"].as_str().unwrap().to_string(),
+                                            })
+                                        }
+                                    }
+                                    None => {}
+                                }
+                            }
+                            "assembly_span" => {
+                                let raw_values = value["rawValues"].as_array();
+                                match raw_values {
+                                    Some(rv) => {
+                                        for el in rv {
+                                            self.span.push(RawAssemblySpan {
+                                                taxon_name: taxon_name.to_string(),
+                                                taxon_ncbi: taxon_id.to_string(),
+                                                source_id: el["source_id"]
+                                                    .as_str()
+                                                    .unwrap()
+                                                    .to_string(),
+                                                source: el["source"].as_str().unwrap().to_string(),
+                                                value: el["value"].as_u64().unwrap(),
+                                            })
+                                        }
+                                    }
+                                    None => {}
+                                }
+                            }
+                            "c_value" => {
+                                let raw_values = value["rawValues"].as_array();
+                                match raw_values {
+                                    Some(rv) => {
+                                        for el in rv {
+                                            self.c_value.push(RawCValue {
+                                                taxon_name: taxon_name.to_string(),
+                                                taxon_ncbi: taxon_id.to_string(),
+                                                source: el["source"]
+                                                    .as_str()
+                                                    .unwrap_or("")
+                                                    .to_string(),
+                                                value: el["value"].as_f64().unwrap(),
+                                            })
+                                        }
+                                    }
+                                    None => {}
+                                }
+                            }
+                            "chromosome_number" => {
+                                let raw_values = value["rawValues"].as_array();
+                                match raw_values {
+                                    Some(rv) => {
+                                        for el in rv {
+                                            self.chromosome_number.push(RawChromosomeNumber {
+                                                taxon_name: taxon_name.to_string(),
+                                                taxon_ncbi: taxon_id.to_string(),
+                                                source: el["source"].as_str().unwrap().to_string(),
+                                                value: el["value"].as_u64().unwrap(),
+                                            })
+                                        }
+                                    }
+                                    None => {}
+                                }
+                            }
+                            "genome_size" => {
+                                let raw_values = value["rawValues"].as_array();
+                                match raw_values {
+                                    Some(rv) => {
+                                        for el in rv {
+                                            self.genome_size.push(RawGenomeSize {
+                                                taxon_name: taxon_name.to_string(),
+                                                taxon_ncbi: taxon_id.to_string(),
+                                                source: el["source"]
+                                                    .as_str()
+                                                    .unwrap_or("")
+                                                    .to_string(),
+                                                value: el["value"].as_u64().unwrap(),
+                                            })
+                                        }
+                                    }
+                                    None => {}
+                                }
+                            }
+                            "haploid_number" => {
+                                let raw_values = value["rawValues"].as_array();
+                                match raw_values {
+                                    Some(rv) => {
+                                        for el in rv {
+                                            self.haploid.push(RawHaploid {
+                                                taxon_name: taxon_name.to_string(),
+                                                taxon_ncbi: taxon_id.to_string(),
+                                                source: el["source"].as_str().unwrap().to_string(),
+                                                value: el["value"].as_u64().unwrap(),
+                                            })
+                                        }
+                                    }
+                                    None => {}
+                                }
+                            }
+                            // add busco here.
+                            _ => {}
+                        }
+                    }
+                }
+                None => {
+                    // we shouldn't really reach here...
+                    // but print to stderr for debugging if we do.
+                    eprintln!("There were no fields for {} ({})", taxon_name, taxon_id);
                 }
             }
         }
+
+        Ok(())
     }
 }
 
-// TODO BUSCO completeness?
+// might be nice to resurrect this later.
 
-// this is the struct to gather the concurrent results for the raw values.
-#[derive(Clone)]
-pub struct AggRawFetches {
-    pub combined_raw: Vec<CombinedRawAssembly>, // make better struct
-    pub c_values: RawCValues,
-    pub chrom_nums: RawChromosomeNumbers,
-    pub genome_sizes: RawGSs,
-    pub haploid: RawHaploidNumbers,
-}
+// pub struct RawAssembly {
+//     pub level: Vec<RawAssemblyLevel>,
+//     pub span: Vec<RawAssemblySpan>,
+// }
+
+// #[derive(Clone)]
+// pub struct CombinedRawAssembly {
+//     pub taxon_name: String,
+//     pub taxon_ncbi: String,
+//     pub source_id: String,
+//     pub source: String,
+//     pub assembly_type: String,
+//     pub span: u64,
+// }
+
+// impl RawAssembly {
+//     pub fn new() -> Self {
+//         RawAssembly {
+//             level: Vec::new(),
+//             span: Vec::new(),
+//         }
+//     }
+//     // I think sorting should be quicker.
+//     pub fn merge(&mut self, taxon_name: &str, taxon_ncbi: &str) -> Vec<CombinedRawAssembly> {
+//         // sort the vecs
+//         &self.level.sort_by(|a, b| a.source_id.cmp(&b.source_id));
+//         &self.span.sort_by(|a, b| a.source_id.cmp(&b.source_id));
+
+//         let mut res = Vec::new();
+
+//         for (el1, el2) in self.level.iter().zip(&self.span) {
+//             res.push(CombinedRawAssembly {
+//                 taxon_name: taxon_name.to_string(),
+//                 taxon_ncbi: taxon_ncbi.to_string(),
+//                 source_id: el1.source_id.clone(),
+//                 source: el1.source.clone(),
+//                 assembly_type: el1.value.clone(),
+//                 span: el2.value,
+//             });
+//         }
+//         res
+//     }
+// }

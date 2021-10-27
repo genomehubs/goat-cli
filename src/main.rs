@@ -4,6 +4,9 @@ use tokio;
 
 use goat::search::run;
 
+// would be nice to add ranks
+// this would add the ranks to each formatted output.
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let matches = App::new("goat")

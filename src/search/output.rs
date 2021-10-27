@@ -1,11 +1,11 @@
 use crate::search::agg_values::Records;
-use crate::search::raw_values::AggRawFetches;
+use crate::search::raw_values::RawRecords;
 
 use anyhow::{bail, Result};
 
 #[derive(Clone)]
 pub struct CombinedValues {
-    pub raw: Option<AggRawFetches>,
+    pub raw: Option<RawRecords>,
     pub agg: Option<Records>,
 }
 
@@ -25,12 +25,23 @@ pub fn print_raw_output(
     // into a separate vector.
     // I need to figure out a more elegant way to do this.
 
-    let mut assembly_vec = Vec::new();
+    let mut assembly_span_vec = Vec::new();
     for el in &awaited_fetches {
         let _ = match el {
             Ok(e) => {
                 // argh more cloning...
-                assembly_vec.push(e.raw.clone().unwrap().combined_raw.clone());
+                assembly_span_vec.push(e.raw.clone().unwrap().span.clone());
+            }
+            Err(e) => bail!("[-]\tSomething went wrong? {}", e),
+        };
+    }
+
+    let mut assembly_level_vec = Vec::new();
+    for el in &awaited_fetches {
+        let _ = match el {
+            Ok(e) => {
+                // argh more cloning...
+                assembly_level_vec.push(e.raw.clone().unwrap().level.clone());
             }
             Err(e) => bail!("[-]\tSomething went wrong? {}", e),
         };
@@ -41,7 +52,7 @@ pub fn print_raw_output(
         let _ = match el {
             Ok(e) => {
                 // argh more cloning...
-                c_value_vec.push(e.raw.clone().unwrap().c_values.0.clone());
+                c_value_vec.push(e.raw.clone().unwrap().c_value.clone());
             }
             Err(e) => bail!("[-]\tSomething went wrong? {}", e),
         };
@@ -52,7 +63,7 @@ pub fn print_raw_output(
         let _ = match el {
             Ok(e) => {
                 // argh more cloning...
-                chromosome_vec.push(e.raw.clone().unwrap().chrom_nums.0.clone());
+                chromosome_vec.push(e.raw.clone().unwrap().chromosome_number.clone());
             }
             Err(e) => bail!("[-]\tSomething went wrong? {}", e),
         };
@@ -63,7 +74,7 @@ pub fn print_raw_output(
         let _ = match el {
             Ok(e) => {
                 // argh more cloning...
-                genome_sizes_vec.push(e.raw.clone().unwrap().genome_sizes.0.clone());
+                genome_sizes_vec.push(e.raw.clone().unwrap().genome_size.clone());
             }
             Err(e) => bail!("[-]\tSomething went wrong? {}", e),
         };
@@ -74,29 +85,41 @@ pub fn print_raw_output(
         let _ = match el {
             Ok(e) => {
                 // argh more cloning...
-                haploid_vec.push(e.raw.clone().unwrap().haploid.0.clone());
+                haploid_vec.push(e.raw.clone().unwrap().haploid.clone());
             }
             Err(e) => bail!("[-]\tSomething went wrong? {}", e),
         };
     }
 
     if all || assembly {
-        println!("--- Assembly Stats ---");
+        println!("--- Assembly Level ---");
         println!(
-            "{}\t{}\t{}\t{}\t{}\t{}",
-            "taxon_name", "ncbi_taxid", "source_id", "source", "assembly_type", "span"
+            "{}\t{}\t{}\t{}\t{}",
+            "taxon_name", "ncbi_taxid", "source_id", "source", "assembly_type"
         );
 
-        for el in assembly_vec {
+        for el in assembly_level_vec {
             for el2 in el {
                 println!(
-                    "{}\t{}\t{}\t{}\t{}\t{}",
-                    el2.taxon_name,
-                    el2.taxon_ncbi,
-                    el2.source_id,
-                    el2.source,
-                    el2.assembly_type,
-                    el2.span
+                    "{}\t{}\t{}\t{}\t{}",
+                    el2.taxon_name, el2.taxon_ncbi, el2.source_id, el2.source, el2.value,
+                );
+            }
+        }
+    }
+
+    if all || assembly {
+        println!("--- Assembly Span ---");
+        println!(
+            "{}\t{}\t{}\t{}\t{}",
+            "taxon_name", "ncbi_taxid", "source_id", "source", "span"
+        );
+
+        for el in assembly_span_vec {
+            for el2 in el {
+                println!(
+                    "{}\t{}\t{}\t{}\t{}",
+                    el2.taxon_name, el2.taxon_ncbi, el2.source_id, el2.source, el2.value,
                 );
             }
         }
