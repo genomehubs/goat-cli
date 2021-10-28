@@ -1,11 +1,22 @@
-use crate::utils::url::{GOAT_URL, TAXONOMY};
-use crate::utils::utils::{lines_from_file, make_goat_search_urls, parse_multiple_taxids};
-use crate::{search::agg_values::Records, search::output::*, search::raw_values::RawRecords};
+use crate::{
+    search::agg_values::Records,
+    search::output::*,
+    search::raw_values::RawRecords,
+    utils::ranks::RankHeaders,
+    utils::url::{GOAT_URL, TAXONOMY},
+    utils::utils::{
+        check_number_hits, get_rank_vector, lines_from_file, make_goat_search_urls,
+        parse_multiple_taxids,
+    },
+};
 
 use anyhow::{bail, Result};
 use futures::StreamExt;
 use reqwest;
 use serde_json::Value;
+
+// tax tree check number of hits. If less than, give a warning.
+// give info on taxa not found
 
 pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
     // should do some checking on the name,
@@ -22,8 +33,12 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
 
     let size = matches.value_of("size").unwrap();
 
-    let tax_name_op = matches.value_of("tax-id");
+    let tax_name_op = matches.value_of("species");
     let filename_op = matches.value_of("file");
+    let ranks = matches.value_of("ranks").unwrap(); // safe to unwrap here.
+
+    // and let's get out the vector of ranks immediately
+    let ranks_vec = get_rank_vector(ranks);
 
     // tree includes all descendents of a node
     let tax_tree = match tax_tree_bool {
@@ -56,6 +71,7 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
         result,
         &*TAXONOMY,
         size,
+        ranks,
     );
 
     // so we can make as many concurrent requests
@@ -75,11 +91,14 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
                 Ok(body) => {
                     // serialise the JSON. No typing.
                     let v: Value = serde_json::from_str(&body)?;
+                    check_number_hits(&v, size)?;
+                    // and let's get out the vector of ranks immediately
+                    let ranks_vec = get_rank_vector(ranks);
 
                     match include_raw_values {
                         true => {
                             let mut records = RawRecords::new();
-                            records.get_results(&v)?;
+                            records.get_results(&v, &ranks_vec)?;
 
                             Ok(CombinedValues {
                                 raw: Some(records),
@@ -88,7 +107,7 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
                         }
                         false => {
                             let mut records = Records::new();
-                            records.get_results(&v)?;
+                            records.get_results(&v, &ranks_vec)?;
                             // records.
                             Ok(CombinedValues {
                                 raw: None,
@@ -108,7 +127,16 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
     let awaited_fetches = fetches.await;
 
     match include_raw_values {
-        true => print_raw_output(awaited_fetches, all, assembly, gs, cvalues, karyotype)?,
+        true => print_raw_output(
+            awaited_fetches,
+            all,
+            assembly,
+            gs,
+            cvalues,
+            karyotype,
+            busco,
+            RankHeaders(ranks_vec),
+        )?,
         false => print_agg_output(
             awaited_fetches,
             all,
@@ -117,6 +145,7 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
             cvalues,
             karyotype,
             busco,
+            RankHeaders(ranks_vec),
         )?,
     }
     Ok(())

@@ -5,7 +5,8 @@ use std::{
 };
 
 use crate::error::error::FileError;
-use anyhow::Result;
+use anyhow::{bail, Result};
+use serde_json::Value;
 
 // read taxids or binomials from file.
 pub fn lines_from_file(filename: impl AsRef<Path>) -> Result<Vec<String>> {
@@ -44,12 +45,62 @@ pub fn parse_multiple_taxids(taxids: &str) -> Vec<String> {
     res2
 }
 
+// needed so that the output headers for ranks can be formatted properly
+// similar to the function `format_rank` but return the vector
+// of ranks the user has chosen
+
+pub fn get_rank_vector(r: &str) -> Vec<String> {
+    let ranks = vec![
+        "subspecies".to_string(),
+        "species".to_string(),
+        "genus".to_string(),
+        "family".to_string(),
+        "order".to_string(),
+        "class".to_string(),
+        "phylum".to_string(),
+        "kingdom".to_string(),
+        "superkingdom".to_string(),
+    ];
+    let position_selected = ranks.iter().position(|e| e == &r);
+    let updated_ranks = match position_selected {
+        Some(p) => ranks[p..].to_vec(),
+        None => vec!["".to_string()],
+    };
+
+    updated_ranks
+}
+
 // make the GoaT API URLs
-// potentially add ranks
-// ranks=species%2Cgenus%2Cfamily%2Corder%2Cclass%2Cphylum%2Ckingdom%2Csuperkingdom
-// or the mitochondrial/plastid genome attributes
-// fields=assembly_level%2Cassembly_span%2CBUSCO%20completeness%2Cmitochondrion_assembly_span%2Cmitochondrion_gc_percent%2Cplastid_assembly_span%2Cplastid_gc_percent%2Cchromosome_number%2Chaploid_number%2Cc_value%2Cgenome_size
-//
+
+// function here to make the ranks URL string
+// &ranks=subspecies%2Cspecies%2Cgenus%2Cfamily%2Corder%2Cclass%2Cphylum%2Ckingdom%2Csuperkingdom
+
+fn format_rank(r: &str) -> String {
+    // fixed vector of ranks.
+    // "none" by default will return an empty string here.
+    let ranks = vec![
+        "subspecies",
+        "species",
+        "genus",
+        "family",
+        "order",
+        "class",
+        "phylum",
+        "kingdom",
+        "superkingdom",
+    ];
+    let position_selected = ranks.iter().position(|e| e == &r);
+    let updated_ranks = match position_selected {
+        Some(p) => &ranks[p..],
+        None => return "".to_string(),
+    };
+    let mut rank_string = String::new();
+    rank_string += "&ranks=";
+    let ranks_to_add = updated_ranks.join("%2C");
+    rank_string += &ranks_to_add;
+
+    rank_string
+}
 
 pub fn make_goat_search_urls(
     taxids: Vec<String>,
@@ -61,16 +112,43 @@ pub fn make_goat_search_urls(
     result: &str,
     taxonomy: &str,
     size: &str,
+    ranks: &str,
 ) -> Vec<String> {
     let mut res = Vec::new();
+
+    let rank_string = format_rank(ranks);
+
     for el in taxids {
         let url = format!(
-        "{}search?query=tax_{}%28{}%29&includeEstimates={}&includeRawValues={}&summaryValues={}&result={}&taxonomy={}&size={}",
-        goat_url, tax_tree, el, include_estimates, include_raw_values, summarise_values_by, result, taxonomy, size
+        "{}search?query=tax_{}%28{}%29&includeEstimates={}&includeRawValues={}&summaryValues={}&result={}&taxonomy={}&size={}{}",
+        goat_url, tax_tree, el, include_estimates, include_raw_values, summarise_values_by, result, taxonomy, size, rank_string
     );
         res.push(url);
     }
     res
 }
 
-// parse a file with tax-id or names
+// check if number of hits > size of query
+
+pub fn check_number_hits(v: &Value, size: &str) -> Result<()> {
+    // parse size to i32
+    let size_int: u64 = size.parse()?;
+    // get value from JSON response
+    let hits = v["status"]["hits"].as_u64();
+
+    match hits {
+        Some(hits) => {
+            if size_int < hits {
+                eprintln!(
+                    "[-]\tOnly {} results are displayed, but there are {} hits from GoaT.",
+                    size_int, hits
+                );
+            }
+        }
+        None => {
+            bail!("[-]\tThere were no hits.")
+        }
+    }
+
+    Ok(())
+}

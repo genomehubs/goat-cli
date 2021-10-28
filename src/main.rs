@@ -2,6 +2,7 @@ use anyhow::{bail, Result};
 use clap::{App, Arg};
 use tokio;
 
+// use goat::count::count;
 use goat::search::run;
 
 // would be nice to add ranks
@@ -17,9 +18,9 @@ async fn main() -> Result<()> {
             clap::SubCommand::with_name("search")
                 .about("Query the search API.")
                 .arg(
-                    Arg::with_name("tax-id")
-                        .short("t")
-                        .long("tax-id")
+                    Arg::with_name("species")
+                        .short("s")
+                        .long("species")
                         .takes_value(true)
                         .required_unless("file")
                         .help("The tax-id. Can be NCBI taxonomy ID, or a binomial name."),
@@ -29,7 +30,7 @@ async fn main() -> Result<()> {
                         .short("f")
                         .long("file")
                         .takes_value(true)
-                        .required_unless("tax-id")
+                        .required_unless("species")
                         .help("A file of NCBI taxonomy ID's (tips) and/or binomial names.\nEach line should contain a single entry."),
                 )
                 .arg(
@@ -72,14 +73,12 @@ async fn main() -> Result<()> {
                     Arg::with_name("url")
                         .short("u")
                         .long("url")
-                        .help("Print the underlying GoaT API URL. Nice to know, and useful for debugging."),
+                        .help("Print the underlying GoaT API URL. Useful for debugging."),
                 )
-                // TODO: does not work with raw values.
                 .arg(
                     Arg::with_name("tree")
-                        .short("p")
+                        .short("t")
                         .long("tree")
-                        .conflicts_with("raw")
                         .help("Get information for all descendents of a common ancestor."),
                 )
                 .arg(
@@ -93,10 +92,18 @@ async fn main() -> Result<()> {
                         .long("size")
                         .default_value("50")
                         .help("The number of results to return."),
+                )
+                .arg(
+                    Arg::with_name("ranks")
+                        .long("ranks")
+                        .possible_values(&["none", "subspecies", "species", "genus", "family", "order", "class", "phylum", "kingdom", "superkingdom"])
+                        .default_value("none")
+                        .help("Choose a rank to display with the results. All values up to the given rank are displayed.")
                 ),
-                // these are all the common options
-                // TODO: --mito flag for mitochondial span, assembly & GC
-                // --plastid for plastid span, assembly & GC.
+        )
+        .subcommand(
+            clap::SubCommand::with_name("count")
+                .about("Query the count API.")
         )
         .get_matches();
 
@@ -105,6 +112,11 @@ async fn main() -> Result<()> {
         "search" => {
             let matches = subcommand.1.unwrap();
             run::search(&matches).await?;
+        }
+        "count" => {
+            bail!(goat::error::error::NotYetImplemented::CLIError);
+            // call the count function here
+            // count();
         }
         _ => {
             bail!(goat::error::error::NotYetImplemented::CLIError)

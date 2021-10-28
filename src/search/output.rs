@@ -1,5 +1,6 @@
 use crate::search::agg_values::Records;
 use crate::search::raw_values::RawRecords;
+use crate::utils::ranks::RankHeaders;
 
 use anyhow::{bail, Result};
 
@@ -9,8 +10,7 @@ pub struct CombinedValues {
     pub agg: Option<Records>,
 }
 
-// format and print the CombinedValues -> raw output
-// from the concurrent stream
+// TODO: add headers for ranks.
 
 pub fn print_raw_output(
     awaited_fetches: Vec<Result<CombinedValues, anyhow::Error>>,
@@ -19,6 +19,8 @@ pub fn print_raw_output(
     gs: bool,
     cvalues: bool,
     karyotype: bool,
+    busco: bool,
+    ranks_vec: RankHeaders,
 ) -> Result<()> {
     // this may be the jankiest work-around to date...
     // I have to allocate each field of AggFetches
@@ -91,18 +93,29 @@ pub fn print_raw_output(
         };
     }
 
+    let mut busco_completeness_vec = Vec::new();
+    for el in &awaited_fetches {
+        let _ = match el {
+            Ok(e) => {
+                // argh more cloning...
+                busco_completeness_vec.push(e.raw.clone().unwrap().busco_completeness.clone());
+            }
+            Err(e) => bail!("[-]\tSomething went wrong? {}", e),
+        };
+    }
+
     if all || assembly {
         println!("--- Assembly Level ---");
         println!(
-            "{}\t{}\t{}\t{}\t{}",
-            "taxon_name", "ncbi_taxid", "source_id", "source", "assembly_type"
+            "{}{}\t{}\t{}\t{}\t{}",
+            ranks_vec, "taxon_name", "ncbi_taxid", "source_id", "source", "assembly_type"
         );
 
         for el in assembly_level_vec {
             for el2 in el {
                 println!(
-                    "{}\t{}\t{}\t{}\t{}",
-                    el2.taxon_name, el2.taxon_ncbi, el2.source_id, el2.source, el2.value,
+                    "{}{}\t{}\t{}\t{}\t{}",
+                    el2.ranks, el2.taxon_name, el2.taxon_ncbi, el2.source_id, el2.source, el2.value,
                 );
             }
         }
@@ -111,15 +124,32 @@ pub fn print_raw_output(
     if all || assembly {
         println!("--- Assembly Span ---");
         println!(
-            "{}\t{}\t{}\t{}\t{}",
-            "taxon_name", "ncbi_taxid", "source_id", "source", "span"
+            "{}{}\t{}\t{}\t{}\t{}",
+            ranks_vec, "taxon_name", "ncbi_taxid", "source_id", "source", "span"
         );
 
         for el in assembly_span_vec {
             for el2 in el {
                 println!(
-                    "{}\t{}\t{}\t{}\t{}",
-                    el2.taxon_name, el2.taxon_ncbi, el2.source_id, el2.source, el2.value,
+                    "{}{}\t{}\t{}\t{}\t{}",
+                    el2.ranks, el2.taxon_name, el2.taxon_ncbi, el2.source_id, el2.source, el2.value,
+                );
+            }
+        }
+    }
+
+    if all || busco {
+        println!("--- BUSCO Completeness ---");
+        println!(
+            "{}{}\t{}\t{}\t{}",
+            ranks_vec, "taxon_name", "ncbi_taxid", "source", "span"
+        );
+
+        for el in busco_completeness_vec {
+            for el2 in el {
+                println!(
+                    "{}{}\t{}\t{}\t{}",
+                    el2.ranks, el2.taxon_name, el2.taxon_ncbi, el2.source, el2.value,
                 );
             }
         }
@@ -128,15 +158,15 @@ pub fn print_raw_output(
     if all || cvalues {
         println!("--- C-Values ---");
         println!(
-            "{}\t{}\t{}\t{}",
-            "taxon_name", "ncbi_id", "source", "c_value"
+            "{}{}\t{}\t{}\t{}",
+            ranks_vec, "taxon_name", "ncbi_id", "source", "c_value"
         );
 
         for el in c_value_vec {
             for el2 in el {
                 println!(
-                    "{}\t{}\t{}\t{}",
-                    el2.taxon_name, el2.taxon_ncbi, el2.source, el2.value
+                    "{}{}\t{}\t{}\t{}",
+                    el2.ranks, el2.taxon_name, el2.taxon_ncbi, el2.source, el2.value
                 )
             }
         }
@@ -145,14 +175,31 @@ pub fn print_raw_output(
     if all || karyotype {
         println!("--- Chromosome Numbers ---");
         println!(
-            "{}\t{}\t{}\t{}",
-            "taxon_name", "ncbi_id", "source", "chromosome_number"
+            "{}{}\t{}\t{}\t{}",
+            ranks_vec, "taxon_name", "ncbi_id", "source", "chromosome_number"
         );
         for el in chromosome_vec {
             for el2 in el {
+                let mut comma_sep_chroms = String::new();
+                let mut peek_chrom_vec = el2.value.iter().peekable();
+
+                while let Some(e) = peek_chrom_vec.next() {
+                    match e {
+                        Some(e) => {
+                            if peek_chrom_vec.peek().is_some() {
+                                let to_add = format!("{},", e);
+                                comma_sep_chroms += &to_add;
+                            } else {
+                                comma_sep_chroms += &e.to_string();
+                            }
+                        }
+                        None => comma_sep_chroms += "",
+                    };
+                }
+
                 println!(
-                    "{}\t{}\t{}\t{}",
-                    el2.taxon_name, el2.taxon_ncbi, el2.source, el2.value
+                    "{}{}\t{}\t{}\t{}",
+                    el2.ranks, el2.taxon_name, el2.taxon_ncbi, el2.source, comma_sep_chroms
                 )
             }
         }
@@ -161,14 +208,14 @@ pub fn print_raw_output(
     if all || gs {
         println!("--- Genome Sizes ---");
         println!(
-            "{}\t{}\t{}\t{}",
-            "taxon_name", "ncbi_id", "source", "genome_size"
+            "{}{}\t{}\t{}\t{}",
+            ranks_vec, "taxon_name", "ncbi_id", "source", "genome_size"
         );
         for el in genome_sizes_vec {
             for el2 in el {
                 println!(
-                    "{}\t{}\t{}\t{}",
-                    el2.taxon_name, el2.taxon_ncbi, el2.source, el2.value
+                    "{}{}\t{}\t{}\t{}",
+                    el2.ranks, el2.taxon_name, el2.taxon_ncbi, el2.source, el2.value
                 )
             }
         }
@@ -177,14 +224,30 @@ pub fn print_raw_output(
     if all || karyotype {
         println!("--- Haploid Numbers ---");
         println!(
-            "{}\t{}\t{}\t{}",
-            "taxon_name", "ncbi_id", "source", "haploid_chromosome_number"
+            "{}{}\t{}\t{}\t{}",
+            ranks_vec, "taxon_name", "ncbi_id", "source", "haploid_chromosome_number"
         );
         for el in haploid_vec {
             for el2 in el {
+                let mut comma_sep_haps = String::new();
+                let mut peek_chrom_vec = el2.value.iter().peekable();
+
+                while let Some(e) = peek_chrom_vec.next() {
+                    match e {
+                        Some(e) => {
+                            if peek_chrom_vec.peek().is_some() {
+                                let to_add = format!("{},", e);
+                                comma_sep_haps += &to_add;
+                            } else {
+                                comma_sep_haps += &e.to_string();
+                            }
+                        }
+                        None => comma_sep_haps += "",
+                    };
+                }
                 println!(
-                    "{}\t{}\t{}\t{}",
-                    el2.taxon_name, el2.taxon_ncbi, el2.source, el2.value
+                    "{}{}\t{}\t{}\t{}",
+                    el2.ranks, el2.taxon_name, el2.taxon_ncbi, el2.source, comma_sep_haps
                 )
             }
         }
@@ -200,6 +263,7 @@ pub fn print_agg_output(
     cvalues: bool,
     karyotype: bool,
     busco: bool,
+    ranks_vec: RankHeaders,
 ) -> Result<()> {
     let mut assembly_span_vec = Vec::new();
     for el in &awaited_fetches {
@@ -281,7 +345,8 @@ pub fn print_agg_output(
     if all || assembly {
         println!("--- Assembly Spans ---");
         println!(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            "{}{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            ranks_vec,
             "taxon_name",
             "ncbi_taxid",
             "aggregation_source",
@@ -297,7 +362,8 @@ pub fn print_agg_output(
         for el in assembly_span_vec {
             for el2 in el {
                 println!(
-                    "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                    "{}{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                    el2.ranks,
                     el2.taxon_name,
                     el2.taxon_id,
                     el2.aggregation_source,
@@ -316,7 +382,8 @@ pub fn print_agg_output(
     if all || assembly {
         println!("--- Assembly Levels ---");
         println!(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            "{}{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            ranks_vec,
             "taxon_name",
             "ncbi_taxid",
             "aggregation_source",
@@ -332,7 +399,8 @@ pub fn print_agg_output(
         for el in assembly_level_vec {
             for el2 in el {
                 println!(
-                    "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                    "{}{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                    el2.ranks,
                     el2.taxon_name,
                     el2.taxon_id,
                     el2.aggregation_source,
@@ -351,7 +419,8 @@ pub fn print_agg_output(
     if all || busco {
         println!("--- BUSCO Completeness ---");
         println!(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            "{}{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            ranks_vec,
             "taxon_name",
             "ncbi_taxid",
             "aggregation_source",
@@ -367,7 +436,8 @@ pub fn print_agg_output(
         for el in busco_completeness_vec {
             for el2 in el {
                 println!(
-                    "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                    "{}{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                    el2.ranks,
                     el2.taxon_name,
                     el2.taxon_id,
                     el2.aggregation_source,
@@ -386,7 +456,8 @@ pub fn print_agg_output(
     if all || cvalues {
         println!("--- C-Values ---");
         println!(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            "{}{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            ranks_vec,
             "taxon_name",
             "ncbi_taxid",
             "aggregation_source",
@@ -402,7 +473,8 @@ pub fn print_agg_output(
         for el in cvalue_vec {
             for el2 in el {
                 println!(
-                    "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                    "{}{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                    el2.ranks,
                     el2.taxon_name,
                     el2.taxon_id,
                     el2.aggregation_source,
@@ -421,7 +493,8 @@ pub fn print_agg_output(
     if all || karyotype {
         println!("--- Chromosome Numbers ---");
         println!(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            "{}{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            ranks_vec,
             "taxon_name",
             "ncbi_taxid",
             "aggregation_source",
@@ -437,7 +510,8 @@ pub fn print_agg_output(
         for el in chromosome_number_vec {
             for el2 in el {
                 println!(
-                    "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                    "{}{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                    el2.ranks,
                     el2.taxon_name,
                     el2.taxon_id,
                     el2.aggregation_source,
@@ -456,7 +530,8 @@ pub fn print_agg_output(
     if all || gs {
         println!("--- Genome Size ---");
         println!(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            "{}{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            ranks_vec,
             "taxon_name",
             "ncbi_taxid",
             "aggregation_source",
@@ -472,7 +547,8 @@ pub fn print_agg_output(
         for el in genome_size_vec {
             for el2 in el {
                 println!(
-                    "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                    "{}{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                    el2.ranks,
                     el2.taxon_name,
                     el2.taxon_id,
                     el2.aggregation_source,
@@ -491,7 +567,8 @@ pub fn print_agg_output(
     if all || karyotype {
         println!("--- Haploid Chromosome Number ---");
         println!(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            "{}{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            ranks_vec,
             "taxon_name",
             "ncbi_taxid",
             "aggregation_source",
@@ -507,7 +584,8 @@ pub fn print_agg_output(
         for el in haploid_vec {
             for el2 in el {
                 println!(
-                    "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                    "{}{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                    el2.ranks,
                     el2.taxon_name,
                     el2.taxon_id,
                     el2.aggregation_source,

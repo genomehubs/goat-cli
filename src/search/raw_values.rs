@@ -2,13 +2,16 @@
 // also potentially change the API here to
 // be more in line with agg_values
 
+use crate::utils::ranks;
+use crate::utils::ranks::Ranks;
 use anyhow::Result;
 use serde_json::Value;
-// These structs are all very copy-heavy.
-// I think this is fine for the small (ish) data
-// coming from GoaT.
+
+// can these be dynamically generated?
+
 #[derive(Clone)]
 pub struct RawAssemblyLevel {
+    pub ranks: Ranks,
     pub taxon_name: String,
     pub taxon_ncbi: String,
     pub source_id: String,
@@ -17,6 +20,7 @@ pub struct RawAssemblyLevel {
 }
 #[derive(Clone)]
 pub struct RawAssemblySpan {
+    pub ranks: Ranks,
     pub taxon_name: String,
     pub taxon_ncbi: String,
     pub source_id: String,
@@ -26,22 +30,25 @@ pub struct RawAssemblySpan {
 
 #[derive(Clone)]
 pub struct RawChromosomeNumber {
+    pub ranks: Ranks,
     pub taxon_name: String,
     pub taxon_ncbi: String,
     pub source: String,
-    pub value: u64,
+    pub value: Vec<Option<u64>>,
 }
 
 #[derive(Clone)]
 pub struct RawHaploid {
+    pub ranks: Ranks,
     pub taxon_name: String,
     pub taxon_ncbi: String,
     pub source: String,
-    pub value: u64,
+    pub value: Vec<Option<u64>>,
 }
 
 #[derive(Clone)]
 pub struct RawCValue {
+    pub ranks: Ranks,
     pub taxon_name: String,
     pub taxon_ncbi: String,
     pub source: String,
@@ -50,18 +57,28 @@ pub struct RawCValue {
 
 #[derive(Clone)]
 pub struct RawGenomeSize {
+    pub ranks: Ranks,
     pub taxon_name: String,
     pub taxon_ncbi: String,
     pub source: String,
     pub value: u64,
 }
 
+#[derive(Clone)]
+pub struct RawBuscoCompleteness {
+    pub ranks: Ranks,
+    pub taxon_name: String,
+    pub taxon_ncbi: String,
+    pub source: String,
+    pub value: f64,
+}
+
 // this is the struct to gather the concurrent results for the raw values.
 #[derive(Clone)]
 pub struct RawRecords {
-    pub level: Vec<RawAssemblyLevel>, // make better struct
+    pub level: Vec<RawAssemblyLevel>,
     pub span: Vec<RawAssemblySpan>,
-    // pub busco_completeness: Vec<_>
+    pub busco_completeness: Vec<RawBuscoCompleteness>,
     pub c_value: Vec<RawCValue>,
     pub chromosome_number: Vec<RawChromosomeNumber>,
     pub genome_size: Vec<RawGenomeSize>,
@@ -73,6 +90,7 @@ impl RawRecords {
         RawRecords {
             level: Vec::new(),
             span: Vec::new(),
+            busco_completeness: Vec::new(),
             c_value: Vec::new(),
             chromosome_number: Vec::new(),
             genome_size: Vec::new(),
@@ -80,7 +98,7 @@ impl RawRecords {
         }
     }
 
-    pub fn get_results(&mut self, v: &Value) -> Result<()> {
+    pub fn get_results(&mut self, v: &Value, ranks_vec: &Vec<String>) -> Result<()> {
         // how many results are there?
         let results_len_op = v["results"].as_array();
         // safely get the number of results.
@@ -100,6 +118,10 @@ impl RawRecords {
             // get a map of each field
             let map_of_fields_op = v["results"][index]["result"]["fields"].as_object();
 
+            // if we wanted to add ranks, we do this here.
+            // then add an Option<> to each struct above for rank
+            let ranks = ranks::get_ranks(v, index, ranks_vec);
+
             match map_of_fields_op {
                 Some(r) => {
                     for (key, value) in r {
@@ -110,6 +132,7 @@ impl RawRecords {
                                     Some(rv) => {
                                         for el in rv {
                                             self.level.push(RawAssemblyLevel {
+                                                ranks: Ranks(ranks.clone()),
                                                 taxon_name: taxon_name.to_string(),
                                                 taxon_ncbi: taxon_id.to_string(),
                                                 source_id: el["source_id"]
@@ -130,6 +153,7 @@ impl RawRecords {
                                     Some(rv) => {
                                         for el in rv {
                                             self.span.push(RawAssemblySpan {
+                                                ranks: Ranks(ranks.clone()),
                                                 taxon_name: taxon_name.to_string(),
                                                 taxon_ncbi: taxon_id.to_string(),
                                                 source_id: el["source_id"]
@@ -150,29 +174,15 @@ impl RawRecords {
                                     Some(rv) => {
                                         for el in rv {
                                             self.c_value.push(RawCValue {
+                                                ranks: Ranks(ranks.clone()),
                                                 taxon_name: taxon_name.to_string(),
                                                 taxon_ncbi: taxon_id.to_string(),
+                                                // look at the underlying source here
                                                 source: el["source"]
                                                     .as_str()
                                                     .unwrap_or("")
                                                     .to_string(),
                                                 value: el["value"].as_f64().unwrap(),
-                                            })
-                                        }
-                                    }
-                                    None => {}
-                                }
-                            }
-                            "chromosome_number" => {
-                                let raw_values = value["rawValues"].as_array();
-                                match raw_values {
-                                    Some(rv) => {
-                                        for el in rv {
-                                            self.chromosome_number.push(RawChromosomeNumber {
-                                                taxon_name: taxon_name.to_string(),
-                                                taxon_ncbi: taxon_id.to_string(),
-                                                source: el["source"].as_str().unwrap().to_string(),
-                                                value: el["value"].as_u64().unwrap(),
                                             })
                                         }
                                     }
@@ -185,8 +195,10 @@ impl RawRecords {
                                     Some(rv) => {
                                         for el in rv {
                                             self.genome_size.push(RawGenomeSize {
+                                                ranks: Ranks(ranks.clone()),
                                                 taxon_name: taxon_name.to_string(),
                                                 taxon_ncbi: taxon_id.to_string(),
+                                                // look at the underlying source here
                                                 source: el["source"]
                                                     .as_str()
                                                     .unwrap_or("")
@@ -198,23 +210,72 @@ impl RawRecords {
                                     None => {}
                                 }
                             }
-                            "haploid_number" => {
+                            "chromosome_number" => {
                                 let raw_values = value["rawValues"].as_array();
                                 match raw_values {
                                     Some(rv) => {
                                         for el in rv {
-                                            self.haploid.push(RawHaploid {
+                                            // get chromosome numbers out of array
+                                            let chrom_num_vec = el["value"].as_array();
+                                            let chrom_num = match chrom_num_vec {
+                                                Some(c) => c.iter().map(|x| x.as_u64()).collect(),
+                                                None => vec![el["value"].as_u64()],
+                                            };
+                                            self.chromosome_number.push(RawChromosomeNumber {
+                                                ranks: Ranks(ranks.clone()),
                                                 taxon_name: taxon_name.to_string(),
                                                 taxon_ncbi: taxon_id.to_string(),
                                                 source: el["source"].as_str().unwrap().to_string(),
-                                                value: el["value"].as_u64().unwrap(),
+                                                // bug was here because chromosome numbers can be in
+                                                // an array.
+                                                value: chrom_num,
                                             })
                                         }
                                     }
                                     None => {}
                                 }
                             }
-                            // add busco here.
+                            "haploid_number" => {
+                                let raw_values = value["rawValues"].as_array();
+                                match raw_values {
+                                    Some(rv) => {
+                                        for el in rv {
+                                            // get chromosome numbers out of array
+                                            let hap_num_vec = el["value"].as_array();
+                                            let hap_num = match hap_num_vec {
+                                                Some(c) => c.iter().map(|x| x.as_u64()).collect(),
+                                                None => vec![el["value"].as_u64()],
+                                            };
+                                            self.haploid.push(RawHaploid {
+                                                ranks: Ranks(ranks.clone()),
+                                                taxon_name: taxon_name.to_string(),
+                                                taxon_ncbi: taxon_id.to_string(),
+                                                source: el["source"].as_str().unwrap().to_string(),
+                                                value: hap_num,
+                                            })
+                                        }
+                                    }
+                                    None => {}
+                                }
+                            }
+                            // why's there a space here Rich?
+                            "busco completeness" => {
+                                let raw_values = value["rawValues"].as_array();
+                                match raw_values {
+                                    Some(rv) => {
+                                        for el in rv {
+                                            self.busco_completeness.push(RawBuscoCompleteness {
+                                                ranks: Ranks(ranks.clone()),
+                                                taxon_name: taxon_name.to_string(),
+                                                taxon_ncbi: taxon_id.to_string(),
+                                                source: el["source"].as_str().unwrap().to_string(),
+                                                value: el["value"].as_f64().unwrap(),
+                                            })
+                                        }
+                                    }
+                                    None => {}
+                                }
+                            }
                             _ => {}
                         }
                     }
@@ -230,49 +291,3 @@ impl RawRecords {
         Ok(())
     }
 }
-
-// might be nice to resurrect this later.
-
-// pub struct RawAssembly {
-//     pub level: Vec<RawAssemblyLevel>,
-//     pub span: Vec<RawAssemblySpan>,
-// }
-
-// #[derive(Clone)]
-// pub struct CombinedRawAssembly {
-//     pub taxon_name: String,
-//     pub taxon_ncbi: String,
-//     pub source_id: String,
-//     pub source: String,
-//     pub assembly_type: String,
-//     pub span: u64,
-// }
-
-// impl RawAssembly {
-//     pub fn new() -> Self {
-//         RawAssembly {
-//             level: Vec::new(),
-//             span: Vec::new(),
-//         }
-//     }
-//     // I think sorting should be quicker.
-//     pub fn merge(&mut self, taxon_name: &str, taxon_ncbi: &str) -> Vec<CombinedRawAssembly> {
-//         // sort the vecs
-//         &self.level.sort_by(|a, b| a.source_id.cmp(&b.source_id));
-//         &self.span.sort_by(|a, b| a.source_id.cmp(&b.source_id));
-
-//         let mut res = Vec::new();
-
-//         for (el1, el2) in self.level.iter().zip(&self.span) {
-//             res.push(CombinedRawAssembly {
-//                 taxon_name: taxon_name.to_string(),
-//                 taxon_ncbi: taxon_ncbi.to_string(),
-//                 source_id: el1.source_id.clone(),
-//                 source: el1.source.clone(),
-//                 assembly_type: el1.value.clone(),
-//                 span: el2.value,
-//             });
-//         }
-//         res
-//     }
-// }

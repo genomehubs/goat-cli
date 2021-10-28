@@ -11,7 +11,7 @@ goat-search
 Query the search API.
 
 USAGE:
-    goat search [FLAGS] [OPTIONS] --file <file> --tax-id <tax-id>
+    goat search [FLAGS] [OPTIONS] --file <file> --species <species>
 
 FLAGS:
     -z, --all            This flag indicates all data should be printed.
@@ -23,15 +23,18 @@ FLAGS:
     -k, --karyotype      This flag indicates karyotype data should be printed.
     -r, --raw            This flag indicates raw values should be all listed out. So you can do your own aggregations
                          for example.
-    -p, --tree           Get information for all descendents of a common ancestor.
-    -u, --url            Print the underlying GoaT API URL. Nice to know, and useful for debugging.
+    -t, --tree           Get information for all descendents of a common ancestor.
+    -u, --url            Print the underlying GoaT API URL. Useful for debugging.
     -V, --version        Prints version information
 
 OPTIONS:
-    -f, --file <file>        A file of NCBI taxonomy ID's (tips) and/or binomial names.
-                             Each line should contain a single entry.
-        --size <size>        The number of results to return. [default: 50]
-    -t, --tax-id <tax-id>    The tax-id. Can be NCBI taxonomy ID, or a binomial name.
+    -f, --file <file>          A file of NCBI taxonomy ID's (tips) and/or binomial names.
+                               Each line should contain a single entry.
+        --ranks <ranks>        Choose a rank to display with the results. All values up to the given rank are displayed.
+                               [default: none]  [possible values: none, subspecies, species, genus, family, order,
+                               class, phylum, kingdom, superkingdom]
+        --size <size>          The number of results to return. [default: 50]
+    -s, --species <species>    The tax-id. Can be NCBI taxonomy ID, or a binomial name.
 ```
 
 ### Examples

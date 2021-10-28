@@ -17,6 +17,8 @@
 
 // build a bunch of structs to hold this information.
 
+use crate::utils::ranks;
+use crate::utils::ranks::Ranks;
 use anyhow::Result;
 use serde_json::Value;
 
@@ -24,8 +26,9 @@ use serde_json::Value;
 // I think this is fine for the small (ish) data
 // coming from GoaT.
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct AssemblyLevel {
+    pub ranks: Ranks,
     pub taxon_name: String,
     pub taxon_id: String,
     pub aggregation_source: String,           // always present
@@ -38,8 +41,9 @@ pub struct AssemblyLevel {
     pub aggregation_rank: Option<String>,     // only in tax_tree
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct AssemblySpan {
+    pub ranks: Ranks,
     pub taxon_name: String,
     pub taxon_id: String,
     pub aggregation_source: String,           // always present
@@ -54,8 +58,9 @@ pub struct AssemblySpan {
 
 // no example yet for tax_tree busco completeness
 // assume they are the same as the assembly ones.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct BuscoCompleteness {
+    pub ranks: Ranks,
     pub taxon_name: String,
     pub taxon_id: String,
     pub aggregation_source: String,           // always present
@@ -68,8 +73,9 @@ pub struct BuscoCompleteness {
     pub aggregation_rank: Option<String>,     // only in tax_tree
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct CValue {
+    pub ranks: Ranks,
     pub taxon_name: String,
     pub taxon_id: String,
     pub aggregation_source: String,           // always present
@@ -82,8 +88,9 @@ pub struct CValue {
     pub aggregation_rank: Option<String>,     // only in tax_tree
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ChromosomeNumber {
+    pub ranks: Ranks,
     pub taxon_name: String,
     pub taxon_id: String,
     pub aggregation_source: String,           // always present
@@ -96,8 +103,9 @@ pub struct ChromosomeNumber {
     pub aggregation_rank: Option<String>,     // only in tax_tree
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct GenomeSize {
+    pub ranks: Ranks,
     pub taxon_name: String,
     pub taxon_id: String,
     pub aggregation_source: String,           // always present
@@ -110,8 +118,9 @@ pub struct GenomeSize {
     pub aggregation_rank: Option<String>,     // only in tax_tree
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Haploid {
+    pub ranks: Ranks,
     pub taxon_name: String,
     pub taxon_id: String,
     pub aggregation_source: String,           // always present
@@ -151,7 +160,7 @@ impl Records {
     }
     // get all the records associated with a single
     // aggregated taxon (most of GoaT)
-    pub fn get_results(&mut self, v: &Value) -> Result<()> {
+    pub fn get_results(&mut self, v: &Value, ranks_vec: &Vec<String>) -> Result<()> {
         // how many results are there?
         let results_len_op = v["results"].as_array();
         // safely get this number out
@@ -171,6 +180,8 @@ impl Records {
             // get the map (k, v pair) of each field
             let map_of_fields_op = v["results"][index]["result"]["fields"].as_object();
 
+            let ranks = ranks::get_ranks(v, index, ranks_vec);
+
             // match each field and read into a struct
             match map_of_fields_op {
                 Some(r) => {
@@ -179,6 +190,7 @@ impl Records {
                         match &key[..] {
                             "assembly_level" => {
                                 let get_values = AssemblyLevel {
+                                    ranks: Ranks(ranks.clone()),
                                     taxon_name: taxon_name.to_string(),
                                     taxon_id: taxon_id.to_string(),
                                     aggregation_source: value["aggregation_source"]
@@ -210,6 +222,7 @@ impl Records {
                             }
                             "assembly_span" => {
                                 let get_values = AssemblySpan {
+                                    ranks: Ranks(ranks.clone()),
                                     taxon_name: taxon_name.to_string(),
                                     taxon_id: taxon_id.to_string(),
                                     aggregation_source: value["aggregation_source"]
@@ -241,6 +254,7 @@ impl Records {
                             }
                             "busco completeness" => {
                                 let get_values = BuscoCompleteness {
+                                    ranks: Ranks(ranks.clone()),
                                     taxon_name: taxon_name.to_string(),
                                     taxon_id: taxon_id.to_string(),
                                     aggregation_source: value["aggregation_source"]
@@ -272,6 +286,7 @@ impl Records {
                             }
                             "c_value" => {
                                 let get_values = CValue {
+                                    ranks: Ranks(ranks.clone()),
                                     taxon_name: taxon_name.to_string(),
                                     taxon_id: taxon_id.to_string(),
                                     aggregation_source: value["aggregation_source"]
@@ -303,6 +318,7 @@ impl Records {
                             }
                             "chromosome_number" => {
                                 let get_values = ChromosomeNumber {
+                                    ranks: Ranks(ranks.clone()),
                                     taxon_name: taxon_name.to_string(),
                                     taxon_id: taxon_id.to_string(),
                                     aggregation_source: value["aggregation_source"]
@@ -334,6 +350,7 @@ impl Records {
                             }
                             "genome_size" => {
                                 let get_values = GenomeSize {
+                                    ranks: Ranks(ranks.clone()),
                                     taxon_name: taxon_name.to_string(),
                                     taxon_id: taxon_id.to_string(),
                                     aggregation_source: value["aggregation_source"]
@@ -365,6 +382,7 @@ impl Records {
                             }
                             "haploid_number" => {
                                 let get_values = Haploid {
+                                    ranks: Ranks(ranks.clone()),
                                     taxon_name: taxon_name.to_string(),
                                     taxon_id: taxon_id.to_string(),
                                     aggregation_source: value["aggregation_source"]
