@@ -28,12 +28,12 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
     let gs = matches.is_present("genome-size");
     let all = matches.is_present("all");
     let print_url = matches.is_present("url");
-    let tax_tree_bool = matches.is_present("tree");
+    let tax_tree_bool = matches.is_present("phylogeny");
     let busco = matches.is_present("busco");
 
     let size = matches.value_of("size").unwrap();
 
-    let tax_name_op = matches.value_of("species");
+    let tax_name_op = matches.value_of("taxon");
     let filename_op = matches.value_of("file");
     let ranks = matches.value_of("ranks").unwrap(); // safe to unwrap here.
 

@@ -18,19 +18,19 @@ async fn main() -> Result<()> {
             clap::SubCommand::with_name("search")
                 .about("Query the search API.")
                 .arg(
-                    Arg::with_name("species")
-                        .short("s")
-                        .long("species")
+                    Arg::with_name("taxon")
+                        .short("t")
+                        .long("taxon")
                         .takes_value(true)
                         .required_unless("file")
-                        .help("The tax-id. Can be NCBI taxonomy ID, or a binomial name."),
+                        .help("The taxon to search. An NCBI taxon ID, or the name of a taxon at any rank."),
                 )
                 .arg(
                     Arg::with_name("file")
                         .short("f")
                         .long("file")
                         .takes_value(true)
-                        .required_unless("species")
+                        .required_unless("taxon")
                         .help("A file of NCBI taxonomy ID's (tips) and/or binomial names.\nEach line should contain a single entry."),
                 )
                 .arg(
@@ -76,9 +76,9 @@ async fn main() -> Result<()> {
                         .help("Print the underlying GoaT API URL. Useful for debugging."),
                 )
                 .arg(
-                    Arg::with_name("tree")
-                        .short("t")
-                        .long("tree")
+                    Arg::with_name("phylogeny")
+                        .short("p")
+                        .long("phylogeny")
                         .help("Get information for all descendents of a common ancestor."),
                 )
                 .arg(
