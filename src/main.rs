@@ -16,7 +16,7 @@ async fn main() -> Result<()> {
         .about("GoaTs on a terminal.")
         .subcommand(
             clap::SubCommand::with_name("search")
-                .about("Query the search API.")
+                .about("Query the GoaT search API.")
                 .arg(
                     Arg::with_name("taxon")
                         .short("t")
@@ -73,7 +73,7 @@ async fn main() -> Result<()> {
                     Arg::with_name("url")
                         .short("u")
                         .long("url")
-                        .help("Print the underlying GoaT API URL. Useful for debugging."),
+                        .help("Print the underlying GoaT API URL(s). Useful for debugging."),
                 )
                 .arg(
                     Arg::with_name("phylogeny")

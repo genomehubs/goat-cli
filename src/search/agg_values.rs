@@ -1,162 +1,53 @@
-// ignore assembly level
-// aggregation method does not seem to be consistent?
-// so record this.
-
-// the request URL for this is (something like):
-
-//https://goat.genomehubs.org/api/v0.0.1/
-// search?
-// query=tax_name%28Arabidopsis%20thaliana%29 // can also be query=tax_tree%28Arabidopsis%29 (which I believe gives no raw values back.)
-// &includeEstimates=false
-// &includeRawValues=false
-// &searchRawValues=false
-// &summaryValues=median
-// &result=taxon
-// &taxonomy=ncbi
-// &tidyData=false
-
-// build a bunch of structs to hold this information.
-
 use crate::utils::ranks;
 use crate::utils::ranks::Ranks;
 use anyhow::Result;
 use serde_json::Value;
 
-// Again, these structs are all very copy-heavy.
-// I think this is fine for the small (ish) data
-// coming from GoaT.
+// make enum to hold values.
 
+// perhaps a better way of doing this is defining an enum
+// of the possible values e.g.
 #[derive(Clone)]
-pub struct AssemblyLevel {
-    pub ranks: Ranks,
-    pub taxon_name: String,
-    pub taxon_id: String,
-    pub aggregation_source: String,           // always present
-    pub min: Option<u64>,                     // only in tax_tree
-    pub max: Option<u64>,                     // only in tax_tree
-    pub count: u64,                           // always present
-    pub aggregation_taxon_id: Option<String>, // only in tax_tree
-    pub value: String,                        // always present
-    pub aggregation_method: String,           // always present
-    pub aggregation_rank: Option<String>,     // only in tax_tree
+pub enum GoaTValueAgg {
+    AssemblyLevel(String),
+    AssemblySpan(u64),
+    BuscoCompleteness(f64),
+    ChromosomeNumber(u64),
+    CValue(f64),
+    GenomeSize(u64),
+    Haploid(u64),
+}
+
+// variants of min/max
+#[derive(Clone)]
+pub enum MinMax {
+    Minmaxf64(Option<f64>),
+    Minmaxu64(Option<u64>),
 }
 
 #[derive(Clone)]
-pub struct AssemblySpan {
-    pub ranks: Ranks,
-    pub taxon_name: String,
-    pub taxon_id: String,
+pub struct Record {
+    pub ranks: Ranks,                         // optional but this is okay
+    pub taxon_name: String,                   // always present
+    pub taxon_id: String,                     // always present
     pub aggregation_source: String,           // always present
-    pub min: Option<u64>,                     // only in tax_tree
-    pub max: Option<u64>,                     // only in tax_tree
+    pub min: MinMax,                          // only in tax_tree
+    pub max: MinMax,                          // only in tax_tree
     pub count: u64,                           // always present
     pub aggregation_taxon_id: Option<String>, // only in tax_tree
-    pub value: u64,                           // always present
-    pub aggregation_method: String,           // always present
-    pub aggregation_rank: Option<String>,     // only in tax_tree
-}
-
-// no example yet for tax_tree busco completeness
-// assume they are the same as the assembly ones.
-#[derive(Clone)]
-pub struct BuscoCompleteness {
-    pub ranks: Ranks,
-    pub taxon_name: String,
-    pub taxon_id: String,
-    pub aggregation_source: String,           // always present
-    pub min: Option<f64>,                     // only in tax_tree
-    pub max: Option<f64>,                     // only in tax_tree
-    pub count: u64,                           // always present
-    pub aggregation_taxon_id: Option<String>, // only in tax_tree
-    pub value: f64,                           // always present
-    pub aggregation_method: String,           // always present
-    pub aggregation_rank: Option<String>,     // only in tax_tree
-}
-
-#[derive(Clone)]
-pub struct CValue {
-    pub ranks: Ranks,
-    pub taxon_name: String,
-    pub taxon_id: String,
-    pub aggregation_source: String,           // always present
-    pub min: Option<f64>,                     // only in tax_tree
-    pub max: Option<f64>,                     // only in tax_tree
-    pub count: u64,                           // always present
-    pub aggregation_taxon_id: Option<String>, // only in tax_tree
-    pub value: f64,                           // always present
-    pub aggregation_method: String,           // always present
-    pub aggregation_rank: Option<String>,     // only in tax_tree
-}
-
-#[derive(Clone)]
-pub struct ChromosomeNumber {
-    pub ranks: Ranks,
-    pub taxon_name: String,
-    pub taxon_id: String,
-    pub aggregation_source: String,           // always present
-    pub min: Option<u64>,                     // only in tax_tree
-    pub max: Option<u64>,                     // only in tax_tree
-    pub count: u64,                           // always present
-    pub aggregation_taxon_id: Option<String>, // only in tax_tree
-    pub value: u64,                           // always present
-    pub aggregation_method: String,           // always present
-    pub aggregation_rank: Option<String>,     // only in tax_tree
-}
-
-#[derive(Clone)]
-pub struct GenomeSize {
-    pub ranks: Ranks,
-    pub taxon_name: String,
-    pub taxon_id: String,
-    pub aggregation_source: String,           // always present
-    pub min: Option<u64>,                     // only in tax_tree
-    pub max: Option<u64>,                     // only in tax_tree
-    pub count: u64,                           // always present
-    pub aggregation_taxon_id: Option<String>, // only in tax_tree
-    pub value: u64,                           // always present
-    pub aggregation_method: String,           // always present
-    pub aggregation_rank: Option<String>,     // only in tax_tree
-}
-
-#[derive(Clone)]
-pub struct Haploid {
-    pub ranks: Ranks,
-    pub taxon_name: String,
-    pub taxon_id: String,
-    pub aggregation_source: String,           // always present
-    pub min: Option<u64>,                     // only in tax_tree
-    pub max: Option<u64>,                     // only in tax_tree
-    pub count: u64,                           // always present
-    pub aggregation_taxon_id: Option<String>, // only in tax_tree
-    pub value: u64,                           // always present
+    pub value: GoaTValueAgg,                  // always present
     pub aggregation_method: String,           // always present
     pub aggregation_rank: Option<String>,     // only in tax_tree
 }
 
 // essentially a vector of the variables defined above
 #[derive(Clone)]
-pub struct Records {
-    pub span: Vec<AssemblySpan>,
-    pub level: Vec<AssemblyLevel>,
-    pub busco_completeness: Vec<BuscoCompleteness>,
-    pub c_value: Vec<CValue>,
-    pub chromosome_number: Vec<ChromosomeNumber>,
-    pub genome_size: Vec<GenomeSize>,
-    pub haploid: Vec<Haploid>,
-}
+pub struct Records(pub Vec<Record>);
 
 impl Records {
     // create a new Record instance
     pub fn new() -> Self {
-        Records {
-            level: Vec::new(),
-            span: Vec::new(),
-            busco_completeness: Vec::new(),
-            c_value: Vec::new(),
-            chromosome_number: Vec::new(),
-            genome_size: Vec::new(),
-            haploid: Vec::new(),
-        }
+        Records(Vec::new())
     }
     // get all the records associated with a single
     // aggregated taxon (most of GoaT)
@@ -189,7 +80,7 @@ impl Records {
                         // match on the key here?
                         match &key[..] {
                             "assembly_level" => {
-                                let get_values = AssemblyLevel {
+                                let get_values = Record {
                                     ranks: Ranks(ranks.clone()),
                                     taxon_name: taxon_name.to_string(),
                                     taxon_id: taxon_id.to_string(),
@@ -197,8 +88,8 @@ impl Records {
                                         .as_str()
                                         .unwrap()
                                         .to_string(),
-                                    min: value["min"].as_u64(),
-                                    max: value["max"].as_u64(),
+                                    min: MinMax::Minmaxu64(value["min"].as_u64()),
+                                    max: MinMax::Minmaxu64(value["max"].as_u64()),
                                     count: value["count"].as_u64().unwrap(),
                                     aggregation_taxon_id: Some(
                                         value["aggregation_taxon_id"]
@@ -206,7 +97,9 @@ impl Records {
                                             .unwrap_or("")
                                             .to_string(),
                                     ),
-                                    value: value["value"].as_str().unwrap().to_string(),
+                                    value: GoaTValueAgg::AssemblyLevel(
+                                        value["value"].as_str().unwrap().to_string(),
+                                    ),
                                     aggregation_method: value["aggregation_method"]
                                         .as_str()
                                         .unwrap()
@@ -218,10 +111,10 @@ impl Records {
                                             .to_string(),
                                     ),
                                 };
-                                self.level.push(get_values);
+                                self.0.push(get_values);
                             }
                             "assembly_span" => {
-                                let get_values = AssemblySpan {
+                                let get_values = Record {
                                     ranks: Ranks(ranks.clone()),
                                     taxon_name: taxon_name.to_string(),
                                     taxon_id: taxon_id.to_string(),
@@ -229,8 +122,8 @@ impl Records {
                                         .as_str()
                                         .unwrap()
                                         .to_string(),
-                                    min: value["min"].as_u64(),
-                                    max: value["max"].as_u64(),
+                                    min: MinMax::Minmaxu64(value["min"].as_u64()),
+                                    max: MinMax::Minmaxu64(value["max"].as_u64()),
                                     count: value["count"].as_u64().unwrap(),
                                     aggregation_taxon_id: Some(
                                         value["aggregation_taxon_id"]
@@ -238,7 +131,9 @@ impl Records {
                                             .unwrap_or("")
                                             .to_string(),
                                     ),
-                                    value: value["value"].as_u64().unwrap(),
+                                    value: GoaTValueAgg::AssemblySpan(
+                                        value["value"].as_u64().unwrap(),
+                                    ),
                                     aggregation_method: value["aggregation_method"]
                                         .as_str()
                                         .unwrap()
@@ -250,10 +145,10 @@ impl Records {
                                             .to_string(),
                                     ),
                                 };
-                                self.span.push(get_values);
+                                self.0.push(get_values);
                             }
                             "busco completeness" => {
-                                let get_values = BuscoCompleteness {
+                                let get_values = Record {
                                     ranks: Ranks(ranks.clone()),
                                     taxon_name: taxon_name.to_string(),
                                     taxon_id: taxon_id.to_string(),
@@ -261,8 +156,8 @@ impl Records {
                                         .as_str()
                                         .unwrap()
                                         .to_string(),
-                                    min: value["min"].as_f64(),
-                                    max: value["max"].as_f64(),
+                                    min: MinMax::Minmaxf64(value["min"].as_f64()),
+                                    max: MinMax::Minmaxf64(value["max"].as_f64()),
                                     count: value["count"].as_u64().unwrap(),
                                     aggregation_taxon_id: Some(
                                         value["aggregation_taxon_id"]
@@ -270,7 +165,9 @@ impl Records {
                                             .unwrap_or("")
                                             .to_string(),
                                     ),
-                                    value: value["value"].as_f64().unwrap(),
+                                    value: GoaTValueAgg::BuscoCompleteness(
+                                        value["value"].as_f64().unwrap(),
+                                    ),
                                     aggregation_method: value["aggregation_method"]
                                         .as_str()
                                         .unwrap()
@@ -282,10 +179,10 @@ impl Records {
                                             .to_string(),
                                     ),
                                 };
-                                self.busco_completeness.push(get_values);
+                                self.0.push(get_values);
                             }
                             "c_value" => {
-                                let get_values = CValue {
+                                let get_values = Record {
                                     ranks: Ranks(ranks.clone()),
                                     taxon_name: taxon_name.to_string(),
                                     taxon_id: taxon_id.to_string(),
@@ -293,8 +190,8 @@ impl Records {
                                         .as_str()
                                         .unwrap()
                                         .to_string(),
-                                    min: value["min"].as_f64(),
-                                    max: value["max"].as_f64(),
+                                    min: MinMax::Minmaxf64(value["min"].as_f64()),
+                                    max: MinMax::Minmaxf64(value["max"].as_f64()),
                                     count: value["count"].as_u64().unwrap(),
                                     aggregation_taxon_id: Some(
                                         value["aggregation_taxon_id"]
@@ -302,7 +199,7 @@ impl Records {
                                             .unwrap_or("")
                                             .to_string(),
                                     ),
-                                    value: value["value"].as_f64().unwrap(),
+                                    value: GoaTValueAgg::CValue(value["value"].as_f64().unwrap()),
                                     aggregation_method: value["aggregation_method"]
                                         .as_str()
                                         .unwrap()
@@ -314,10 +211,10 @@ impl Records {
                                             .to_string(),
                                     ),
                                 };
-                                self.c_value.push(get_values);
+                                self.0.push(get_values);
                             }
                             "chromosome_number" => {
-                                let get_values = ChromosomeNumber {
+                                let get_values = Record {
                                     ranks: Ranks(ranks.clone()),
                                     taxon_name: taxon_name.to_string(),
                                     taxon_id: taxon_id.to_string(),
@@ -325,8 +222,8 @@ impl Records {
                                         .as_str()
                                         .unwrap()
                                         .to_string(),
-                                    min: value["min"].as_u64(),
-                                    max: value["max"].as_u64(),
+                                    min: MinMax::Minmaxu64(value["min"].as_u64()),
+                                    max: MinMax::Minmaxu64(value["max"].as_u64()),
                                     count: value["count"].as_u64().unwrap(),
                                     aggregation_taxon_id: Some(
                                         value["aggregation_taxon_id"]
@@ -334,7 +231,9 @@ impl Records {
                                             .unwrap_or("")
                                             .to_string(),
                                     ),
-                                    value: value["value"].as_u64().unwrap(),
+                                    value: GoaTValueAgg::ChromosomeNumber(
+                                        value["value"].as_u64().unwrap(),
+                                    ),
                                     aggregation_method: value["aggregation_method"]
                                         .as_str()
                                         .unwrap()
@@ -346,10 +245,10 @@ impl Records {
                                             .to_string(),
                                     ),
                                 };
-                                self.chromosome_number.push(get_values);
+                                self.0.push(get_values);
                             }
                             "genome_size" => {
-                                let get_values = GenomeSize {
+                                let get_values = Record {
                                     ranks: Ranks(ranks.clone()),
                                     taxon_name: taxon_name.to_string(),
                                     taxon_id: taxon_id.to_string(),
@@ -357,8 +256,8 @@ impl Records {
                                         .as_str()
                                         .unwrap()
                                         .to_string(),
-                                    min: value["min"].as_u64(),
-                                    max: value["max"].as_u64(),
+                                    min: MinMax::Minmaxu64(value["min"].as_u64()),
+                                    max: MinMax::Minmaxu64(value["max"].as_u64()),
                                     count: value["count"].as_u64().unwrap(),
                                     aggregation_taxon_id: Some(
                                         value["aggregation_taxon_id"]
@@ -366,7 +265,9 @@ impl Records {
                                             .unwrap_or("")
                                             .to_string(),
                                     ),
-                                    value: value["value"].as_u64().unwrap(),
+                                    value: GoaTValueAgg::GenomeSize(
+                                        value["value"].as_u64().unwrap(),
+                                    ),
                                     aggregation_method: value["aggregation_method"]
                                         .as_str()
                                         .unwrap()
@@ -378,10 +279,10 @@ impl Records {
                                             .to_string(),
                                     ),
                                 };
-                                self.genome_size.push(get_values);
+                                self.0.push(get_values);
                             }
                             "haploid_number" => {
-                                let get_values = Haploid {
+                                let get_values = Record {
                                     ranks: Ranks(ranks.clone()),
                                     taxon_name: taxon_name.to_string(),
                                     taxon_id: taxon_id.to_string(),
@@ -389,8 +290,8 @@ impl Records {
                                         .as_str()
                                         .unwrap()
                                         .to_string(),
-                                    min: value["min"].as_u64(),
-                                    max: value["max"].as_u64(),
+                                    min: MinMax::Minmaxu64(value["min"].as_u64()),
+                                    max: MinMax::Minmaxu64(value["max"].as_u64()),
                                     count: value["count"].as_u64().unwrap(),
                                     aggregation_taxon_id: Some(
                                         value["aggregation_taxon_id"]
@@ -398,7 +299,7 @@ impl Records {
                                             .unwrap_or("")
                                             .to_string(),
                                     ),
-                                    value: value["value"].as_u64().unwrap(),
+                                    value: GoaTValueAgg::Haploid(value["value"].as_u64().unwrap()),
                                     aggregation_method: value["aggregation_method"]
                                         .as_str()
                                         .unwrap()
@@ -410,9 +311,11 @@ impl Records {
                                             .to_string(),
                                     ),
                                 };
-                                self.haploid.push(get_values);
+                                self.0.push(get_values);
                             }
-                            _ => {}
+                            _ => {
+                                eprintln!("[-]\tThere were no values.")
+                            }
                         }
                     }
                 }

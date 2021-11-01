@@ -23,6 +23,8 @@ cd goat-cli && cargo build --release
 ./target/release/goat search --help
 ```
 
+Executables for common systems will be released soon.
+
 ## Usage
 
 Currently, all functionality is through the `goat search` subcommand. `goat search --help` will bring up the help below:
@@ -64,7 +66,7 @@ There are a series of flags that can be added in any combination. For example:
 
 `goat search -abc -t "Arabidopsis thaliana"` (<- Note quotes needed when there are spaces in the query)
 
-Will return TSV's for assembly statistics (type & span), BUSCO completeness metrics, and C-values for the taxon <i>Arabidopsis thaliana</i>.
+Will return TSV's for assembly statistics (`-a`, type & span), BUSCO completeness metrics (`-b`), and C-values (`-c`) for the taxon <i>Arabidopsis thaliana</i>.
 
 Two of the flags are different. `-p` (`--phylogeny`) will return a tax tree search. This means that a node on the tree and all of its descendents will be included in the query. For example:
 

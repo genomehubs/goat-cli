@@ -1,3 +1,6 @@
+// going to have to make a field builder.
+// once the non-default 
+
 use std::{
     fs::File,
     io::{BufRead, BufReader},

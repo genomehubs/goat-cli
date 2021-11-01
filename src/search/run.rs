@@ -108,6 +108,7 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
                         false => {
                             let mut records = Records::new();
                             records.get_results(&v, &ranks_vec)?;
+
                             // records.
                             Ok(CombinedValues {
                                 raw: None,
