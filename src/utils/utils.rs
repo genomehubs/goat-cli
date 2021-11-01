@@ -1,6 +1,3 @@
-// going to have to make a field builder.
-// once the non-default 
-
 use std::{
     fs::File,
     io::{BufRead, BufReader},
@@ -71,64 +68,6 @@ pub fn get_rank_vector(r: &str) -> Vec<String> {
     };
 
     updated_ranks
-}
-
-// make the GoaT API URLs
-
-// function here to make the ranks URL string
-// &ranks=subspecies%2Cspecies%2Cgenus%2Cfamily%2Corder%2Cclass%2Cphylum%2Ckingdom%2Csuperkingdom
-
-fn format_rank(r: &str) -> String {
-    // fixed vector of ranks.
-    // "none" by default will return an empty string here.
-    let ranks = vec![
-        "subspecies",
-        "species",
-        "genus",
-        "family",
-        "order",
-        "class",
-        "phylum",
-        "kingdom",
-        "superkingdom",
-    ];
-    let position_selected = ranks.iter().position(|e| e == &r);
-    let updated_ranks = match position_selected {
-        Some(p) => &ranks[p..],
-        None => return "".to_string(),
-    };
-    let mut rank_string = String::new();
-    rank_string += "&ranks=";
-    let ranks_to_add = updated_ranks.join("%2C");
-    rank_string += &ranks_to_add;
-
-    rank_string
-}
-
-pub fn make_goat_search_urls(
-    taxids: Vec<String>,
-    goat_url: &str,
-    tax_tree: &str,
-    include_estimates: bool,
-    include_raw_values: bool,
-    summarise_values_by: &str,
-    result: &str,
-    taxonomy: &str,
-    size: &str,
-    ranks: &str,
-) -> Vec<String> {
-    let mut res = Vec::new();
-
-    let rank_string = format_rank(ranks);
-
-    for el in taxids {
-        let url = format!(
-        "{}search?query=tax_{}%28{}%29&includeEstimates={}&includeRawValues={}&summaryValues={}&result={}&taxonomy={}&size={}{}",
-        goat_url, tax_tree, el, include_estimates, include_raw_values, summarise_values_by, result, taxonomy, size, rank_string
-    );
-        res.push(url);
-    }
-    res
 }
 
 // check if number of hits > size of query

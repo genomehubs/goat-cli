@@ -1,4 +1,4 @@
-# GoaT
+# GoaT CLI
 
 A command line interface for GoaT (Genomes on a Tree). GoaT presents metadata for taxa across the tree of life. 
 
@@ -31,29 +31,30 @@ Currently, all functionality is through the `goat search` subcommand. `goat sear
 
 ```
 goat-search 
-Query the search API.
+Query the GoaT search API.
 
 USAGE:
     goat search [FLAGS] [OPTIONS] --file <file> --taxon <taxon>
 
 FLAGS:
-    -z, --all            This flag indicates all data should be printed.
-    -a, --assembly       This flag indicates assembly data should be printed.
-    -b, --busco          Include BUSCO estimates?
-    -c, --c-values       This flag indicates C-value data should be printed.
-    -g, --genome-size    This flag indicates genome size data should be printed.
-    -h, --help           Prints help information
-    -k, --karyotype      This flag indicates karyotype data should be printed.
-    -p, --phylogeny      Get information for all descendents of a common ancestor.
-    -r, --raw            This flag indicates raw values should be all listed out. So you can do your own aggregations
-                         for example.
-    -u, --url            Print the underlying GoaT API URL. Useful for debugging.
-    -V, --version        Prints version information
+    -z, --all             This flag indicates all data should be printed.
+    -a, --assembly        This flag indicates assembly data should be printed.
+    -b, --busco           Include BUSCO estimates.
+    -c, --c-values        This flag indicates C-value data should be printed.
+    -g, --genome-size     This flag indicates genome size data should be printed.
+    -h, --help            Prints help information
+    -k, --karyotype       This flag indicates karyotype data should be printed.
+        --mitochondria    Include mitochondrial size & GC%.
+    -p, --phylogeny       Get information for all descendents of a common ancestor.
+    -r, --raw             This flag indicates raw values should be all listed out. So you can do your own aggregations
+                          for example.
+    -u, --url             Print the underlying GoaT API URL(s). Useful for debugging.
+    -V, --version         Prints version information
 
 OPTIONS:
     -f, --file <file>      A file of NCBI taxonomy ID's (tips) and/or binomial names.
                            Each line should contain a single entry.
-        --ranks <ranks>    Choose a rank to display with the results. All values up to the given rank are displayed.
+        --ranks <ranks>    Choose a rank to display with the results. All ranks up to the given rank are displayed.
                            [default: none]  [possible values: none, subspecies, species, genus, family, order, class,
                            phylum, kingdom, superkingdom]
         --size <size>      The number of results to return. [default: 50]

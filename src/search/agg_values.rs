@@ -16,6 +16,9 @@ pub enum GoaTValueAgg {
     CValue(f64),
     GenomeSize(u64),
     Haploid(u64),
+    // display level 2
+    MitochondrionAssemblySpan(u64),
+    MitochondrionGCPercent(f64),
 }
 
 // variants of min/max
@@ -66,8 +69,11 @@ impl Records {
             // TODO: make the unwrap safer here.
             let taxon_name = v["results"][index]["result"]["scientific_name"]
                 .as_str()
-                .unwrap();
-            let taxon_id = v["results"][index]["result"]["taxon_id"].as_str().unwrap();
+                // why is this happening??
+                .unwrap_or("-");
+            let taxon_id = v["results"][index]["result"]["taxon_id"]
+                .as_str()
+                .unwrap_or("-");
             // get the map (k, v pair) of each field
             let map_of_fields_op = v["results"][index]["result"]["fields"].as_object();
 
@@ -313,8 +319,76 @@ impl Records {
                                 };
                                 self.0.push(get_values);
                             }
+                            "mitochondrion_assembly_span" => {
+                                let get_values = Record {
+                                    ranks: Ranks(ranks.clone()),
+                                    taxon_name: taxon_name.to_string(),
+                                    taxon_id: taxon_id.to_string(),
+                                    aggregation_source: value["aggregation_source"]
+                                        .as_str()
+                                        .unwrap()
+                                        .to_string(),
+                                    min: MinMax::Minmaxu64(value["min"].as_u64()),
+                                    max: MinMax::Minmaxu64(value["max"].as_u64()),
+                                    count: value["count"].as_u64().unwrap(),
+                                    aggregation_taxon_id: Some(
+                                        value["aggregation_taxon_id"]
+                                            .as_str()
+                                            .unwrap_or("")
+                                            .to_string(),
+                                    ),
+                                    value: GoaTValueAgg::MitochondrionAssemblySpan(
+                                        value["value"].as_u64().unwrap(),
+                                    ),
+                                    aggregation_method: value["aggregation_method"]
+                                        .as_str()
+                                        .unwrap()
+                                        .to_string(), // always present
+                                    aggregation_rank: Some(
+                                        value["aggregation_rank"]
+                                            .as_str()
+                                            .unwrap_or("")
+                                            .to_string(),
+                                    ),
+                                };
+                                self.0.push(get_values);
+                            }
+                            "mitochondrion_gc_percent" => {
+                                let get_values = Record {
+                                    ranks: Ranks(ranks.clone()),
+                                    taxon_name: taxon_name.to_string(),
+                                    taxon_id: taxon_id.to_string(),
+                                    aggregation_source: value["aggregation_source"]
+                                        .as_str()
+                                        .unwrap()
+                                        .to_string(),
+                                    min: MinMax::Minmaxf64(value["min"].as_f64()),
+                                    max: MinMax::Minmaxf64(value["max"].as_f64()),
+                                    count: value["count"].as_u64().unwrap(),
+                                    aggregation_taxon_id: Some(
+                                        value["aggregation_taxon_id"]
+                                            .as_str()
+                                            .unwrap_or("")
+                                            .to_string(),
+                                    ),
+                                    value: GoaTValueAgg::MitochondrionGCPercent(
+                                        value["value"].as_f64().unwrap(),
+                                    ),
+                                    aggregation_method: value["aggregation_method"]
+                                        .as_str()
+                                        .unwrap()
+                                        .to_string(), // always present
+                                    aggregation_rank: Some(
+                                        value["aggregation_rank"]
+                                            .as_str()
+                                            .unwrap_or("")
+                                            .to_string(),
+                                    ),
+                                };
+                                self.0.push(get_values);
+                            }
                             _ => {
-                                eprintln!("[-]\tThere were no values.")
+                                // not quite sure what to do with this arm yet.
                             }
                         }
                     }

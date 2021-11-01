@@ -85,7 +85,7 @@ async fn main() -> Result<()> {
                     Arg::with_name("busco")
                         .short("b")
                         .long("busco")
-                        .help("Include BUSCO estimates?"),
+                        .help("Include BUSCO estimates."),
                 )
                 .arg(
                     Arg::with_name("size")
@@ -94,11 +94,16 @@ async fn main() -> Result<()> {
                         .help("The number of results to return."),
                 )
                 .arg(
+                    Arg::with_name("mitochondria")
+                        .long("mitochondria")
+                        .help("Include mitochondrial size & GC%.")
+                )
+                .arg(
                     Arg::with_name("ranks")
                         .long("ranks")
                         .possible_values(&["none", "subspecies", "species", "genus", "family", "order", "class", "phylum", "kingdom", "superkingdom"])
                         .default_value("none")
-                        .help("Choose a rank to display with the results. All values up to the given rank are displayed.")
+                        .help("Choose a rank to display with the results. All ranks up to the given rank are displayed.")
                 ),
         )
         .subcommand(

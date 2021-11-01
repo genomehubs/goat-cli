@@ -14,6 +14,9 @@ pub enum GoaTValue {
     RawCValue(f64),
     RawGenomeSize(u64),
     RawBuscoCompleteness(f64),
+    // display level 2
+    RawMitochondrionAssemblySpan(u64),
+    RawMitochondrionGCPercent(f64),
 }
 
 // and then a single struct e.g.
@@ -218,6 +221,47 @@ impl RawRecords {
                                                 source: el["source"].as_str().unwrap().to_string(),
                                                 source_id: "".to_string(),
                                                 value: GoaTValue::RawBuscoCompleteness(
+                                                    el["value"].as_f64().unwrap(),
+                                                ),
+                                            })
+                                        }
+                                    }
+                                    None => {}
+                                }
+                            }
+                            "mitochondrion_assembly_span" => {
+                                let raw_values = value["rawValues"].as_array();
+                                match raw_values {
+                                    Some(rv) => {
+                                        for el in rv {
+                                            self.0.push(RawRecord {
+                                                ranks: Ranks(ranks.clone()),
+                                                taxon_name: taxon_name.to_string(),
+                                                taxon_ncbi: taxon_id.to_string(),
+                                                source: el["source"].as_str().unwrap().to_string(),
+                                                source_id: "".to_string(),
+                                                value: GoaTValue::RawMitochondrionAssemblySpan(
+                                                    el["value"].as_u64().unwrap(),
+                                                ),
+                                            })
+                                        }
+                                    }
+                                    None => {}
+                                }
+                            }
+                            // any other fields?
+                            "mitochondrion_gc_percent" => {
+                                let raw_values = value["rawValues"].as_array();
+                                match raw_values {
+                                    Some(rv) => {
+                                        for el in rv {
+                                            self.0.push(RawRecord {
+                                                ranks: Ranks(ranks.clone()),
+                                                taxon_name: taxon_name.to_string(),
+                                                taxon_ncbi: taxon_id.to_string(),
+                                                source: el["source"].as_str().unwrap().to_string(),
+                                                source_id: "".to_string(),
+                                                value: GoaTValue::RawMitochondrionGCPercent(
                                                     el["value"].as_f64().unwrap(),
                                                 ),
                                             })
