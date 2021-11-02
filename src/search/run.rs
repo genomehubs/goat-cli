@@ -42,7 +42,7 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
     match size.parse::<usize>() {
         Ok(e) => {
             if e > 10000 {
-                bail!("Searches with more than 10,000 results not currently supported.")
+                bail!("Searches with more than 10,000 results are not currently supported.")
             }
         }
         Err(e) => bail!("Did you pass an integer? {}", e),
@@ -103,7 +103,9 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
     }
 
     let fetches = futures::stream::iter(url_vector_api.into_iter().map(|path| async move {
-        match reqwest::get(&path).await {
+        // possibly make a again::RetryPolicy
+        // to catch all the values in a *very* large request.
+        match again::retry(|| reqwest::get(&path)).await {
             Ok(resp) => match resp.text().await {
                 Ok(body) => {
                     // serialise the JSON. No typing.
