@@ -44,8 +44,9 @@ FLAGS:
     -g, --genome-size     This flag indicates genome size data should be printed.
     -h, --help            Prints help information
     -k, --karyotype       This flag indicates karyotype data should be printed.
-        --mitochondria    Include mitochondrial size & GC%.
+        --mitochondria    Include mitochondrial genome size & GC%.
     -p, --phylogeny       Get information for all descendents of a common ancestor.
+        --plastid         Include plastid genome size & GC%.
     -r, --raw             This flag indicates raw values should be all listed out. So you can do your own aggregations
                           for example.
     -u, --url             Print the underlying GoaT API URL(s). Useful for debugging.
