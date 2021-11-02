@@ -1,6 +1,7 @@
 use crate::{
-    search::agg_values::Records, search::output::*, search::raw_values::RawRecords,
-    utils::ranks::RankHeaders, utils::url, utils::utils,
+    search::agg_values::Records, search::combine_output::CombinedValues, search::output_agg,
+    search::output_raw, search::raw_values::RawRecords, utils::ranks::RankHeaders, utils::url,
+    utils::utils,
 };
 
 use anyhow::{bail, Result};
@@ -12,8 +13,6 @@ use serde_json::Value;
 // give info on taxa not found
 
 pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
-    // should do some checking on the name,
-    // and also parse comma separated names/taxids
     let include_raw_values = matches.is_present("raw");
     let assembly = matches.is_present("assembly");
     let cvalues = matches.is_present("c-values");
@@ -25,8 +24,9 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
     let busco = matches.is_present("busco");
     // non-default fields.
     let mitochondrion = matches.is_present("mitochondria");
+    let plastid = matches.is_present("plastid");
 
-    // merge the fields
+    // merge the field flags
     let fields = url::FieldBuilder {
         all,
         assembly,
@@ -35,9 +35,18 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
         gs,
         karyotype,
         mitochondrion,
+        plastid,
     };
 
     let size = matches.value_of("size").unwrap();
+    match size.parse::<usize>() {
+        Ok(e) => {
+            if e > 10000 {
+                bail!("Searches with more than 10,000 results not currently supported.")
+            }
+        }
+        Err(e) => bail!("Did you pass an integer? {}", e),
+    }
 
     let tax_name_op = matches.value_of("taxon");
     let filename_op = matches.value_of("file");
@@ -83,7 +92,8 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
 
     // so we can make as many concurrent requests
     // as there are taxa
-    let url_vector_api_len = url_vector_api.len();
+    // I've tested this up to 20,000 with no problems.
+    let concurrent_requests = url_vector_api.len();
 
     if print_url {
         for (index, url) in url_vector_api.iter().enumerate() {
@@ -129,14 +139,18 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
             Err(_) => bail!("[-]\tERROR downloading {}", path),
         }
     }))
-    .buffer_unordered(url_vector_api_len)
+    .buffer_unordered(concurrent_requests)
     .collect::<Vec<_>>();
 
     let awaited_fetches = fetches.await;
 
     match include_raw_values {
-        true => print_raw_output(awaited_fetches, fields.clone(), RankHeaders(ranks_vec))?,
-        false => print_agg_output(awaited_fetches, fields.clone(), RankHeaders(ranks_vec))?,
+        true => {
+            output_raw::print_raw_output(awaited_fetches, fields.clone(), RankHeaders(ranks_vec))?
+        }
+        false => {
+            output_agg::print_agg_output(awaited_fetches, fields.clone(), RankHeaders(ranks_vec))?
+        }
     }
     Ok(())
 }

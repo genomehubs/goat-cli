@@ -7,6 +7,7 @@ use serde_json::Value;
 // of the possible values e.g.
 #[derive(Clone)]
 pub enum GoaTValue {
+    // display level 1
     RawAssemblyLevel(String),
     RawAssemblySpan(u64),
     RawChromosomeNumber(Vec<Option<u64>>),
@@ -17,6 +18,8 @@ pub enum GoaTValue {
     // display level 2
     RawMitochondrionAssemblySpan(u64),
     RawMitochondrionGCPercent(f64),
+    RawPlastidAssemblySpan(u64),
+    RawPlastidGCPercent(f64),
 }
 
 // and then a single struct e.g.
@@ -229,6 +232,7 @@ impl RawRecords {
                                     None => {}
                                 }
                             }
+                            // display level 2
                             "mitochondrion_assembly_span" => {
                                 let raw_values = value["rawValues"].as_array();
                                 match raw_values {
@@ -262,6 +266,46 @@ impl RawRecords {
                                                 source: el["source"].as_str().unwrap().to_string(),
                                                 source_id: "".to_string(),
                                                 value: GoaTValue::RawMitochondrionGCPercent(
+                                                    el["value"].as_f64().unwrap(),
+                                                ),
+                                            })
+                                        }
+                                    }
+                                    None => {}
+                                }
+                            }
+                            "plastid_assembly_span" => {
+                                let raw_values = value["rawValues"].as_array();
+                                match raw_values {
+                                    Some(rv) => {
+                                        for el in rv {
+                                            self.0.push(RawRecord {
+                                                ranks: Ranks(ranks.clone()),
+                                                taxon_name: taxon_name.to_string(),
+                                                taxon_ncbi: taxon_id.to_string(),
+                                                source: el["source"].as_str().unwrap().to_string(),
+                                                source_id: "".to_string(),
+                                                value: GoaTValue::RawPlastidAssemblySpan(
+                                                    el["value"].as_u64().unwrap(),
+                                                ),
+                                            })
+                                        }
+                                    }
+                                    None => {}
+                                }
+                            }
+                            "plastid_gc_percent" => {
+                                let raw_values = value["rawValues"].as_array();
+                                match raw_values {
+                                    Some(rv) => {
+                                        for el in rv {
+                                            self.0.push(RawRecord {
+                                                ranks: Ranks(ranks.clone()),
+                                                taxon_name: taxon_name.to_string(),
+                                                taxon_ncbi: taxon_id.to_string(),
+                                                source: el["source"].as_str().unwrap().to_string(),
+                                                source_id: "".to_string(),
+                                                value: GoaTValue::RawPlastidGCPercent(
                                                     el["value"].as_f64().unwrap(),
                                                 ),
                                             })

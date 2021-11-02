@@ -51,8 +51,8 @@ pub fn get_ranks(v: &Value, index: usize, ref_ranks: &Vec<String>) -> Option<Vec
         }
         // a guard to not mess up the column number
         // in the TSV. Sometimes there are higher orders
-        // presented from a search, in which case
-        // we pad with None values.
+        // presented from a search than what was specified, 
+        // in which case we pad with "None" values.
         if !is_in_vec && !updated_rank_vec.is_empty() {
             updated_rank_vec.push("None".to_string());
         }

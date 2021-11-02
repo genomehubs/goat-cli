@@ -96,7 +96,12 @@ async fn main() -> Result<()> {
                 .arg(
                     Arg::with_name("mitochondria")
                         .long("mitochondria")
-                        .help("Include mitochondrial size & GC%.")
+                        .help("Include mitochondrial genome size & GC%.")
+                )
+                .arg(
+                    Arg::with_name("plastid")
+                        .long("plastid")
+                        .help("Include plastid genome size & GC%.")
                 )
                 .arg(
                     Arg::with_name("ranks")

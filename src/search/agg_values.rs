@@ -3,12 +3,9 @@ use crate::utils::ranks::Ranks;
 use anyhow::Result;
 use serde_json::Value;
 
-// make enum to hold values.
-
-// perhaps a better way of doing this is defining an enum
-// of the possible values e.g.
 #[derive(Clone)]
 pub enum GoaTValueAgg {
+    // display level 1
     AssemblyLevel(String),
     AssemblySpan(u64),
     BuscoCompleteness(f64),
@@ -19,9 +16,10 @@ pub enum GoaTValueAgg {
     // display level 2
     MitochondrionAssemblySpan(u64),
     MitochondrionGCPercent(f64),
+    PlastidAssemblySpan(u64),
+    PlastidGCPercent(f64),
 }
 
-// variants of min/max
 #[derive(Clone)]
 pub enum MinMax {
     Minmaxf64(Option<f64>),
@@ -43,7 +41,6 @@ pub struct Record {
     pub aggregation_rank: Option<String>,     // only in tax_tree
 }
 
-// essentially a vector of the variables defined above
 #[derive(Clone)]
 pub struct Records(pub Vec<Record>);
 
@@ -69,7 +66,6 @@ impl Records {
             // TODO: make the unwrap safer here.
             let taxon_name = v["results"][index]["result"]["scientific_name"]
                 .as_str()
-                // why is this happening??
                 .unwrap_or("-");
             let taxon_id = v["results"][index]["result"]["taxon_id"]
                 .as_str()
@@ -79,7 +75,7 @@ impl Records {
 
             let ranks = ranks::get_ranks(v, index, ranks_vec);
 
-            // match each field and read into a struct
+            // match each field and read into Record
             match map_of_fields_op {
                 Some(r) => {
                     for (key, value) in r {
@@ -319,6 +315,7 @@ impl Records {
                                 };
                                 self.0.push(get_values);
                             }
+                            // display level 2
                             "mitochondrion_assembly_span" => {
                                 let get_values = Record {
                                     ranks: Ranks(ranks.clone()),
@@ -372,6 +369,74 @@ impl Records {
                                             .to_string(),
                                     ),
                                     value: GoaTValueAgg::MitochondrionGCPercent(
+                                        value["value"].as_f64().unwrap(),
+                                    ),
+                                    aggregation_method: value["aggregation_method"]
+                                        .as_str()
+                                        .unwrap()
+                                        .to_string(), // always present
+                                    aggregation_rank: Some(
+                                        value["aggregation_rank"]
+                                            .as_str()
+                                            .unwrap_or("")
+                                            .to_string(),
+                                    ),
+                                };
+                                self.0.push(get_values);
+                            }
+                            "plastid_assembly_span" => {
+                                let get_values = Record {
+                                    ranks: Ranks(ranks.clone()),
+                                    taxon_name: taxon_name.to_string(),
+                                    taxon_id: taxon_id.to_string(),
+                                    aggregation_source: value["aggregation_source"]
+                                        .as_str()
+                                        .unwrap()
+                                        .to_string(),
+                                    min: MinMax::Minmaxu64(value["min"].as_u64()),
+                                    max: MinMax::Minmaxu64(value["max"].as_u64()),
+                                    count: value["count"].as_u64().unwrap(),
+                                    aggregation_taxon_id: Some(
+                                        value["aggregation_taxon_id"]
+                                            .as_str()
+                                            .unwrap_or("")
+                                            .to_string(),
+                                    ),
+                                    value: GoaTValueAgg::PlastidAssemblySpan(
+                                        value["value"].as_u64().unwrap(),
+                                    ),
+                                    aggregation_method: value["aggregation_method"]
+                                        .as_str()
+                                        .unwrap()
+                                        .to_string(), // always present
+                                    aggregation_rank: Some(
+                                        value["aggregation_rank"]
+                                            .as_str()
+                                            .unwrap_or("")
+                                            .to_string(),
+                                    ),
+                                };
+                                self.0.push(get_values);
+                            }
+                            "plastid_gc_percent" => {
+                                let get_values = Record {
+                                    ranks: Ranks(ranks.clone()),
+                                    taxon_name: taxon_name.to_string(),
+                                    taxon_id: taxon_id.to_string(),
+                                    aggregation_source: value["aggregation_source"]
+                                        .as_str()
+                                        .unwrap()
+                                        .to_string(),
+                                    min: MinMax::Minmaxf64(value["min"].as_f64()),
+                                    max: MinMax::Minmaxf64(value["max"].as_f64()),
+                                    count: value["count"].as_u64().unwrap(),
+                                    aggregation_taxon_id: Some(
+                                        value["aggregation_taxon_id"]
+                                            .as_str()
+                                            .unwrap_or("")
+                                            .to_string(),
+                                    ),
+                                    value: GoaTValueAgg::PlastidGCPercent(
                                         value["value"].as_f64().unwrap(),
                                     ),
                                     aggregation_method: value["aggregation_method"]

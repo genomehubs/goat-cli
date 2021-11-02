@@ -91,13 +91,15 @@ As for the options, we have already seen `size`. Next up is `--ranks`. Adding on
 
 `goat search -pa -t Arabidopsis --ranks genus` 
 
-The `file` option is in progress. You can pass a file with one taxon per line to do concurrent searches. See `exampes/taxids.txt`.
-
 Another way of searching for multiple species (related or not) is to use `-t` with quotes around a comma separated list. Like this:
 
 `goat search -ra -t "Arabidopsis thaliana, Zea mays, Solanum tuberosum"`
 
 This search will return all the assembly spans and levels for the three taxa specified.
+
+Large numbers of requests are probably best submitted using a file, e.g:
+
+`goat search -k -f examples/brassicaceae.txt > brassicaceae_karyotype_data.tsv`
 
 ### Feedback, requests, etc
 

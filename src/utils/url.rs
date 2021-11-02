@@ -63,11 +63,12 @@ pub struct FieldBuilder {
     pub gs: bool,
     pub karyotype: bool,
     pub mitochondrion: bool,
+    pub plastid: bool,
 }
 
 impl FieldBuilder {
     // private fn used below in build_fields_string
-    fn as_array(&self) -> [bool; 7] {
+    fn as_array(&self) -> [bool; 8] {
         [
             self.all,
             self.assembly,
@@ -76,6 +77,7 @@ impl FieldBuilder {
             self.gs,
             self.karyotype,
             self.mitochondrion,
+            self.plastid,
         ]
     }
 
@@ -94,6 +96,8 @@ impl FieldBuilder {
         // these are display level 2
         let mitochondrial_assembly_span_field = "mitochondrion_assembly_span";
         let mitochondrial_gc_percent_field = "mitochondrion_gc_percent";
+        let plastid_assembly_span_field = "plastid_assembly_span";
+        let plastid_gc_percent_field = "plastid_gc_percent";
 
         let field_array = self.as_array();
         let mut field_string = String::new();
@@ -114,8 +118,6 @@ impl FieldBuilder {
         if self.karyotype || self.all {
             field_string += chromosome_number_field;
             field_string += delimiter;
-        }
-        if self.karyotype || self.all {
             field_string += haploid_number_field;
             field_string += delimiter;
         }
@@ -130,9 +132,14 @@ impl FieldBuilder {
         if self.mitochondrion || self.all {
             field_string += mitochondrial_assembly_span_field;
             field_string += delimiter;
-        }
-        if self.mitochondrion || self.all {
             field_string += mitochondrial_gc_percent_field;
+            field_string += delimiter;
+        }
+        // add plastid
+        if self.plastid || self.all {
+            field_string += plastid_assembly_span_field;
+            field_string += delimiter;
+            field_string += plastid_gc_percent_field;
             field_string += delimiter;
         }
         // remove the last three chars == '&2C'
