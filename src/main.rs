@@ -64,6 +64,11 @@ async fn main() -> Result<()> {
                         .help("This flag indicates karyotype data should be printed."),
                 )
                 .arg(
+                    Arg::with_name("ploidy")
+                        .long("ploidy")
+                        .help("Include ploidy estimate.")
+                )
+                .arg(
                     Arg::with_name("genome-size")
                         .short("g")
                         .long("genome-size")

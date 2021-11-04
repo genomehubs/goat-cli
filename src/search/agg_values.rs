@@ -18,6 +18,7 @@ pub enum GoaTValueAgg {
     MitochondrionGCPercent(f64),
     PlastidAssemblySpan(u64),
     PlastidGCPercent(f64),
+    Ploidy(u64),
 }
 
 #[derive(Clone)]
@@ -439,6 +440,38 @@ impl Records {
                                     value: GoaTValueAgg::PlastidGCPercent(
                                         value["value"].as_f64().unwrap(),
                                     ),
+                                    aggregation_method: value["aggregation_method"]
+                                        .as_str()
+                                        .unwrap()
+                                        .to_string(), // always present
+                                    aggregation_rank: Some(
+                                        value["aggregation_rank"]
+                                            .as_str()
+                                            .unwrap_or("")
+                                            .to_string(),
+                                    ),
+                                };
+                                self.0.push(get_values);
+                            }
+                            "ploidy" => {
+                                let get_values = Record {
+                                    ranks: Ranks(ranks.clone()),
+                                    taxon_name: taxon_name.to_string(),
+                                    taxon_id: taxon_id.to_string(),
+                                    aggregation_source: value["aggregation_source"]
+                                        .as_str()
+                                        .unwrap()
+                                        .to_string(),
+                                    min: MinMax::Minmaxf64(value["min"].as_f64()),
+                                    max: MinMax::Minmaxf64(value["max"].as_f64()),
+                                    count: value["count"].as_u64().unwrap(),
+                                    aggregation_taxon_id: Some(
+                                        value["aggregation_taxon_id"]
+                                            .as_str()
+                                            .unwrap_or("")
+                                            .to_string(),
+                                    ),
+                                    value: GoaTValueAgg::Ploidy(value["value"].as_u64().unwrap()),
                                     aggregation_method: value["aggregation_method"]
                                         .as_str()
                                         .unwrap()

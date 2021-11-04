@@ -39,21 +39,7 @@ fn format_rank(r: &str) -> String {
     rank_string
 }
 
-// default fields are:
-// &fields=assembly_level
-// %2Cassembly_span
-// %2CBUSCO%20completeness
-// %2Cchromosome_number
-// %2Chaploid_number
-// %2Cc_value
-// %2Cgenome_size
-
-// To add:
-// %2Cmitochondrion_assembly_span
-// %2Cmitochondrion_gc_percent
-
-// a struct to gather the options
-
+// entry point for adding new variables.
 #[derive(Copy, Clone)]
 pub struct FieldBuilder {
     pub all: bool,
@@ -64,11 +50,12 @@ pub struct FieldBuilder {
     pub karyotype: bool,
     pub mitochondrion: bool,
     pub plastid: bool,
+    pub ploidy: bool,
 }
 
 impl FieldBuilder {
     // private fn used below in build_fields_string
-    fn as_array(&self) -> [bool; 8] {
+    fn as_array(&self) -> [bool; 9] {
         [
             self.all,
             self.assembly,
@@ -78,10 +65,10 @@ impl FieldBuilder {
             self.karyotype,
             self.mitochondrion,
             self.plastid,
+            self.ploidy,
         ]
     }
 
-    //
     pub fn build_fields_string(&self) -> String {
         let base = "&fields=";
         let delimiter = "%2C";
@@ -98,6 +85,7 @@ impl FieldBuilder {
         let mitochondrial_gc_percent_field = "mitochondrion_gc_percent";
         let plastid_assembly_span_field = "plastid_assembly_span";
         let plastid_gc_percent_field = "plastid_gc_percent";
+        let ploidy = "ploidy";
 
         let field_array = self.as_array();
         let mut field_string = String::new();
@@ -119,6 +107,10 @@ impl FieldBuilder {
             field_string += chromosome_number_field;
             field_string += delimiter;
             field_string += haploid_number_field;
+            field_string += delimiter;
+        }
+        if self.ploidy || self.all {
+            field_string += ploidy;
             field_string += delimiter;
         }
         if self.gs || self.all {

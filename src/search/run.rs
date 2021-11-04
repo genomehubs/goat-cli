@@ -25,6 +25,7 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
     // non-default fields.
     let mitochondrion = matches.is_present("mitochondria");
     let plastid = matches.is_present("plastid");
+    let ploidy = matches.is_present("ploidy");
 
     // merge the field flags
     let fields = url::FieldBuilder {
@@ -36,8 +37,10 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
         karyotype,
         mitochondrion,
         plastid,
+        ploidy,
     };
 
+    // do some size checking
     let size = matches.value_of("size").unwrap();
     match size.parse::<usize>() {
         Ok(e) => {
@@ -71,7 +74,13 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
     match tax_name_op {
         Some(s) => url_vector = utils::parse_multiple_taxids(s),
         None => match filename_op {
-            Some(s) => url_vector = utils::lines_from_file(s)?,
+            Some(s) => {
+                url_vector = utils::lines_from_file(s)?;
+                // check length of vector and bail if > 1000
+                if url_vector.len() > 1000 {
+                    bail!("[-]\tNumber of taxa specified cannot exceed 1000.")
+                }
+            }
             None => bail!("[-]\tOne of -f (--file) or -t (--tax-id) should be specified."),
         },
     }

@@ -24,6 +24,7 @@ pub fn print_agg_output(
     let mut mitochondrion_gc_percent_vec = Vec::new();
     let mut plastid_assembly_span_vec = Vec::new();
     let mut plastid_gc_percent_vec = Vec::new();
+    let mut ploidy_vec = Vec::new();
 
     // decompose FieldBuilder
     let all = fields.all;
@@ -34,6 +35,7 @@ pub fn print_agg_output(
     let karyotype = fields.karyotype;
     let mitochondrion = fields.mitochondrion;
     let plastid = fields.plastid;
+    let ploidy = fields.ploidy;
 
     // iterate over the fetches and collect into separate vecs.
     for el in &awaited_fetches {
@@ -329,6 +331,32 @@ pub fn print_agg_output(
                                     ));
                                 }
                             }
+                            GoaTValueAgg::Ploidy(res) => {
+                                if all || ploidy {
+                                    let mut min: u64 = 0;
+                                    if let MinMax::Minmaxu64(e) = r.min {
+                                        min = e.unwrap_or(0)
+                                    };
+                                    let mut max: u64 = 0;
+                                    if let MinMax::Minmaxu64(e) = r.max {
+                                        max = e.unwrap_or(0)
+                                    };
+
+                                    ploidy_vec.push((
+                                        r.ranks.clone(),
+                                        r.taxon_name.clone(),
+                                        r.taxon_id.clone(),
+                                        r.aggregation_source.clone(),
+                                        min,
+                                        max,
+                                        r.count,
+                                        r.aggregation_taxon_id.clone().unwrap_or("".to_string()),
+                                        res,
+                                        r.aggregation_method.clone(),
+                                        r.aggregation_rank.clone().unwrap_or("".to_string()),
+                                    ));
+                                }
+                            }
                         }
                     }
                 }
@@ -589,6 +617,30 @@ pub fn print_agg_output(
             "aggregation_rank"
         );
         for el in plastid_gc_percent_vec {
+            println!(
+                "{}{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                el.0, el.1, el.2, el.3, el.4, el.5, el.6, el.7, el.8, el.9, el.10
+            )
+        }
+    }
+
+    if all || ploidy {
+        println!("--- Ploidy ---");
+        println!(
+            "{}{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            ranks_vec,
+            "taxon_name",
+            "ncbi_taxid",
+            "aggregation_source",
+            "min",
+            "max",
+            "count",
+            "aggregation_taxon_id",
+            "ploidy_level",
+            "aggregation_method",
+            "aggregation_rank"
+        );
+        for el in ploidy_vec {
             println!(
                 "{}{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
                 el.0, el.1, el.2, el.3, el.4, el.5, el.6, el.7, el.8, el.9, el.10

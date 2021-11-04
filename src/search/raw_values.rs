@@ -20,6 +20,7 @@ pub enum GoaTValue {
     RawMitochondrionGCPercent(f64),
     RawPlastidAssemblySpan(u64),
     RawPlastidGCPercent(f64),
+    RawPloidy(u64),
 }
 
 // and then a single struct e.g.
@@ -83,7 +84,10 @@ impl RawRecords {
                                                     .as_str()
                                                     .unwrap()
                                                     .to_string(),
-                                                source: el["source"].as_str().unwrap().to_string(),
+                                                source: el["source"]
+                                                    .as_str()
+                                                    .unwrap_or("No source")
+                                                    .to_string(),
                                                 value: GoaTValue::RawAssemblyLevel(
                                                     el["value"].as_str().unwrap().to_string(),
                                                 ),
@@ -104,7 +108,7 @@ impl RawRecords {
                                                 taxon_ncbi: taxon_id.to_string(),
                                                 source_id: el["source_id"]
                                                     .as_str()
-                                                    .unwrap()
+                                                    .unwrap_or("No source")
                                                     .to_string(),
                                                 source: el["source"].as_str().unwrap().to_string(),
                                                 value: GoaTValue::RawAssemblySpan(
@@ -128,7 +132,7 @@ impl RawRecords {
                                                 source_id: "".to_string(),
                                                 source: el["source"]
                                                     .as_str()
-                                                    .unwrap_or("")
+                                                    .unwrap_or("No source")
                                                     .to_string(),
                                                 value: GoaTValue::RawCValue(
                                                     el["value"].as_f64().unwrap(),
@@ -152,7 +156,7 @@ impl RawRecords {
                                                 // look at the underlying source here
                                                 source: el["source"]
                                                     .as_str()
-                                                    .unwrap_or("")
+                                                    .unwrap_or("No source")
                                                     .to_string(),
                                                 value: GoaTValue::RawGenomeSize(
                                                     el["value"].as_u64().unwrap(),
@@ -179,7 +183,10 @@ impl RawRecords {
                                                 taxon_name: taxon_name.to_string(),
                                                 taxon_ncbi: taxon_id.to_string(),
                                                 source_id: "".to_string(),
-                                                source: el["source"].as_str().unwrap().to_string(),
+                                                source: el["source"]
+                                                    .as_str()
+                                                    .unwrap_or("No source")
+                                                    .to_string(),
                                                 value: GoaTValue::RawChromosomeNumber(chrom_num),
                                             })
                                         }
@@ -202,7 +209,10 @@ impl RawRecords {
                                                 ranks: Ranks(ranks.clone()),
                                                 taxon_name: taxon_name.to_string(),
                                                 taxon_ncbi: taxon_id.to_string(),
-                                                source: el["source"].as_str().unwrap().to_string(),
+                                                source: el["source"]
+                                                    .as_str()
+                                                    .unwrap_or("No source")
+                                                    .to_string(),
                                                 source_id: "".to_string(),
                                                 value: GoaTValue::RawHaploid(hap_num),
                                             })
@@ -221,7 +231,10 @@ impl RawRecords {
                                                 ranks: Ranks(ranks.clone()),
                                                 taxon_name: taxon_name.to_string(),
                                                 taxon_ncbi: taxon_id.to_string(),
-                                                source: el["source"].as_str().unwrap().to_string(),
+                                                source: el["source"]
+                                                    .as_str()
+                                                    .unwrap_or("No source")
+                                                    .to_string(),
                                                 source_id: "".to_string(),
                                                 value: GoaTValue::RawBuscoCompleteness(
                                                     el["value"].as_f64().unwrap(),
@@ -242,7 +255,10 @@ impl RawRecords {
                                                 ranks: Ranks(ranks.clone()),
                                                 taxon_name: taxon_name.to_string(),
                                                 taxon_ncbi: taxon_id.to_string(),
-                                                source: el["source"].as_str().unwrap().to_string(),
+                                                source: el["source"]
+                                                    .as_str()
+                                                    .unwrap_or("No source")
+                                                    .to_string(),
                                                 source_id: "".to_string(),
                                                 value: GoaTValue::RawMitochondrionAssemblySpan(
                                                     el["value"].as_u64().unwrap(),
@@ -263,7 +279,10 @@ impl RawRecords {
                                                 ranks: Ranks(ranks.clone()),
                                                 taxon_name: taxon_name.to_string(),
                                                 taxon_ncbi: taxon_id.to_string(),
-                                                source: el["source"].as_str().unwrap().to_string(),
+                                                source: el["source"]
+                                                    .as_str()
+                                                    .unwrap_or("No source")
+                                                    .to_string(),
                                                 source_id: "".to_string(),
                                                 value: GoaTValue::RawMitochondrionGCPercent(
                                                     el["value"].as_f64().unwrap(),
@@ -283,7 +302,10 @@ impl RawRecords {
                                                 ranks: Ranks(ranks.clone()),
                                                 taxon_name: taxon_name.to_string(),
                                                 taxon_ncbi: taxon_id.to_string(),
-                                                source: el["source"].as_str().unwrap().to_string(),
+                                                source: el["source"]
+                                                    .as_str()
+                                                    .unwrap_or("No source")
+                                                    .to_string(),
                                                 source_id: "".to_string(),
                                                 value: GoaTValue::RawPlastidAssemblySpan(
                                                     el["value"].as_u64().unwrap(),
@@ -303,10 +325,36 @@ impl RawRecords {
                                                 ranks: Ranks(ranks.clone()),
                                                 taxon_name: taxon_name.to_string(),
                                                 taxon_ncbi: taxon_id.to_string(),
-                                                source: el["source"].as_str().unwrap().to_string(),
+                                                source: el["source"]
+                                                    .as_str()
+                                                    .unwrap_or("No source")
+                                                    .to_string(),
                                                 source_id: "".to_string(),
                                                 value: GoaTValue::RawPlastidGCPercent(
                                                     el["value"].as_f64().unwrap(),
+                                                ),
+                                            })
+                                        }
+                                    }
+                                    None => {}
+                                }
+                            }
+                            "ploidy" => {
+                                let raw_values = value["rawValues"].as_array();
+                                match raw_values {
+                                    Some(rv) => {
+                                        for el in rv {
+                                            self.0.push(RawRecord {
+                                                ranks: Ranks(ranks.clone()),
+                                                taxon_name: taxon_name.to_string(),
+                                                taxon_ncbi: taxon_id.to_string(),
+                                                source: el["source"]
+                                                    .as_str()
+                                                    .unwrap_or("No source")
+                                                    .to_string(),
+                                                source_id: "".to_string(),
+                                                value: GoaTValue::RawPloidy(
+                                                    el["value"].as_u64().unwrap(),
                                                 ),
                                             })
                                         }

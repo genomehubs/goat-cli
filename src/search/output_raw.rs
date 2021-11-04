@@ -25,6 +25,7 @@ pub fn print_raw_output(
     let mut raw_mitochondrion_gc_percent_vec = Vec::new();
     let mut raw_plastid_assembly_span_vec = Vec::new();
     let mut raw_plastid_gc_percent_vec = Vec::new();
+    let mut raw_ploidy_vec = Vec::new();
 
     // decompose FieldBuilder
     let all = fields.all;
@@ -35,6 +36,7 @@ pub fn print_raw_output(
     let karyotype = fields.karyotype;
     let mitochondrion = fields.mitochondrion;
     let plastid = fields.plastid;
+    let ploidy = fields.ploidy;
 
     // iterate over all awaited fetches
     // match on raw records
@@ -206,6 +208,18 @@ pub fn print_raw_output(
                                     ));
                                 }
                             }
+                            GoaTValue::RawPloidy(res) => {
+                                if all || ploidy {
+                                    raw_ploidy_vec.push((
+                                        r.ranks.clone(),
+                                        r.taxon_name.clone(),
+                                        r.taxon_ncbi.clone(),
+                                        r.source_id.clone(),
+                                        r.source.clone(),
+                                        res,
+                                    ));
+                                }
+                            }
                         }
                     }
                 }
@@ -327,6 +341,16 @@ pub fn print_raw_output(
             ranks_vec, "taxon_name", "ncbi_id", "source", "source_id", "plastid_gc_percent"
         );
         for el in raw_plastid_gc_percent_vec {
+            println!("{}{}\t{}\t{}\t{}\t{}", el.0, el.1, el.2, el.3, el.4, el.5)
+        }
+    }
+    if all || ploidy {
+        println!("--- Ploidy ---");
+        println!(
+            "{}{}\t{}\t{}\t{}\t{}",
+            ranks_vec, "taxon_name", "ncbi_id", "source", "source_id", "ploidy_level"
+        );
+        for el in raw_ploidy_vec {
             println!("{}{}\t{}\t{}\t{}\t{}", el.0, el.1, el.2, el.3, el.4, el.5)
         }
     }
