@@ -8,9 +8,7 @@ lazy_static! {
     pub static ref TAXONOMY: String = "ncbi".to_string();
 }
 
-// make the GoaT API URLs
-// function here to make the ranks URL string
-// &ranks=subspecies%2Cspecies%2Cgenus%2Cfamily%2Corder%2Cclass%2Cphylum%2Ckingdom%2Csuperkingdom
+// format the ranks for the URL.
 
 fn format_rank(r: &str) -> String {
     // fixed vector of ranks.
@@ -39,7 +37,7 @@ fn format_rank(r: &str) -> String {
     rank_string
 }
 
-// entry point for adding new variables.
+// Parse the fields from search.
 #[derive(Copy, Clone)]
 pub struct FieldBuilder {
     pub all: bool,
@@ -147,8 +145,9 @@ impl FieldBuilder {
     }
 }
 
-pub fn make_goat_search_urls(
-    taxids: Vec<String>,
+pub fn make_goat_urls(
+    api: &str,
+    taxids: &Vec<String>,
     goat_url: &str,
     tax_tree: &str,
     include_estimates: bool,
@@ -169,8 +168,9 @@ pub fn make_goat_search_urls(
 
     for el in taxids {
         let url = format!(
-        "{}search?query=tax_{}%28{}%29&includeEstimates={}&includeRawValues={}&summaryValues={}&result={}&taxonomy={}&size={}{}{}",
-        goat_url, tax_tree, el, include_estimates, include_raw_values, summarise_values_by, result, taxonomy, size, rank_string, fields_string
+        // hardcode tidy data for now.
+        "{}{}?query=tax_{}%28{}%29&includeEstimates={}&includeRawValues={}&summaryValues={}&result={}&taxonomy={}&size={}{}{}&tidyData=true",
+        goat_url, api, tax_tree, el, include_estimates, include_raw_values, summarise_values_by, result, taxonomy, size, rank_string, fields_string
     );
         res.push(url);
     }

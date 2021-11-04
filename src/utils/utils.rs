@@ -6,7 +6,6 @@ use std::{
 
 use crate::error::error::FileError;
 use anyhow::{bail, Result};
-use serde_json::Value;
 
 // read taxids or binomials from file.
 pub fn lines_from_file(filename: impl AsRef<Path>) -> Result<Vec<String>> {
@@ -70,25 +69,37 @@ pub fn get_rank_vector(r: &str) -> Vec<String> {
     updated_ranks
 }
 
-// check if number of hits > size of query
+// if you query multiple taxa, headers pop up for every new taxon.
 
-pub fn check_number_hits(v: &Value, size: &str) -> Result<()> {
-    // parse size to i32
-    let size_int: u64 = size.parse()?;
-    // get value from JSON response
-    let hits = v["status"]["hits"].as_u64();
-
-    match hits {
-        Some(hits) => {
-            if size_int < hits {
-                eprintln!(
-                    "[-]\tOnly {} results are displayed, but there are {} hits from GoaT.",
-                    size_int, hits
-                );
-            }
+pub fn format_tsv_output(awaited_fetches: Vec<Result<String, anyhow::Error>>) -> Result<()> {
+    // if there is a single element, return this.
+    if awaited_fetches.len() == 1 {
+        let first = awaited_fetches.get(0);
+        match first {
+            Some(s) => match s {
+                Ok(s) => {
+                    println!("{}", s);
+                }
+                Err(e) => bail!("{}", e),
+            },
+            None => bail!("There were no results."),
         }
-        None => {
-            bail!("[-]\tThere were no hits.")
+    } else {
+        let mut index = 0;
+        for el in awaited_fetches {
+            let tsv = match el {
+                Ok(ref e) => e,
+                Err(e) => bail!("{}", e),
+            };
+            if index == 0 {
+                println!("{}", tsv);
+            } else {
+                let tsv_iter = tsv.split("\n");
+                for row in tsv_iter.skip(1) {
+                    println!("{}", row)
+                }
+            }
+            index += 1;
         }
     }
 

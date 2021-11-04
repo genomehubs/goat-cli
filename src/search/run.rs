@@ -1,13 +1,10 @@
-use crate::{
-    search::agg_values::Records, search::combine_output::CombinedValues, search::output_agg,
-    search::output_raw, search::raw_values::RawRecords, utils::ranks::RankHeaders, utils::url,
-    utils::utils,
-};
+use crate::count::count;
+use crate::{utils::url, utils::utils};
 
 use anyhow::{bail, Result};
 use futures::StreamExt;
 use reqwest;
-use serde_json::Value;
+use reqwest::header::ACCEPT;
 
 // tax tree check number of hits. If less than, give a warning.
 // give info on taxa not found
@@ -26,6 +23,9 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
     let mitochondrion = matches.is_present("mitochondria");
     let plastid = matches.is_present("plastid");
     let ploidy = matches.is_present("ploidy");
+
+    // print count warnings.
+    count::count(matches, false).await?;
 
     // merge the field flags
     let fields = url::FieldBuilder {
@@ -55,9 +55,6 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
     let filename_op = matches.value_of("file");
     let ranks = matches.value_of("ranks").unwrap(); // safe to unwrap here.
 
-    // and let's get out the vector of ranks immediately
-    let ranks_vec = utils::get_rank_vector(ranks);
-
     // tree includes all descendents of a node
     let tax_tree = match tax_tree_bool {
         true => "tree",
@@ -67,7 +64,14 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
     // some GoaT defaults.
     let result = "taxon";
     let summarise_values_by = "count";
-    let include_estimates = true;
+
+    // to avoid empty queries, if requesting raw values
+    // include estimates should be false
+    let include_estimates: bool;
+    match include_raw_values {
+        true => include_estimates = false,
+        false => include_estimates = true,
+    }
 
     let url_vector: Vec<String>;
     // if -t use this
@@ -85,8 +89,9 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
         },
     }
 
-    let url_vector_api = url::make_goat_search_urls(
-        url_vector,
+    let url_vector_api = url::make_goat_urls(
+        "search",
+        &url_vector,
         &*url::GOAT_URL,
         tax_tree,
         include_estimates,
@@ -114,37 +119,18 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
     let fetches = futures::stream::iter(url_vector_api.into_iter().map(|path| async move {
         // possibly make a again::RetryPolicy
         // to catch all the values in a *very* large request.
-        match again::retry(|| reqwest::get(&path)).await {
+        let client = reqwest::Client::new();
+
+        match again::retry(|| {
+            client
+                .get(&path)
+                .header(ACCEPT, "text/tab-separated-values")
+                .send()
+        })
+        .await
+        {
             Ok(resp) => match resp.text().await {
-                Ok(body) => {
-                    // serialise the JSON. No typing.
-                    let v: Value = serde_json::from_str(&body)?;
-                    utils::check_number_hits(&v, size)?;
-                    // and let's get out the vector of ranks immediately
-                    let ranks_vec = utils::get_rank_vector(ranks);
-
-                    match include_raw_values {
-                        true => {
-                            let mut records = RawRecords::new();
-                            records.get_results(&v, &ranks_vec)?;
-
-                            Ok(CombinedValues {
-                                raw: Some(records),
-                                agg: None,
-                            })
-                        }
-                        false => {
-                            let mut records = Records::new();
-                            records.get_results(&v, &ranks_vec)?;
-
-                            // records.
-                            Ok(CombinedValues {
-                                raw: None,
-                                agg: Some(records),
-                            })
-                        }
-                    }
-                }
+                Ok(body) => Ok(body),
                 Err(_) => bail!("[-]\tERROR reading {}", path),
             },
             Err(_) => bail!("[-]\tERROR downloading {}", path),
@@ -155,13 +141,7 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
 
     let awaited_fetches = fetches.await;
 
-    match include_raw_values {
-        true => {
-            output_raw::print_raw_output(awaited_fetches, fields.clone(), RankHeaders(ranks_vec))?
-        }
-        false => {
-            output_agg::print_agg_output(awaited_fetches, fields.clone(), RankHeaders(ranks_vec))?
-        }
-    }
+    utils::format_tsv_output(awaited_fetches)?;
+
     Ok(())
 }
