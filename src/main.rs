@@ -34,7 +34,7 @@ async fn main() -> Result<()> {
                     Arg::with_name("raw")
                         .short("r")
                         .long("raw")
-                        .help("This flag indicates raw values should be all listed out. So you can do your own aggregations for example."),
+                        .help("This flag indicates raw values should all be listed out."),
                 )
                 .arg(
                     Arg::with_name("all")

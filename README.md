@@ -2,7 +2,7 @@
 
 A command line interface for GoaT (Genomes on a Tree). GoaT presents metadata for taxa across the tree of life. 
 
-The CLI here builds URLs to query the <b><a href="https://goat.genomehubs.org/api-docs/">Goat API</a></b> and parses the returned JSON files. The underlying API is very powerful, but complex. The aim of this CLI is to remove some of the complexity for the end user. Currently TSV's are returned, with variables separated by a delimeter line (e.g. `"--- Variable 1 ---"`).
+The CLI here builds URLs to query the <b><a href="https://goat.genomehubs.org/api-docs/">Goat API</a></b> and parses the returned JSON files. The underlying API is very powerful, but complex. The aim of this CLI is to remove some of the complexity for the end user. TSV's are returned.
 
 This CLI is actively being built so no guarantees are made for stability or bugs. An official release will be made soon.
 
@@ -76,7 +76,7 @@ Two of the flags are different. `-p` (`--phylogeny`) will return a tax tree sear
 
 Will return aggregated results for every species in the genus <i>Arabidopsis</i>. If the default number of return hits is lower than the possible number of results, there will be a warning (in this case):
 
-`[-]	Only 50 results are displayed, but there are 51 hits from GoaT.`
+`[-]     For search query Arabidopsis, size specified (50) was less than the number of results returned, (51).`
 
 So up the `--size` option to `51`.
 
