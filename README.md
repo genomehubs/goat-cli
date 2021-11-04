@@ -2,11 +2,21 @@
 
 A command line interface for GoaT (Genomes on a Tree). GoaT presents metadata for taxa across the tree of life. 
 
-The CLI here builds URLs to query the <b><a href="https://goat.genomehubs.org/api-docs/">Goat API</a></b> and parses the returned JSON files. The underlying API is very powerful, but complex. The aim of this CLI is to remove some of the complexity for the end user. TSV's are returned.
+The CLI here builds URLs to query the <b><a href="https://goat.genomehubs.org/api-docs/">Goat API</a></b>. The underlying API is very powerful, but complex. The aim of this CLI is to remove some of the complexity for the end user. TSV's are returned.
 
 This CLI is actively being built so no guarantees are made for stability or bugs. An official release will be made soon.
 
 ## Download
+
+### Download from releases
+
+E.g. get from the releases page.
+
+```bash
+curl -L "https://github.com/genomehubs/goat-cli/releases/download/0.1.1/goat_mac_0.1.1" > goat && chmod +x goat
+```
+
+### Build from source
 
 First download Rust if you haven't already.
 
@@ -22,8 +32,6 @@ cd goat-cli && cargo build --release
 # executable is in ./target/release/goat
 ./target/release/goat search --help
 ```
-
-Executables for common systems will be released soon.
 
 ## Usage
 
