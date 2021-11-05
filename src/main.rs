@@ -66,10 +66,27 @@ async fn main() -> Result<()> {
                         .help("Include ploidy estimate.")
                 )
                 .arg(
+                    Arg::with_name("sex-determination")
+                        .long("sex-determination")
+                        .help("This flag indicates sex determination data should be printed."),
+                )
+                .arg(
                     Arg::with_name("genome-size")
                         .short("g")
                         .long("genome-size")
                         .help("This flag indicates genome size data should be printed."),
+                )
+                .arg(
+                    Arg::with_name("legislation")
+                        .short("l")
+                        .long("legislation")
+                        .help("This flag indicates all legislation data should be printed."),
+                )
+                .arg(
+                    Arg::with_name("names")
+                        .short("n")
+                        .long("names")
+                        .help("This flag indicates all names data should be printed.\nThis includes synonyms, Tree of Life ID, and common names."),
                 )
                 .arg(
                     Arg::with_name("url")

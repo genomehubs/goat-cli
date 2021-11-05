@@ -26,6 +26,11 @@ pub async fn count<'a>(matches: &clap::ArgMatches<'a>, cli: bool) -> Result<()> 
     let mitochondrion = matches.is_present("mitochondria");
     let plastid = matches.is_present("plastid");
     let ploidy = matches.is_present("ploidy");
+    let sex_determination = matches.is_present("sex-determination");
+    // all legislation
+    let legislation = matches.is_present("legislation");
+    // all names data
+    let names = matches.is_present("names");
 
     // merge the field flags
     let fields = url::FieldBuilder {
@@ -38,6 +43,9 @@ pub async fn count<'a>(matches: &clap::ArgMatches<'a>, cli: bool) -> Result<()> 
         mitochondrion,
         plastid,
         ploidy,
+        sex_determination,
+        legislation,
+        names,
     };
 
     // do some size checking

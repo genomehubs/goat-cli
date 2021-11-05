@@ -23,9 +23,11 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
     let mitochondrion = matches.is_present("mitochondria");
     let plastid = matches.is_present("plastid");
     let ploidy = matches.is_present("ploidy");
-
-    // print count warnings.
-    count::count(matches, false).await?;
+    let sex_determination = matches.is_present("sex-determination");
+    // all legislation
+    let legislation = matches.is_present("legislation");
+    // all names
+    let names = matches.is_present("names");
 
     // merge the field flags
     let fields = url::FieldBuilder {
@@ -38,6 +40,9 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
         mitochondrion,
         plastid,
         ploidy,
+        sex_determination,
+        legislation,
+        names,
     };
 
     // do some size checking
@@ -115,6 +120,9 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
         }
         std::process::exit(0);
     }
+
+    // print count warnings.
+    count::count(matches, false).await?;
 
     let fetches = futures::stream::iter(url_vector_api.into_iter().map(|path| async move {
         // possibly make a again::RetryPolicy
