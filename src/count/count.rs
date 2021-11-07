@@ -105,8 +105,8 @@ pub async fn count<'a>(matches: &clap::ArgMatches<'a>, cli: bool) -> Result<()> 
             Some(s) => {
                 url_vector = utils::lines_from_file(s)?;
                 // check length of vector and bail if > 1000
-                if url_vector.len() > 1000 {
-                    bail!("[-]\tNumber of taxa specified cannot exceed 1000.")
+                if url_vector.len() > 10000 {
+                    bail!("[-]\tNumber of taxa specified cannot exceed 10000.")
                 }
             }
             None => bail!("[-]\tOne of -f (--file) or -t (--tax-id) should be specified."),
