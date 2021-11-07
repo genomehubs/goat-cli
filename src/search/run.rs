@@ -28,6 +28,22 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
     let legislation = matches.is_present("legislation");
     // all names
     let names = matches.is_present("names");
+    // all target lists data
+    let target_lists = matches.is_present("target-lists");
+    // scaffold + contig n50
+    let n50 = matches.is_present("n50");
+    // bioproject & sample ID
+    let bioproject = matches.is_present("bioproject");
+    // tidy data
+    let mut tidy = matches.is_present("tidy");
+    // and guard against error
+    if include_raw_values {
+        tidy = true;
+    }
+    let gene_count = matches.is_present("gene-count");
+    let date = matches.is_present("date");
+    // including estimates
+    let include_estimates = matches.is_present("include-estimates");
 
     // merge the field flags
     let fields = url::FieldBuilder {
@@ -43,6 +59,12 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
         sex_determination,
         legislation,
         names,
+        target_lists,
+        n50,
+        bioproject,
+        tidy,
+        gene_count,
+        date,
     };
 
     // do some size checking
@@ -68,15 +90,7 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
 
     // some GoaT defaults.
     let result = "taxon";
-    let summarise_values_by = "count";
-
-    // to avoid empty queries, if requesting raw values
-    // include estimates should be false
-    let include_estimates: bool;
-    match include_raw_values {
-        true => include_estimates = false,
-        false => include_estimates = true,
-    }
+    let summarise_values_by = "max";
 
     let url_vector: Vec<String>;
     // if -t use this
@@ -86,8 +100,8 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
             Some(s) => {
                 url_vector = utils::lines_from_file(s)?;
                 // check length of vector and bail if > 1000
-                if url_vector.len() > 1000 {
-                    bail!("[-]\tNumber of taxa specified cannot exceed 1000.")
+                if url_vector.len() > 10000 {
+                    bail!("[-]\tNumber of taxa specified cannot exceed 10,000.")
                 }
             }
             None => bail!("[-]\tOne of -f (--file) or -t (--tax-id) should be specified."),
@@ -110,8 +124,6 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
     );
 
     // so we can make as many concurrent requests
-    // as there are taxa
-    // I've tested this up to 20,000 with no problems.
     let concurrent_requests = url_vector_api.len();
 
     if print_url {
@@ -139,9 +151,9 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
         {
             Ok(resp) => match resp.text().await {
                 Ok(body) => Ok(body),
-                Err(_) => bail!("[-]\tERROR reading {}", path),
+                Err(_) => bail!("ERROR reading {}", path),
             },
-            Err(_) => bail!("[-]\tERROR downloading {}", path),
+            Err(_) => bail!("ERROR downloading {}", path),
         }
     }))
     .buffer_unordered(concurrent_requests)

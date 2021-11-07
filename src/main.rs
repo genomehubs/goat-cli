@@ -10,7 +10,7 @@ async fn main() -> Result<()> {
     let matches = App::new("goat")
         .version(clap::crate_version!())
         .author("Max Brown <mb39@sanger.ac.uk>")
-        .about("GoaTs on a terminal.")
+        .about("GoaTs on a terminal. Combine flags to query metadata for any species.")
         .subcommand(
             clap::SubCommand::with_name("search")
                 .about("Query the GoaT search API.")
@@ -34,59 +34,60 @@ async fn main() -> Result<()> {
                     Arg::with_name("raw")
                         .short("r")
                         .long("raw")
-                        .help("This flag indicates raw values should all be listed out."),
+                        .help("Print raw values (i.e. no aggregation/summary)."),
                 )
                 .arg(
                     Arg::with_name("all")
-                        .short("z")
+                        .short("A")
                         .long("all")
-                        .help("This flag indicates all data should be printed."),
+                        .help("Print all currently implemented GoaT variables."),
                 )
                 .arg(
                     Arg::with_name("assembly")
                         .short("a")
                         .long("assembly")
-                        .help("This flag indicates assembly data should be printed."),
+                        .help("Print assembly data (span & level)"),
                 )
                 .arg(
                     Arg::with_name("c-values")
                         .short("c")
                         .long("c-values")
-                        .help("This flag indicates C-value data should be printed."),
+                        .help("Print c-value data."),
                 )
                 .arg(
                     Arg::with_name("karyotype")
                         .short("k")
                         .long("karyotype")
-                        .help("This flag indicates karyotype data should be printed."),
+                        .help("Print karyotype data (chromosome number & haploid number)."),
                 )
                 .arg(
                     Arg::with_name("ploidy")
                         .long("ploidy")
-                        .help("Include ploidy estimate.")
+                        .help("Print ploidy estimates.")
                 )
                 .arg(
                     Arg::with_name("sex-determination")
+                        .short("S")
                         .long("sex-determination")
-                        .help("This flag indicates sex determination data should be printed."),
+                        .help("Print sex determination data."),
                 )
                 .arg(
                     Arg::with_name("genome-size")
                         .short("g")
                         .long("genome-size")
-                        .help("This flag indicates genome size data should be printed."),
+                        .help("Print genome size data."),
                 )
                 .arg(
                     Arg::with_name("legislation")
                         .short("l")
                         .long("legislation")
-                        .help("This flag indicates all legislation data should be printed."),
+                        .help("Print legislation data."),
                 )
                 .arg(
                     Arg::with_name("names")
                         .short("n")
                         .long("names")
-                        .help("This flag indicates all names data should be printed.\nThis includes synonyms, Tree of Life ID, and common names."),
+                        .help("Print all associated name data (synonyms, Tree of Life ID, and common names)."),
                 )
                 .arg(
                     Arg::with_name("url")
@@ -104,23 +105,26 @@ async fn main() -> Result<()> {
                     Arg::with_name("busco")
                         .short("b")
                         .long("busco")
-                        .help("Include BUSCO estimates."),
+                        .help("Print BUSCO estimates."),
                 )
                 .arg(
                     Arg::with_name("size")
+                        .short("s")
                         .long("size")
                         .default_value("50")
-                        .help("The number of results to return."),
+                        .help("The number of results to return. Max 10,000 currently."),
                 )
                 .arg(
                     Arg::with_name("mitochondria")
+                        .short("m")
                         .long("mitochondria")
-                        .help("Include mitochondrial genome size & GC%.")
+                        .help("Print mitochondrial genome size & GC%.")
                 )
                 .arg(
                     Arg::with_name("plastid")
+                        .short("P")
                         .long("plastid")
-                        .help("Include plastid genome size & GC%.")
+                        .help("Print plastid genome size & GC%.")
                 )
                 .arg(
                     Arg::with_name("ranks")
@@ -128,12 +132,54 @@ async fn main() -> Result<()> {
                         .possible_values(&["none", "subspecies", "species", "genus", "family", "order", "class", "phylum", "kingdom", "superkingdom"])
                         .default_value("none")
                         .help("Choose a rank to display with the results. All ranks up to the given rank are displayed.")
+                )
+                .arg(
+                    Arg::with_name("target-lists")
+                        .long("target-lists")
+                        .help("Print target list data associated with each taxon.")
+                )
+                .arg(
+                    Arg::with_name("n50")
+                        .short("N")
+                        .long("n50")
+                        .help("Print the contig & scaffold n50 of assemblies.")
+                )
+                .arg(
+                    Arg::with_name("bioproject")
+                        .short("B")
+                        .long("bioproject")
+                        .help("Print the bioproject and biosample ID of records.")
+                )
+                .arg(
+                    Arg::with_name("tidy")
+                        .long("tidy")
+                        .short("T")
+                        .help("Print data in tidy format.")
+                )
+                .arg(
+                    Arg::with_name("gene-count")
+                        .short("G")
+                        .long("gene-count")
+                        .help("Print gene count data.")
+                )
+                .arg(
+                    Arg::with_name("date")
+                        .short("d")
+                        .long("date")
+                        .help("Print EBP & assembly dates.")
+                )
+                .arg(
+                    Arg::with_name("include-estimates")
+                        .short("i")
+                        .long("include-estimates")
+                        .conflicts_with("raw")
+                        .help("Include ancestral estimates. Omitting this flag includes only direct estimates from a taxon. Cannot be used with --raw.")
                 ),
         )
         // copy of the above.
         .subcommand(
             clap::SubCommand::with_name("count")
-                .about("Query the count API.")
+                .about("Query the GoaT count API. Return the number of hits from any search.")
                 .arg(
                     Arg::with_name("taxon")
                         .short("t")
@@ -154,42 +200,60 @@ async fn main() -> Result<()> {
                     Arg::with_name("raw")
                         .short("r")
                         .long("raw")
-                        .help("This flag indicates raw values should be all listed out. So you can do your own aggregations for example."),
+                        .help("Print raw values (i.e. no aggregation/summary)."),
                 )
                 .arg(
                     Arg::with_name("all")
-                        .short("z")
+                        .short("A")
                         .long("all")
-                        .help("This flag indicates all data should be printed."),
+                        .help("Print all currently implemented GoaT variables."),
                 )
                 .arg(
                     Arg::with_name("assembly")
                         .short("a")
                         .long("assembly")
-                        .help("This flag indicates assembly data should be printed."),
+                        .help("Print assembly data (span & level)"),
                 )
                 .arg(
                     Arg::with_name("c-values")
                         .short("c")
                         .long("c-values")
-                        .help("This flag indicates C-value data should be printed."),
+                        .help("Print c-value data."),
                 )
                 .arg(
                     Arg::with_name("karyotype")
                         .short("k")
                         .long("karyotype")
-                        .help("This flag indicates karyotype data should be printed."),
+                        .help("Print karyotype data (chromosome number & haploid number)."),
                 )
                 .arg(
                     Arg::with_name("ploidy")
                         .long("ploidy")
-                        .help("Include ploidy estimate.")
+                        .help("Print ploidy estimates.")
+                )
+                .arg(
+                    Arg::with_name("sex-determination")
+                        .short("S")
+                        .long("sex-determination")
+                        .help("Print sex determination data."),
                 )
                 .arg(
                     Arg::with_name("genome-size")
                         .short("g")
                         .long("genome-size")
-                        .help("This flag indicates genome size data should be printed."),
+                        .help("Print genome size data."),
+                )
+                .arg(
+                    Arg::with_name("legislation")
+                        .short("l")
+                        .long("legislation")
+                        .help("Print legislation data."),
+                )
+                .arg(
+                    Arg::with_name("names")
+                        .short("n")
+                        .long("names")
+                        .help("Print all associated name data (synonyms, Tree of Life ID, and common names)."),
                 )
                 .arg(
                     Arg::with_name("url")
@@ -207,23 +271,26 @@ async fn main() -> Result<()> {
                     Arg::with_name("busco")
                         .short("b")
                         .long("busco")
-                        .help("Include BUSCO estimates."),
+                        .help("Print BUSCO estimates."),
                 )
                 .arg(
                     Arg::with_name("size")
+                        .short("s")
                         .long("size")
                         .default_value("50")
-                        .help("The number of results to return."),
+                        .help("The number of results to return. Max 10,000 currently."),
                 )
                 .arg(
                     Arg::with_name("mitochondria")
+                        .short("m")
                         .long("mitochondria")
-                        .help("Include mitochondrial genome size & GC%.")
+                        .help("Print mitochondrial genome size & GC%.")
                 )
                 .arg(
                     Arg::with_name("plastid")
+                        .short("P")
                         .long("plastid")
-                        .help("Include plastid genome size & GC%.")
+                        .help("Print plastid genome size & GC%.")
                 )
                 .arg(
                     Arg::with_name("ranks")
@@ -232,6 +299,48 @@ async fn main() -> Result<()> {
                         .default_value("none")
                         .help("Choose a rank to display with the results. All ranks up to the given rank are displayed.")
                 )
+                .arg(
+                    Arg::with_name("target-lists")
+                        .long("target-lists")
+                        .help("Print target list data associated with each taxon.")
+                )
+                .arg(
+                    Arg::with_name("n50")
+                        .short("N")
+                        .long("n50")
+                        .help("Print the contig & scaffold n50 of assemblies.")
+                )
+                .arg(
+                    Arg::with_name("bioproject")
+                        .short("B")
+                        .long("bioproject")
+                        .help("Print the bioproject and biosample ID of records.")
+                )
+                .arg(
+                    Arg::with_name("tidy")
+                        .long("tidy")
+                        .short("T")
+                        .help("Print data in tidy format.")
+                )
+                .arg(
+                    Arg::with_name("gene-count")
+                        .short("G")
+                        .long("gene-count")
+                        .help("Print gene count data.")
+                )
+                .arg(
+                    Arg::with_name("date")
+                        .short("d")
+                        .long("date")
+                        .help("Print EBP & assembly dates.")
+                )
+                .arg(
+                    Arg::with_name("include-estimates")
+                        .short("i")
+                        .long("include-estimates")
+                        .conflicts_with("raw")
+                        .help("Include ancestral estimates. Omitting this flag includes only direct estimates from a taxon. Cannot be used with --raw.")
+                ),
         )
         .get_matches();
 

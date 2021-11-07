@@ -60,11 +60,17 @@ pub struct FieldBuilder {
     pub sex_determination: bool,
     pub legislation: bool,
     pub names: bool,
+    pub target_lists: bool,
+    pub n50: bool,
+    pub bioproject: bool,
+    pub tidy: bool,
+    pub gene_count: bool,
+    pub date: bool,
 }
 
 impl FieldBuilder {
     // private fn used below in build_fields_string
-    fn as_array(&self) -> [bool; 12] {
+    fn as_array(&self) -> [bool; 18] {
         [
             self.all,
             self.assembly,
@@ -78,6 +84,12 @@ impl FieldBuilder {
             self.sex_determination,
             self.legislation,
             self.names,
+            self.target_lists,
+            self.n50,
+            self.bioproject,
+            self.tidy,
+            self.gene_count,
+            self.date,
         ]
     }
 
@@ -106,6 +118,21 @@ impl FieldBuilder {
         let waca_1981 = "waca_1981";
         let protection_of_badgers_act_1992 = "Protection_of_Badgers_Act_1992";
         let e_c_habs92 = "ECHabs92";
+        // all target lists
+        let long_list = "long_list";
+        let other_priority = "other_priority";
+        let family_representative = "family_representative";
+        // add n50
+        let contig_n50 = "contig_n50";
+        let scaffold_n50 = "scaffold_n50";
+        // add bioproject & biosample
+        let bioproject = "bioproject";
+        let biosample = "biosample";
+        // gene count
+        let gene_count = "gene_count";
+        // dates
+        let assembly_date = "assembly_date";
+        let ebp_metric_date = "ebp_metric_date";
 
         let field_array = self.as_array();
         let mut field_string = String::new();
@@ -164,6 +191,7 @@ impl FieldBuilder {
             field_string += plastid_gc_percent_field;
             field_string += delimiter;
         }
+        // add all legislation data
         if self.legislation || self.all {
             field_string += isb_wildlife_act_1976;
             field_string += delimiter;
@@ -176,6 +204,36 @@ impl FieldBuilder {
             field_string += protection_of_badgers_act_1992;
             field_string += delimiter;
             field_string += e_c_habs92;
+            field_string += delimiter;
+        }
+        if self.target_lists || self.all {
+            field_string += long_list;
+            field_string += delimiter;
+            field_string += other_priority;
+            field_string += delimiter;
+            field_string += family_representative;
+            field_string += delimiter;
+        }
+        if self.n50 || self.all {
+            field_string += contig_n50;
+            field_string += delimiter;
+            field_string += scaffold_n50;
+            field_string += delimiter;
+        }
+        if self.bioproject || self.all {
+            field_string += bioproject;
+            field_string += delimiter;
+            field_string += biosample;
+            field_string += delimiter;
+        }
+        if self.gene_count || self.all {
+            field_string += gene_count;
+            field_string += delimiter;
+        }
+        if self.date || self.all {
+            field_string += assembly_date;
+            field_string += delimiter;
+            field_string += ebp_metric_date;
             field_string += delimiter;
         }
         // remove the last three chars == '&2C'
@@ -213,11 +271,18 @@ pub fn make_goat_urls(
     let fields_string = fields.build_fields_string();
     let names = format_names(fields.names);
 
+    let tidy_data: &str;
+
+    match fields.tidy {
+        true => tidy_data = "&tidyData=true",
+        false => tidy_data = "",
+    }
+
     for el in taxids {
         let url = format!(
         // hardcode tidy data for now.
-        "{goat_url}{api}?query=tax_{tax_tree}%28{taxon}%29&includeEstimates={include_estimates}&includeRawValues={include_raw_values}&summaryValues={summarise_values_by}&result={result}&taxonomy={taxonomy}&size={size}{rank_string}{fields_string}&tidyData=true{names}",
-        goat_url = goat_url, api = api, tax_tree = tax_tree, taxon = el, include_estimates = include_estimates, include_raw_values = include_raw_values, summarise_values_by = summarise_values_by, result = result, taxonomy = taxonomy, size = size, rank_string = rank_string, fields_string = fields_string, names = names
+        "{goat_url}{api}?query=tax_{tax_tree}%28{taxon}%29&includeEstimates={include_estimates}&includeRawValues={include_raw_values}&summaryValues={summarise_values_by}&result={result}&taxonomy={taxonomy}&size={size}{rank_string}{fields_string}{tidy_data}{names}",
+        goat_url = goat_url, api = api, tax_tree = tax_tree, taxon = el, include_estimates = include_estimates, include_raw_values = include_raw_values, summarise_values_by = summarise_values_by, result = result, taxonomy = taxonomy, size = size, rank_string = rank_string, fields_string = fields_string, tidy_data = tidy_data, names = names
     );
         res.push(url);
     }
