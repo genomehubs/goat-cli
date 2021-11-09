@@ -105,3 +105,11 @@ pub fn format_tsv_output(awaited_fetches: Vec<Result<String, anyhow::Error>>) ->
 
     Ok(())
 }
+
+pub fn some_kind_of_uppercase_first_letter(s: &str) -> String {
+    let mut c = s.chars();
+    match c.next() {
+        None => String::new(),
+        Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
+    }
+}

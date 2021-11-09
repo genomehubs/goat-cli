@@ -15,6 +15,8 @@ E.g. get from the releases page.
 ```bash
 # for mac
 curl -L "https://github.com/genomehubs/goat-cli/releases/download/0.1.1/goat_mac_0.1.1" > goat && chmod +x goat
+# and linux (ubuntu)
+curl -L "https://github.com/genomehubs/goat-cli/releases/download/0.1.1/goat_ubuntu_0.1.1" > goat && chmod +x goat
 ```
 
 ### Build from source
@@ -36,7 +38,36 @@ cd goat-cli && cargo build --release
 
 ## Usage
 
-Currently, all functionality is through the `goat search` subcommand. `goat search --help` will bring up the help below:
+### Overall
+
+There are three implemented commands:
+
+- `goat search` is the main program, returning metadata for any species.
+- `goat lookup` gives you a **full** list of synonyms, authorities, and Tree of Life identifier where applicable. Also includes spell-check which is neat. To be integrated into `goat search`.
+- `goat count` exposes the <a href="https://goat.genomehubs.org/api-docs/#/GoaT%20API/getSearchResultCount">count API</a>. It tells you how many results you would get for any given `goat search` query. It's used internally but presented here for interest.
+
+```
+goat 0.1.2
+Max Brown <mb39@sanger.ac.uk>
+GoaTs on a terminal. Combine flags to query metadata for any species.
+
+USAGE:
+    goat [SUBCOMMAND]
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+
+SUBCOMMANDS:
+    count     Query the GoaT count API. Return the number of hits from any search.
+    help      Prints this message or the help of the given subcommand(s)
+    lookup    Query the GoaT lookup API.
+    search    Query the GoaT search API.
+```
+
+### Search
+
+`goat help search` or `goat search --help` will bring up the help below:
 
 ```
 goat-search 
@@ -82,7 +113,7 @@ OPTIONS:
     -t, --taxon <taxon>    The taxon to search. An NCBI taxon ID, or the name of a taxon at any rank.
 ```
 
-### Flags
+#### Flags
 
 There are a series of flags that can be added in any combination. For example:
 
@@ -106,7 +137,7 @@ You may not want aggregated results, instead requiring raw values. This is where
 
 Will display each direct result in turn for the assembly statistics implemented so far. Note adding `raw` coerces results into tidy format.
 
-### Options
+#### Options
 
 As for the options, we have already seen `size`. Next up is `--ranks`. Adding one of `subspecies, species, genus, family, order, class, phylum, kingdom, superkingdom` to this option will prepend a tab separated taxonomy for each record. Use it like this:
 
@@ -122,6 +153,39 @@ Large numbers of requests are probably best submitted using a file, e.g:
 
 `goat search -kf examples/taxids.txt > taxids_karyotype_data.tsv`
 
-### Feedback, requests, etc
+*`goat count` presents an identical CLI to `goat search`.*
 
-Please test `goat`. Please find bugs and tell me. Please send feature requests. Creating an issue in this repo is probably the best way to go!
+### Lookup
+
+`goat lookup` is very simple currently. It only requires a taxon NCBI ID, taxon name, or common name.
+
+```
+goat-lookup 
+Query the GoaT lookup API.
+
+USAGE:
+    goat lookup [FLAGS] --taxon <taxon>
+
+FLAGS:
+    -h, --help       Prints help information
+    -u, --url        Print lookup URL.
+    -V, --version    Prints version information
+
+OPTIONS:
+    -t, --taxon <taxon>    The taxon to search. An NCBI taxon ID, or the name of a taxon at any rank.
+```
+
+Examples:
+
+Spell-check if no results found
+- `goat lookup -t Pterophorsa` -> `Did you mean: Pterophorus, Petrophora, Pterophora?`
+Query multiple taxon ID's
+- `goat lookup -t "38942, 2405"`
+Get authorities only
+- `goat lookup -t "Quercus robur" | grep "authority"`
+
+### Feedback, requests, notes etc
+
+This README will always be up to date with the latest *working* version. The released versions may lag behind.
+
+Please test `goat`. Please try and break `goat`. Please find bugs and tell me. Please send feature requests. Creating an issue in this repo is probably the best way to go!

@@ -3,6 +3,7 @@ use clap::{App, Arg};
 use tokio;
 
 use goat::count::count;
+use goat::lookup::lookup::lookup;
 use goat::search::run;
 
 #[tokio::main]
@@ -342,6 +343,24 @@ async fn main() -> Result<()> {
                         .help("Include ancestral estimates. Omitting this flag includes only direct estimates from a taxon. Cannot be used with --raw.")
                 ),
         )
+        .subcommand(
+            clap::SubCommand::with_name("lookup")
+                .about("Query the GoaT lookup API.")
+                .arg(
+                    Arg::with_name("taxon")
+                        .short("t")
+                        .long("taxon")
+                        .takes_value(true)
+                        .required_unless("file")
+                        .help("The taxon to search. An NCBI taxon ID, or the name of a taxon at any rank."),
+                )
+                .arg(
+                    Arg::with_name("url")
+                        .short("u")
+                        .long("url")
+                        .help("Print lookup URL.")
+                )
+        )
         .get_matches();
 
     let subcommand = matches.subcommand();
@@ -353,6 +372,10 @@ async fn main() -> Result<()> {
         "count" => {
             let matches = subcommand.1.unwrap();
             count::count(&matches, true).await?;
+        }
+        "lookup" => {
+            let matches = subcommand.1.unwrap();
+            lookup(&matches, true).await?;
         }
         _ => {
             bail!(goat::error::error::NotYetImplemented::CLIError)
