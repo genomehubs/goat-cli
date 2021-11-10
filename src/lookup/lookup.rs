@@ -1,5 +1,7 @@
 use crate::utils::url::{GOAT_URL, TAXONOMY};
-use crate::utils::utils::{parse_multiple_taxids, some_kind_of_uppercase_first_letter};
+use crate::utils::utils::{
+    lines_from_file, parse_multiple_taxids, some_kind_of_uppercase_first_letter,
+};
 
 // this struct will contain all the lookup data
 // but only from the first (best) hit.
@@ -40,11 +42,24 @@ pub struct Lookups {
 
 // throw warnings if there are no hits
 impl Lookups {
-    fn new<'a>(matches: &clap::ArgMatches<'a>) -> Self {
-        // currently the only flag.
-        // unwrap should be safe, as it's caught by clap otherwise
-        let tax_name = matches.value_of("taxon").unwrap();
-        let tax_name_vector = parse_multiple_taxids(tax_name);
+    fn new<'a>(matches: &clap::ArgMatches<'a>) -> Result<Self> {
+        let tax_name_op = matches.value_of("taxon");
+        let filename_op = matches.value_of("file");
+
+        let tax_name_vector: Vec<String>;
+        match tax_name_op {
+            Some(s) => tax_name_vector = parse_multiple_taxids(s),
+            None => match filename_op {
+                Some(s) => {
+                    tax_name_vector = lines_from_file(s)?;
+                    // check length of vector and bail if > 1000
+                    if tax_name_vector.len() > 10000 {
+                        bail!("[-]\tNumber of taxa specified cannot exceed 10000.")
+                    }
+                }
+                None => bail!("[-]\tOne of -f (--file) or -t (--tax-id) should be specified."),
+            },
+        }
 
         let mut res = Vec::new();
 
@@ -52,7 +67,7 @@ impl Lookups {
             res.push(Lookup { search: el })
         }
 
-        Self { entries: res }
+        Ok(Self { entries: res })
     }
 
     // make urls, these are slightly different, and simpler than those
@@ -83,6 +98,7 @@ pub struct Collector {
 }
 
 impl Collector {
+    // add an index, so we don't repeat headers
     pub fn print_result(&self, index: usize) -> Result<()> {
         // if we got a hit
         match &self.search {
@@ -111,10 +127,6 @@ impl Collector {
                     }
                     // no suggestion, so we got a hit
                     None => {
-                        // let taxon_rank = match &self.taxon_rank {
-                        //     Some(t) => t,
-                        //     None => bail!("No results found."),
-                        // };
                         let taxon_id = match &self.taxon_id {
                             Some(t) => t,
                             None => "No taxon ID",
@@ -153,15 +165,60 @@ impl Collector {
             None => Ok(eprintln!("No results.")),
         }
     }
-    // another function for internal use should probably go here.
     // take matches from search cli
     // generate ncbi taxid
     // give user warning for spelling mistakes.
-    // ncbi taxid can then be passed 
+    // ncbi taxid can then be passed
+    // the output type must be Option<String> (= taxid in `search` & `count`)
+    pub fn return_taxid_vec(&self) -> Result<Option<String>> {
+        // if we got a hit
+        match &self.search {
+            Some(search) => {
+                // if we got a suggestion
+                match &self.suggestions {
+                    // we end up here even if there are no *actual* suggestions.
+                    Some(suggestions) => {
+                        let mut suggestion_str = String::new();
+                        for el in suggestions {
+                            match el {
+                                Some(s) => {
+                                    suggestion_str += &some_kind_of_uppercase_first_letter(&s[..]);
+                                    suggestion_str += ", ";
+                                }
+                                None => {}
+                            }
+                        }
+                        // remove last comma
+                        if suggestion_str.len() > 2 {
+                            suggestion_str.drain(suggestion_str.len() - 2..);
+                            eprintln!(
+                                "[-]\tYou searched {}. Did you mean: {}?",
+                                search, suggestion_str
+                            );
+                            // no taxid here
+                            Ok(None)
+                        } else {
+                            eprintln!("[-]\tThere are no results for the search: {}", search);
+                            Ok(None)
+                        }
+                    }
+                    // no suggestion, so we got a hit
+                    None => {
+                        let taxon_id = match &self.taxon_id {
+                            Some(t) => t,
+                            None => "No taxon ID",
+                        };
+                        Ok(Some(taxon_id.to_string()))
+                    }
+                }
+            }
+            None => bail!("No results."),
+        }
+    }
 }
 
-pub async fn lookup<'a>(matches: &clap::ArgMatches<'a>, _cli: bool) -> Result<()> {
-    let lookups = Lookups::new(matches);
+pub async fn lookup<'a>(matches: &clap::ArgMatches<'a>, cli: bool) -> Result<Option<Vec<String>>> {
+    let lookups = Lookups::new(matches)?;
     let url_vector_api = lookups.make_urls();
     let print_url = matches.is_present("url");
 
@@ -169,7 +226,10 @@ pub async fn lookup<'a>(matches: &clap::ArgMatches<'a>, _cli: bool) -> Result<()
         for (index, url) in url_vector_api.iter().enumerate() {
             println!("{}.\tGoaT lookup API URL: {}", index, url);
         }
-        std::process::exit(0);
+        // don't exit here internally; we'll exit later
+        if cli {
+            std::process::exit(0);
+        }
     }
     // so we can make as many concurrent requests
     let concurrent_requests = url_vector_api.len();
@@ -253,12 +313,26 @@ pub async fn lookup<'a>(matches: &clap::ArgMatches<'a>, _cli: bool) -> Result<()
 
     let awaited_fetches = fetches.await;
 
+    let mut return_taxid_vec: Vec<String> = Vec::new();
+
     for (index, el) in awaited_fetches.iter().enumerate() {
         match el {
-            Ok(e) => e.print_result(index)?,
+            Ok(e) => {
+                if cli {
+                    e.print_result(index)?;
+                } else {
+                    let taxid_op = e.return_taxid_vec()?;
+                    match taxid_op {
+                        Some(s) => return_taxid_vec.push(s),
+                        // the None variant can't push a "",
+                        // otherwise the URL hangs.
+                        None => return_taxid_vec.push("-".to_string()),
+                    }
+                }
+            }
             Err(_) => bail!("No results found."),
         }
     }
 
-    Ok(())
+    Ok(Some(return_taxid_vec))
 }

@@ -63,6 +63,7 @@ async fn main() -> Result<()> {
                 )
                 .arg(
                     Arg::with_name("ploidy")
+                        .short("P")
                         .long("ploidy")
                         .help("Print ploidy estimates.")
                 )
@@ -97,9 +98,9 @@ async fn main() -> Result<()> {
                         .help("Print the underlying GoaT API URL(s). Useful for debugging."),
                 )
                 .arg(
-                    Arg::with_name("phylogeny")
-                        .short("p")
-                        .long("phylogeny")
+                    Arg::with_name("descendents")
+                        .short("d")
+                        .long("descendents")
                         .help("Get information for all descendents of a common ancestor."),
                 )
                 .arg(
@@ -123,12 +124,13 @@ async fn main() -> Result<()> {
                 )
                 .arg(
                     Arg::with_name("plastid")
-                        .short("P")
+                        .short("p")
                         .long("plastid")
                         .help("Print plastid genome size & GC%.")
                 )
                 .arg(
                     Arg::with_name("ranks")
+                        .short("R")
                         .long("ranks")
                         .possible_values(&["none", "subspecies", "species", "genus", "family", "order", "class", "phylum", "kingdom", "superkingdom"])
                         .default_value("none")
@@ -136,6 +138,7 @@ async fn main() -> Result<()> {
                 )
                 .arg(
                     Arg::with_name("target-lists")
+                        .short("t")
                         .long("target-lists")
                         .help("Print target list data associated with each taxon.")
                 )
@@ -165,7 +168,7 @@ async fn main() -> Result<()> {
                 )
                 .arg(
                     Arg::with_name("date")
-                        .short("d")
+                        .short("D")
                         .long("date")
                         .help("Print EBP & assembly dates.")
                 )
@@ -229,6 +232,7 @@ async fn main() -> Result<()> {
                 )
                 .arg(
                     Arg::with_name("ploidy")
+                        .short("P")
                         .long("ploidy")
                         .help("Print ploidy estimates.")
                 )
@@ -263,9 +267,9 @@ async fn main() -> Result<()> {
                         .help("Print the underlying GoaT API URL(s). Useful for debugging."),
                 )
                 .arg(
-                    Arg::with_name("phylogeny")
-                        .short("p")
-                        .long("phylogeny")
+                    Arg::with_name("descendents")
+                        .short("d")
+                        .long("descendents")
                         .help("Get information for all descendents of a common ancestor."),
                 )
                 .arg(
@@ -289,12 +293,13 @@ async fn main() -> Result<()> {
                 )
                 .arg(
                     Arg::with_name("plastid")
-                        .short("P")
+                        .short("p")
                         .long("plastid")
                         .help("Print plastid genome size & GC%.")
                 )
                 .arg(
                     Arg::with_name("ranks")
+                        .short("R")
                         .long("ranks")
                         .possible_values(&["none", "subspecies", "species", "genus", "family", "order", "class", "phylum", "kingdom", "superkingdom"])
                         .default_value("none")
@@ -302,6 +307,7 @@ async fn main() -> Result<()> {
                 )
                 .arg(
                     Arg::with_name("target-lists")
+                        .short("t")
                         .long("target-lists")
                         .help("Print target list data associated with each taxon.")
                 )
@@ -331,7 +337,7 @@ async fn main() -> Result<()> {
                 )
                 .arg(
                     Arg::with_name("date")
-                        .short("d")
+                        .short("D")
                         .long("date")
                         .help("Print EBP & assembly dates.")
                 )

@@ -73,39 +73,48 @@ pub fn get_rank_vector(r: &str) -> Vec<String> {
 
 pub fn format_tsv_output(awaited_fetches: Vec<Result<String, anyhow::Error>>) -> Result<()> {
     // if there is a single element, return this.
-    if awaited_fetches.len() == 1 {
-        let first = awaited_fetches.get(0);
-        match first {
-            Some(s) => match s {
-                Ok(s) => {
-                    println!("{}", s);
-                }
-                Err(e) => bail!("{}", e),
-            },
-            None => bail!("There were no results."),
+    // is there a way to get all the headers, and compare them...
+    let mut headers = Vec::new();
+    for el in &awaited_fetches {
+        let tsv = match el {
+            Ok(ref e) => e,
+            Err(e) => bail!("{}", e),
+        };
+        headers.push(tsv.split("\n").next());
+    }
+
+    // mainly a guard - but Rich I think fixed this so shouldn't need to be done.
+    let header = headers.iter().fold(headers[0], |acc, &item| {
+        let acc = acc.unwrap();
+        let item = item.unwrap();
+        if item.len() > acc.len() {
+            Some(item)
+        } else {
+            Some(acc)
         }
-    } else {
-        let mut index = 0;
-        for el in awaited_fetches {
-            let tsv = match el {
-                Ok(ref e) => e,
-                Err(e) => bail!("{}", e),
-            };
-            if index == 0 {
-                println!("{}", tsv);
-            } else {
-                let tsv_iter = tsv.split("\n");
-                for row in tsv_iter.skip(1) {
-                    println!("{}", row)
-                }
-            }
-            index += 1;
+    });
+
+    match header {
+        Some(h) => println!("{}", h),
+        None => bail!("No header found."),
+    }
+
+    for el in awaited_fetches {
+        let tsv = match el {
+            Ok(ref e) => e,
+            Err(e) => bail!("{}", e),
+        };
+
+        let tsv_iter = tsv.split("\n");
+        for row in tsv_iter.skip(1) {
+            println!("{}", row)
         }
     }
 
     Ok(())
 }
 
+// https://stackoverflow.com/questions/38406793/why-is-capitalizing-the-first-letter-of-a-string-so-convoluted-in-rust
 pub fn some_kind_of_uppercase_first_letter(s: &str) -> String {
     let mut c = s.chars();
     match c.next() {

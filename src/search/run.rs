@@ -1,13 +1,11 @@
 use crate::count::count;
+use crate::lookup::lookup;
 use crate::{utils::url, utils::utils};
 
 use anyhow::{bail, Result};
 use futures::StreamExt;
 use reqwest;
 use reqwest::header::ACCEPT;
-
-// tax tree check number of hits. If less than, give a warning.
-// give info on taxa not found
 
 pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
     let include_raw_values = matches.is_present("raw");
@@ -17,7 +15,7 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
     let gs = matches.is_present("genome-size");
     let all = matches.is_present("all");
     let print_url = matches.is_present("url");
-    let tax_tree_bool = matches.is_present("phylogeny");
+    let tax_tree_bool = matches.is_present("descendents");
     let busco = matches.is_present("busco");
     // non-default fields.
     let mitochondrion = matches.is_present("mitochondria");
@@ -77,9 +75,6 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
         }
         Err(e) => bail!("Did you pass an integer? {}", e),
     }
-
-    let tax_name_op = matches.value_of("taxon");
-    let filename_op = matches.value_of("file");
     let ranks = matches.value_of("ranks").unwrap(); // safe to unwrap here.
 
     // tree includes all descendents of a node
@@ -92,21 +87,12 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
     let result = "taxon";
     let summarise_values_by = "max";
 
-    let url_vector: Vec<String>;
-    // if -t use this
-    match tax_name_op {
-        Some(s) => url_vector = utils::parse_multiple_taxids(s),
-        None => match filename_op {
-            Some(s) => {
-                url_vector = utils::lines_from_file(s)?;
-                // check length of vector and bail if > 1000
-                if url_vector.len() > 10000 {
-                    bail!("[-]\tNumber of taxa specified cannot exceed 10,000.")
-                }
-            }
-            None => bail!("[-]\tOne of -f (--file) or -t (--tax-id) should be specified."),
-        },
-    }
+    // use lookup to validate names
+    let url_vector_op = lookup::lookup(matches, false).await?;
+    let url_vector = match url_vector_op {
+        Some(u) => u,
+        None => bail!("There was nothing to search!"),
+    };
 
     let url_vector_api = url::make_goat_urls(
         "search",
