@@ -1,5 +1,4 @@
-use crate::lookup::lookup;
-use crate::utils::url;
+use crate::utils::{url, utils};
 
 use anyhow::{bail, Result};
 use futures::StreamExt;
@@ -94,12 +93,25 @@ pub async fn count<'a>(matches: &clap::ArgMatches<'a>, cli: bool) -> Result<()> 
     let result = "taxon";
     let summarise_values_by = "max";
 
-    // use lookup to validate names
-    let url_vector_op = lookup::lookup(matches, false).await?;
-    let url_vector = match url_vector_op {
-        Some(u) => u,
-        None => bail!("There was nothing to search!"),
-    };
+    // re-implement this
+    let tax_name_op = matches.value_of("taxon");
+    let filename_op = matches.value_of("file");
+
+    let url_vector: Vec<String>;
+    // if -t use this
+    match tax_name_op {
+        Some(s) => url_vector = utils::parse_multiple_taxids(s),
+        None => match filename_op {
+            Some(s) => {
+                url_vector = utils::lines_from_file(s)?;
+                // check length of vector and bail if > 1000
+                if url_vector.len() > 10000 {
+                    bail!("[-]\tNumber of taxa specified cannot exceed 10,000.")
+                }
+            }
+            None => bail!("[-]\tOne of -f (--file) or -t (--tax-id) should be specified."),
+        },
+    }
 
     let url_vector_api = url::make_goat_urls(
         "count",

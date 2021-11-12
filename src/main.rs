@@ -366,6 +366,13 @@ async fn main() -> Result<()> {
                         .long("url")
                         .help("Print lookup URL.")
                 )
+                .arg(
+                    Arg::with_name("size")
+                        .short("s")
+                        .long("size")
+                        .default_value("10")
+                        .help("The number of results to return."),
+                )
         )
         .get_matches();
 

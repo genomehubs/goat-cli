@@ -3,8 +3,6 @@ use crate::utils::utils::{
     lines_from_file, parse_multiple_taxids, some_kind_of_uppercase_first_letter,
 };
 
-// this struct will contain all the lookup data
-// but only from the first (best) hit.
 use anyhow::{bail, Result};
 use futures::StreamExt;
 use reqwest;
@@ -15,6 +13,7 @@ use serde_json::Value;
 pub struct Lookup {
     // the user search
     pub search: String,
+    pub size: u64,
 }
 
 // an example
@@ -30,6 +29,9 @@ impl Lookup {
         // add the search term
         let search_term = format!("searchTerm={}", self.search);
         url += &search_term;
+        // add size
+        let size = format!("&size={}", self.size);
+        url += &size;
         // hardcode the rest for now
         url += &format!("&result=taxon&taxonomy={}", &*TAXONOMY);
         url
@@ -45,6 +47,9 @@ impl Lookups {
     fn new<'a>(matches: &clap::ArgMatches<'a>) -> Result<Self> {
         let tax_name_op = matches.value_of("taxon");
         let filename_op = matches.value_of("file");
+        // safe to unwrap, as default is defined.
+        let no_hits = matches.value_of("size").unwrap();
+        let no_hits = no_hits.parse::<u64>().unwrap_or(10);
 
         let tax_name_vector: Vec<String>;
         match tax_name_op {
@@ -64,7 +69,10 @@ impl Lookups {
         let mut res = Vec::new();
 
         for el in tax_name_vector {
-            res.push(Lookup { search: el })
+            res.push(Lookup {
+                search: el,
+                size: no_hits,
+            })
         }
 
         Ok(Self { entries: res })
@@ -76,7 +84,6 @@ impl Lookups {
     pub fn make_urls(&self) -> Vec<String> {
         let mut url_vector = Vec::new();
         for el in &self.entries {
-            // println!("{}", el.make_url())
             url_vector.push(el.make_url());
         }
         url_vector
@@ -84,15 +91,18 @@ impl Lookups {
 }
 
 #[derive(Clone)]
+// change these to vecs
 pub struct Collector {
     // the user search
+    // single value
     pub search: Option<String>,
     // the taxon id, that we fetch
-    pub taxon_id: Option<String>,
+    // can return multiple taxon id's
+    pub taxon_id: Vec<Option<String>>,
     // the taxon rank
-    pub taxon_rank: Option<String>,
+    pub taxon_rank: Vec<Option<String>>,
     // maybe a map of name: class pairs? Might be empty
-    pub taxon_names: Option<Vec<(String, String)>>,
+    pub taxon_names: Vec<Option<Vec<(String, String)>>>,
     // suggestion.
     pub suggestions: Option<Vec<Option<String>>>,
 }
@@ -120,37 +130,59 @@ impl Collector {
                         // remove last comma
                         if suggestion_str.len() > 2 {
                             suggestion_str.drain(suggestion_str.len() - 2..);
-                            Ok(eprintln!("Did you mean: {}?", suggestion_str))
+                            Ok(eprintln!("[-]\tDid you mean: {}?", suggestion_str))
                         } else {
-                            Ok(eprintln!("There are no results."))
+                            Ok(eprintln!("[-]\tThere are no results."))
                         }
                     }
                     // no suggestion, so we got a hit
                     None => {
-                        let taxon_id = match &self.taxon_id {
-                            Some(t) => t,
-                            None => "No taxon ID",
-                        };
+                        // Vec<Option<String>> -> Option<Vec<String>>
+                        // these vecs should all be the same length?
+                        let taxon_id = self.taxon_id.clone();
+                        let taxon_rank = self.taxon_rank.clone();
+                        let taxon_names = self.taxon_names.clone();
+
+                        let taxon_ids_op: Option<Vec<String>> = taxon_id.into_iter().collect();
+                        let taxon_ranks_op: Option<Vec<String>> = taxon_rank.into_iter().collect();
+                        // same but for nested vec.
+                        let taxon_names_op: Option<Vec<Vec<(String, String)>>> =
+                            taxon_names.into_iter().collect();
+
+                        // print headers for first result only.
                         if index == 0 {
-                            println!("taxon\tsearch_query\tname\ttype");
+                            println!("taxon\trank\tsearch_query\tname\ttype");
                         }
-                        match &self.taxon_names {
+                        match taxon_names_op {
                             Some(n) => {
+                                // get taxon_ids and taxon_ranks
+                                let taxon_ids = match taxon_ids_op {
+                                    Some(t) => t,
+                                    // empty vec
+                                    None => vec![],
+                                };
+                                let taxon_ranks = match taxon_ranks_op {
+                                    Some(t) => t,
+                                    // empty vec
+                                    None => vec![],
+                                };
+                                // zip these vectors together
+                                let mut zipped_taxon_vectors =
+                                    taxon_ids.iter().zip(taxon_ranks.iter()).zip(n.iter());
+
                                 // this may not be the best way to print
                                 // as everything has to be loaded into mem
                                 // however, each result string should be small.
                                 let mut whole_res_string = String::new();
-                                let mut peekable_iter = n.iter().peekable();
-                                while let Some(el) = peekable_iter.next() {
-                                    if peekable_iter.peek().is_some() {
+
+                                while let Some(((taxon_id, taxon_rank), taxon_ranks)) =
+                                    zipped_taxon_vectors.next()
+                                {
+                                    for el in taxon_ranks {
                                         let row = format!(
-                                            "{}\t{}\t{}\t{}\n",
-                                            taxon_id, search, el.0, el.1
+                                            "{}\t{}\t{}\t{}\t{}\n",
+                                            taxon_id, taxon_rank, search, el.0, el.1
                                         );
-                                        whole_res_string += &row;
-                                    } else {
-                                        let row =
-                                            format!("{}\t{}\t{}\t{}", taxon_id, search, el.0, el.1);
                                         whole_res_string += &row;
                                     }
                                 }
@@ -170,6 +202,10 @@ impl Collector {
     // give user warning for spelling mistakes.
     // ncbi taxid can then be passed
     // the output type must be Option<String> (= taxid in `search` & `count`)
+
+    // currently deprecated - don't use this in `search` or `count`
+    // there is the possibility of URL's being too long...
+    // might be useful for `record` API at some point?
     pub fn return_taxid_vec(&self) -> Result<Option<String>> {
         // if we got a hit
         match &self.search {
@@ -204,11 +240,14 @@ impl Collector {
                     }
                     // no suggestion, so we got a hit
                     None => {
-                        let taxon_id = match &self.taxon_id {
-                            Some(t) => t,
-                            None => "No taxon ID",
+                        let taxon_id = self.taxon_id.clone();
+                        let taxon_ids_op: Option<Vec<String>> = taxon_id.into_iter().collect();
+
+                        let taxon_id = match taxon_ids_op {
+                            Some(t) => t.join("%2C"),
+                            None => "No taxon ID".to_string(),
                         };
-                        Ok(Some(taxon_id.to_string()))
+                        Ok(Some(taxon_id))
                     }
                 }
             }
@@ -221,6 +260,13 @@ pub async fn lookup<'a>(matches: &clap::ArgMatches<'a>, cli: bool) -> Result<Opt
     let lookups = Lookups::new(matches)?;
     let url_vector_api = lookups.make_urls();
     let print_url = matches.is_present("url");
+    let size = matches.value_of("size").unwrap();
+
+    let search_query_op = lookups.entries.get(0);
+    let search_query = match search_query_op {
+        Some(q) => &q.search,
+        None => "None",
+    };
 
     if print_url {
         for (index, url) in url_vector_api.iter().enumerate() {
@@ -243,11 +289,16 @@ pub async fn lookup<'a>(matches: &clap::ArgMatches<'a>, cli: bool) -> Result<Opt
             Ok(resp) => match resp.text().await {
                 Ok(body) => {
                     let v: Value = serde_json::from_str(&body)?;
+                    // print a warning if number of hits > size specified.
+                    let request_size_op = &v["status"]["hits"].as_u64();
+                    match request_size_op {
+                        Some(s) => eprintln!(
+                            "[-]\tFor seach query {}, size specified ({}) was less than the number of results returned, ({}).",
+                            search_query, size, s
+                        ),
+                        None => (),
+                    }
 
-                    // this bit is a bit horrible.
-                    // get the suggestions first
-                    // suggestion search will be the same for each element in the array
-                    let suggestion_search = &v["suggestions"][0]["text"].as_str();
                     // get all the suggestions
                     let suggestions_text_op = &v["suggestions"].as_array();
                     // collect into a vec
@@ -264,42 +315,55 @@ pub async fn lookup<'a>(matches: &clap::ArgMatches<'a>, cli: bool) -> Result<Opt
                         None => None,
                     };
                     // and the taxon ID
-                    let taxon_search = &v["results"][0]["result"]["scientific_name"].as_str();
-                    let taxon_id = &v["results"][0]["result"]["taxon_id"].as_str();
-                    let taxon_rank = &v["results"][0]["result"]["taxon_rank"].as_str();
-                    let taxon_names_array_op = &v["results"][0]["result"]["taxon_names"].as_array();
+                    // we need to iterate over the array of results.
+                    // potentially look at the scores, and keep those over a certain amount
+                    // or keep everything. Currently I'm missing synonymous genera.
 
-                    let taxon_names_array = match taxon_names_array_op {
-                        Some(vec) => {
-                            let mut collect_names = Vec::new();
-                            for el in vec.into_iter() {
-                                let key = el["name"].as_str().unwrap_or("-");
-                                let value = el["class"].as_str().unwrap_or("-");
-                                collect_names.push((key.to_string(), value.to_string()));
+                    let mut taxon_id_vec = Vec::new();
+                    let mut taxon_rank_vec = Vec::new();
+                    let mut taxon_names_array_vec = Vec::new();
+
+                    let results_array = v["results"].as_array();
+                    // unwrap safely here
+                    match results_array {
+                        Some(arr) => {
+                            for el in arr {
+                                let taxon_id = el["result"]["taxon_id"].as_str();
+                                let taxon_rank = el["result"]["taxon_rank"].as_str();
+                                let taxon_names_array_op = el["result"]["taxon_names"].as_array();
+
+                                let taxon_names_array = match taxon_names_array_op {
+                                    Some(vec) => {
+                                        let mut collect_names = Vec::new();
+                                        for el in vec.into_iter() {
+                                            let key = el["name"].as_str().unwrap_or("-");
+                                            let value = el["class"].as_str().unwrap_or("-");
+                                            collect_names
+                                                .push((key.to_string(), value.to_string()));
+                                        }
+                                        Some(collect_names)
+                                    }
+                                    None => None,
+                                };
+
+                                // gather results into the vecs
+                                taxon_id_vec.push(taxon_id);
+                                taxon_rank_vec.push(taxon_rank);
+                                taxon_names_array_vec.push(taxon_names_array);
                             }
-                            Some(collect_names)
                         }
-                        None => None,
-                    };
-                    // sort out the search name
-                    let search;
-                    match suggestion_search {
-                        Some(s) => search = s,
-                        None => match taxon_search {
-                            Some(s) => search = s,
-                            None => search = &"No match",
-                        },
+                        None => {}
                     }
-                    // clone the relevant bits
-                    let tax_id = taxon_id.clone();
-                    let taxon_rank = taxon_rank.clone().map(String::from);
-                    let taxon_id = tax_id.clone().map(String::from);
+
+                    // Vec<Option<&str>> -> Vec<Option<String>>
+                    let taxon_id = taxon_id_vec.iter().map(|e| e.map(String::from)).collect();
+                    let taxon_rank = taxon_rank_vec.iter().map(|e| e.map(String::from)).collect();
 
                     Ok(Collector {
-                        search: Some(search.to_string()),
+                        search: Some(search_query.to_string()),
                         suggestions: suggestions_text,
                         taxon_id,
-                        taxon_names: taxon_names_array,
+                        taxon_names: taxon_names_array_vec,
                         taxon_rank,
                     })
                 }
@@ -321,6 +385,7 @@ pub async fn lookup<'a>(matches: &clap::ArgMatches<'a>, cli: bool) -> Result<Opt
                 if cli {
                     e.print_result(index)?;
                 } else {
+                    // dead code currently
                     let taxid_op = e.return_taxid_vec()?;
                     match taxid_op {
                         Some(s) => return_taxid_vec.push(s),
