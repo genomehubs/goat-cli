@@ -186,7 +186,8 @@ impl Collector {
                                         whole_res_string += &row;
                                     }
                                 }
-
+                                // remove trailing newline
+                                whole_res_string.pop();
                                 Ok(println!("{}", whole_res_string))
                             }
                             None => Ok(eprintln!("There were no taxon names.")),

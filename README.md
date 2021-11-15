@@ -159,7 +159,7 @@ Larger numbers of requests are probably best submitted using a file, e.g:
 
 ### Lookup
 
-`goat lookup` is very simple currently. It only requires a taxon NCBI ID, taxon name, or common name.
+`goat lookup` is very simple currently. It only requires a taxon NCBI ID, taxon name, or common name. It returns an NCBI tax-id, along with synonyms, authorities, and common names.
 
 ```
 goat-lookup 
@@ -187,6 +187,32 @@ Query multiple taxon ID's
 
 Get authorities only
 - `goat lookup -t "Quercus robur" | grep "authority"`
+
+### Newick
+
+GoaT can also return trees. Given a clade, or a string of clades, a newick tree will be returned. It's actually a cladogram as there are no branch lengths, but this may change with future GoaT versions.
+
+```
+goat-newick 
+Query the GoaT record API, and return a newick.
+
+USAGE:
+    goat newick [FLAGS] [OPTIONS] --taxon <taxon>
+
+FLAGS:
+    -h, --help       Prints help information
+    -u, --url        Print lookup URL.
+    -V, --version    Prints version information
+
+OPTIONS:
+    -r, --rank <rank>      The number of results to return. [default: species]  [possible values: species, genus,
+                           family, order]
+    -t, --taxon <taxon>    The taxon to return a newick of. Multiple taxa will return the joint tree.
+```
+
+E.g. get a cladogram of the genera in the family Fabaceae:
+
+`goat newick -t "Fabaceae" -r genus`
 
 ### Feedback, requests, notes etc
 

@@ -4,6 +4,7 @@ use tokio;
 
 use goat::count::count;
 use goat::lookup::lookup::lookup;
+use goat::record::newick;
 use goat::search::run;
 
 #[tokio::main]
@@ -374,6 +375,32 @@ async fn main() -> Result<()> {
                         .help("The number of results to return."),
                 )
         )
+        .subcommand(
+            clap::SubCommand::with_name("newick")
+                .about("Query the GoaT record API, and return a newick.")
+                .arg(
+                    Arg::with_name("taxon")
+                        .short("t")
+                        .long("taxon")
+                        .takes_value(true)
+                        .required_unless("file")
+                        .help("The taxon to return a newick of. Multiple taxa will return the joint tree."),
+                )
+                .arg(
+                    Arg::with_name("url")
+                        .short("u")
+                        .long("url")
+                        .help("Print lookup URL.")
+                )
+                .arg(
+                    Arg::with_name("rank")
+                        .short("r")
+                        .long("rank")
+                        .default_value("species")
+                        .possible_values(&["species", "genus", "family", "order"])
+                        .help("The number of results to return."),
+                )
+        )
         .get_matches();
 
     let subcommand = matches.subcommand();
@@ -389,6 +416,10 @@ async fn main() -> Result<()> {
         "lookup" => {
             let matches = subcommand.1.unwrap();
             lookup(&matches, true).await?;
+        }
+        "newick" => {
+            let matches = subcommand.1.unwrap();
+            newick::get_newick(matches).await?;
         }
         _ => {
             bail!(goat::error::error::NotYetImplemented::CLIError)
