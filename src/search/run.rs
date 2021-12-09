@@ -31,14 +31,15 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
     let n50 = matches.is_present("n50");
     // bioproject & sample ID
     let bioproject = matches.is_present("bioproject");
-    // tidy data
-    let mut tidy = matches.is_present("tidy");
-    // and guard against error
-    if include_raw_values {
-        tidy = true;
-    }
+    // tidy data.
+    // must be true if raw values included
+    let tidy = match include_raw_values {
+        true => true,
+        false => matches.is_present("tidy"),
+    };
     let gene_count = matches.is_present("gene-count");
     let date = matches.is_present("date");
+    let country_list = matches.is_present("country-list");
     // including estimates
     let include_estimates = matches.is_present("include-estimates");
 
@@ -46,22 +47,23 @@ pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
     let fields = url::FieldBuilder {
         all,
         assembly,
+        bioproject,
         busco,
+        country_list,
         cvalues,
+        date,
+        gene_count,
         gs,
         karyotype,
+        legislation,
         mitochondrion,
+        names,
+        n50,
         plastid,
         ploidy,
         sex_determination,
-        legislation,
-        names,
         target_lists,
-        n50,
-        bioproject,
         tidy,
-        gene_count,
-        date,
     };
 
     // do some size checking

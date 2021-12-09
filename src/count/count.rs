@@ -44,6 +44,7 @@ pub async fn count<'a>(matches: &clap::ArgMatches<'a>, cli: bool) -> Result<()> 
     }
     let gene_count = matches.is_present("gene-count");
     let date = matches.is_present("date");
+    let country_list = matches.is_present("country-list");
     // including estimates
     let include_estimates = matches.is_present("include-estimates");
 
@@ -51,22 +52,23 @@ pub async fn count<'a>(matches: &clap::ArgMatches<'a>, cli: bool) -> Result<()> 
     let fields = url::FieldBuilder {
         all,
         assembly,
+        bioproject,
         busco,
+        country_list,
         cvalues,
+        date,
+        gene_count,
         gs,
         karyotype,
+        legislation,
         mitochondrion,
+        names,
+        n50,
         plastid,
         ploidy,
         sex_determination,
-        legislation,
-        names,
         target_lists,
-        n50,
-        bioproject,
         tidy,
-        gene_count,
-        date,
     };
 
     // do some size checking

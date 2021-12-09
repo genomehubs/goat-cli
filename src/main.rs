@@ -174,6 +174,13 @@ async fn main() -> Result<()> {
                         .help("Print EBP & assembly dates.")
                 )
                 .arg(
+                    Arg::with_name("country-list")
+                        .short("C")
+                        .long("country-list")
+                        // what's the best description for this?
+                        .help("Print list of countries where taxon is found.")
+                )
+                .arg(
                     Arg::with_name("include-estimates")
                         .short("i")
                         .long("include-estimates")
@@ -340,6 +347,13 @@ async fn main() -> Result<()> {
                         .short("D")
                         .long("date")
                         .help("Print EBP & assembly dates.")
+                )
+                .arg(
+                    Arg::with_name("country-list")
+                        .short("C")
+                        .long("country-list")
+                        // what's the best description for this?
+                        .help("Print list of countries where taxon is found.")
                 )
                 .arg(
                     Arg::with_name("include-estimates")

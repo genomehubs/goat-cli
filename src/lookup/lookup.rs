@@ -257,6 +257,7 @@ impl Collector {
     }
 }
 
+// entry function
 pub async fn lookup<'a>(matches: &clap::ArgMatches<'a>, cli: bool) -> Result<Option<Vec<String>>> {
     let lookups = Lookups::new(matches)?;
     let url_vector_api = lookups.make_urls();

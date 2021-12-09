@@ -50,7 +50,9 @@ fn format_names(flag: bool) -> String {
 pub struct FieldBuilder {
     pub all: bool,
     pub assembly: bool,
+    pub bioproject: bool,
     pub busco: bool,
+    pub country_list: bool,
     pub cvalues: bool,
     pub gs: bool,
     pub karyotype: bool,
@@ -62,7 +64,6 @@ pub struct FieldBuilder {
     pub names: bool,
     pub target_lists: bool,
     pub n50: bool,
-    pub bioproject: bool,
     pub tidy: bool,
     pub gene_count: bool,
     pub date: bool,
@@ -70,26 +71,27 @@ pub struct FieldBuilder {
 
 impl FieldBuilder {
     // private fn used below in build_fields_string
-    fn as_array(&self) -> [bool; 18] {
+    fn as_array(&self) -> [bool; 19] {
         [
             self.all,
             self.assembly,
+            self.bioproject,
             self.busco,
+            self.country_list,
             self.cvalues,
+            self.date,
+            self.gene_count,
             self.gs,
             self.karyotype,
+            self.legislation,
             self.mitochondrion,
+            self.names,
+            self.n50,
             self.plastid,
             self.ploidy,
             self.sex_determination,
-            self.legislation,
-            self.names,
             self.target_lists,
-            self.n50,
-            self.bioproject,
             self.tidy,
-            self.gene_count,
-            self.date,
         ]
     }
 
@@ -133,6 +135,8 @@ impl FieldBuilder {
         // dates
         let assembly_date = "assembly_date";
         let ebp_metric_date = "ebp_metric_date";
+        // country list
+        let country_list = "country_list";
 
         let field_array = self.as_array();
         let mut field_string = String::new();
@@ -236,6 +240,11 @@ impl FieldBuilder {
             field_string += ebp_metric_date;
             field_string += delimiter;
         }
+        if self.country_list || self.all {
+            field_string += country_list;
+            field_string += delimiter;
+        }
+
         // remove the last three chars == '&2C'
         field_string.drain(field_string.len() - 3..);
         // check for blanks
