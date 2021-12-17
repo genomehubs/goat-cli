@@ -122,3 +122,18 @@ pub fn some_kind_of_uppercase_first_letter(s: &str) -> String {
         Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
     }
 }
+
+// https://stackoverflow.com/questions/26998485/is-it-possible-to-print-a-number-formatted-with-thousand-separator-in-rust
+// for error messages above cli query limit
+pub fn pretty_print_usize(i: usize) -> String {
+    let mut s = String::new();
+    let i_str = i.to_string();
+    let a = i_str.chars().rev().enumerate();
+    for (idx, val) in a {
+        if idx != 0 && idx % 3 == 0 {
+            s.insert(0, ',');
+        }
+        s.insert(0, val);
+    }
+    format!("{}", s)
+}

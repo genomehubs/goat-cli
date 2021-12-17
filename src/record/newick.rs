@@ -39,7 +39,7 @@ pub async fn get_newick<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
             Err(_) => bail!("ERROR downloading {}", path),
         }
     }))
-    .buffer_unordered(concurrent_requests)
+    .buffered(concurrent_requests)
     .collect::<Vec<_>>();
 
     let awaited_fetches = fetches.await;

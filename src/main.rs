@@ -1,9 +1,11 @@
 use anyhow::{bail, Result};
 use clap::{App, Arg};
+use futures::try_join;
 use tokio;
 
 use goat::count::count;
 use goat::lookup::lookup::lookup;
+use goat::progress::progress;
 use goat::record::newick;
 use goat::search::run;
 
@@ -420,11 +422,14 @@ async fn main() -> Result<()> {
     match subcommand.0 {
         "search" => {
             let matches = subcommand.1.unwrap();
-            run::search(&matches).await?;
+            try_join!(
+                run::search(&matches),
+                progress::progress_bar(&matches, "search")
+            )?;
         }
         "count" => {
             let matches = subcommand.1.unwrap();
-            count::count(&matches, true).await?;
+            count::count(&matches, true, false).await?;
         }
         "lookup" => {
             let matches = subcommand.1.unwrap();
@@ -432,7 +437,10 @@ async fn main() -> Result<()> {
         }
         "newick" => {
             let matches = subcommand.1.unwrap();
-            newick::get_newick(matches).await?;
+            try_join!(
+                newick::get_newick(matches),
+                progress::progress_bar(&matches, "newick")
+            )?;
         }
         _ => {
             bail!(goat::error::error::NotYetImplemented::CLIError)

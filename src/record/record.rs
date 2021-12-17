@@ -60,6 +60,8 @@ impl Record {
                 // default stuff for now
                 url += &"&includeEstimates=true";
                 url += &format!("&taxonomy={}", &*TAXONOMY);
+                // fix this for now, as only single requests can be submitted
+                url += "&queryId=goat_cli_0";
                 url
             }
         }

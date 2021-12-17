@@ -287,11 +287,14 @@ pub fn make_goat_urls(
         false => tidy_data = "",
     }
 
-    for el in taxids {
+    // enumeration of the taxa will be 0 -> n,
+    // corresponding to alphabetical order of taxa
+    for (index, el) in taxids.iter().enumerate() {
+        let query_id = format!("&queryId=goat_cli_{}", index);
         let url = format!(
         // hardcode tidy data for now.
-        "{goat_url}{api}?query=tax_{tax_tree}%28{taxon}%29&includeEstimates={include_estimates}&includeRawValues={include_raw_values}&summaryValues={summarise_values_by}&result={result}&taxonomy={taxonomy}&size={size}{rank_string}{fields_string}{tidy_data}{names}",
-        goat_url = goat_url, api = api, tax_tree = tax_tree, taxon = el, include_estimates = include_estimates, include_raw_values = include_raw_values, summarise_values_by = summarise_values_by, result = result, taxonomy = taxonomy, size = size, rank_string = rank_string, fields_string = fields_string, tidy_data = tidy_data, names = names
+        "{goat_url}{api}?query=tax_{tax_tree}%28{taxon}%29&includeEstimates={include_estimates}&includeRawValues={include_raw_values}&summaryValues={summarise_values_by}&result={result}&taxonomy={taxonomy}&size={size}{rank_string}{fields_string}{tidy_data}{names}{query_id}",
+        goat_url = goat_url, api = api, tax_tree = tax_tree, taxon = el, include_estimates = include_estimates, include_raw_values = include_raw_values, summarise_values_by = summarise_values_by, result = result, taxonomy = taxonomy, size = size, rank_string = rank_string, fields_string = fields_string, tidy_data = tidy_data, names = names, query_id = query_id
     );
         res.push(url);
     }

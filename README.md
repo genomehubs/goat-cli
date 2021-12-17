@@ -62,6 +62,7 @@ SUBCOMMANDS:
     count     Query the GoaT count API. Return the number of hits from any search.
     help      Prints this message or the help of the given subcommand(s)
     lookup    Query the GoaT lookup API.
+    newick    Query the GoaT record API, and return a newick.
     search    Query the GoaT search API.
 ```
 
@@ -82,6 +83,7 @@ FLAGS:
     -B, --bioproject           Print the bioproject and biosample ID of records.
     -b, --busco                Print BUSCO estimates.
     -c, --c-values             Print c-value data.
+    -C, --country-list         Print list of countries where taxon is found.
     -D, --date                 Print EBP & assembly dates.
     -d, --descendents          Get information for all descendents of a common ancestor.
     -G, --gene-count           Print gene count data.
@@ -151,7 +153,7 @@ Another way of searching for multiple species (related or not) is to use `-t` wi
 
 This search will return all the assembly spans and levels for the three taxa specified.
 
-Larger numbers of requests are probably best submitted using a file, e.g:
+Larger numbers of requests are probably best submitted using a file (only up to 500 spp), e.g:
 
 `goat search -kf examples/taxids.txt > taxids_karyotype_data.tsv`
 
