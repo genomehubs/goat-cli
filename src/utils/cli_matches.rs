@@ -49,6 +49,8 @@ pub fn process_cli_args(
     let country_list = matches.is_present("country-list");
     // including estimates
     let include_estimates = matches.is_present("include-estimates");
+    // status
+    let status = matches.is_present("status");
 
     // merge the field flags
     let fields = url::FieldBuilder {
@@ -69,6 +71,7 @@ pub fn process_cli_args(
         plastid,
         ploidy,
         sex_determination,
+        status,
         target_lists,
         tidy,
     };

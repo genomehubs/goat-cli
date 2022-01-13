@@ -135,7 +135,7 @@ pub async fn progress_bar<'a>(matches: &clap::ArgMatches<'a>, api: &str) -> Resu
 
         bar.set_position(progress_x_total);
 
-        if progress_x_total == progress_total_total {
+        if progress_x_total >= progress_total_total {
             break;
         }
 

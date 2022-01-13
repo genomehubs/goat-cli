@@ -54,24 +54,25 @@ pub struct FieldBuilder {
     pub busco: bool,
     pub country_list: bool,
     pub cvalues: bool,
+    pub date: bool,
+    pub gene_count: bool,
     pub gs: bool,
     pub karyotype: bool,
+    pub legislation: bool,
     pub mitochondrion: bool,
+    pub n50: bool,
+    pub names: bool,
     pub plastid: bool,
     pub ploidy: bool,
     pub sex_determination: bool,
-    pub legislation: bool,
-    pub names: bool,
+    pub status: bool,
     pub target_lists: bool,
-    pub n50: bool,
     pub tidy: bool,
-    pub gene_count: bool,
-    pub date: bool,
 }
 
 impl FieldBuilder {
     // private fn used below in build_fields_string
-    fn as_array(&self) -> [bool; 19] {
+    fn as_array(&self) -> [bool; 20] {
         [
             self.all,
             self.assembly,
@@ -90,11 +91,13 @@ impl FieldBuilder {
             self.plastid,
             self.ploidy,
             self.sex_determination,
+            self.status,
             self.target_lists,
             self.tidy,
         ]
     }
 
+    // add
     pub fn build_fields_string(&self) -> String {
         let base = "&fields=";
         let delimiter = "%2C";
@@ -137,6 +140,16 @@ impl FieldBuilder {
         let ebp_metric_date = "ebp_metric_date";
         // country list
         let country_list = "country_list";
+        // sequencing status of the taxon
+        // lump all these together at the moment.
+        let sequencing_status = "sequencing_status";
+        let sample_collected = "sample_collected";
+        let sample_acquired = "sample_acquired";
+        let in_progress = "in_progress";
+        let insdc_submitted = "insdc_submitted";
+        let insdc_open = "insdc_open";
+        let published = "published";
+        let sample_collected_by = "sample_collected_by";
 
         let field_array = self.as_array();
         let mut field_string = String::new();
@@ -242,6 +255,24 @@ impl FieldBuilder {
         }
         if self.country_list || self.all {
             field_string += country_list;
+            field_string += delimiter;
+        }
+        if self.status || self.all {
+            field_string += sequencing_status;
+            field_string += delimiter;
+            field_string += sample_collected;
+            field_string += delimiter;
+            field_string += sample_acquired;
+            field_string += delimiter;
+            field_string += in_progress;
+            field_string += delimiter;
+            field_string += insdc_submitted;
+            field_string += delimiter;
+            field_string += insdc_open;
+            field_string += delimiter;
+            field_string += published;
+            field_string += delimiter;
+            field_string += sample_collected_by;
             field_string += delimiter;
         }
 

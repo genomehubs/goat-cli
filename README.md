@@ -2,7 +2,7 @@
 
 A command line interface for GoaT (Genomes on a Tree). GoaT presents metadata for taxa across the tree of life. 
 
-The CLI here builds URLs to query the <b><a href="https://goat.genomehubs.org/api-docs/">Goat API</a></b>. The underlying API is very powerful, but complex. The aim of this CLI is to remove some of the complexity for the end user. TSV's are returned.
+The CLI here builds URLs to query the <b><a href="https://goat.genomehubs.org/api-docs/">Goat API</a></b>. The underlying API is very powerful, but complex. The aim of this CLI is to remove some of the complexity for the end user. Only TSV files are returned. 
 
 This CLI is actively being built so no guarantees are made for stability or bugs.
 
@@ -100,6 +100,9 @@ FLAGS:
     -P, --ploidy               Print ploidy estimates.
     -r, --raw                  Print raw values (i.e. no aggregation/summary).
     -S, --sex-determination    Print sex determination data.
+        --status               Print all data associated with how far this taxon has progressed with genomic sequencing.
+                               This includes sample collection, acquisition, progress in sequencing, and whether
+                               submitted to INSDC.
     -t, --target-lists         Print target list data associated with each taxon.
     -T, --tidy                 Print data in tidy format.
     -u, --url                  Print the underlying GoaT API URL(s). Useful for debugging.

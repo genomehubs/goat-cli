@@ -188,6 +188,11 @@ async fn main() -> Result<()> {
                         .long("include-estimates")
                         .conflicts_with("raw")
                         .help("Include ancestral estimates. Omitting this flag includes only direct estimates from a taxon. Cannot be used with --raw.")
+                )
+                .arg(
+                    Arg::with_name("status")
+                        .long("status")
+                        .help("Print all data associated with how far this taxon has progressed with genomic sequencing.\nThis includes sample collection, acquisition, progress in sequencing, and whether submitted to INSDC.")
                 ),
         )
         // copy of the above.
@@ -363,6 +368,11 @@ async fn main() -> Result<()> {
                         .long("include-estimates")
                         .conflicts_with("raw")
                         .help("Include ancestral estimates. Omitting this flag includes only direct estimates from a taxon. Cannot be used with --raw.")
+                )
+                .arg(
+                    Arg::with_name("status")
+                        .long("status")
+                        .help("Print all data associated with how far this taxon has progressed with genomic sequencing.\nThis includes sample collection, acquisition, progress in sequencing, and whether submitted to INSDC.")
                 ),
         )
         .subcommand(
