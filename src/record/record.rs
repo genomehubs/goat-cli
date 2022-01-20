@@ -18,7 +18,7 @@ pub struct Record {
 }
 
 impl Record {
-    pub fn new<'a>(matches: &clap::ArgMatches<'a>) -> Result<Self> {
+    pub fn new(matches: &clap::ArgMatches) -> Result<Self> {
         // simply return the populated struct
         // taxon, url, rank
         let search_op = matches.value_of("taxon");

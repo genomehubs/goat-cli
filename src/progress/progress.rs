@@ -14,7 +14,7 @@ use crate::utils::cli_matches::UPPER_CLI_SIZE_LIMIT;
 // a function to create and display a progress bar
 // for large requests. Currently limited to single large requests.
 
-pub async fn progress_bar<'a>(matches: &clap::ArgMatches<'a>, api: &str) -> Result<()> {
+pub async fn progress_bar(matches: &clap::ArgMatches, api: &str) -> Result<()> {
     // wait briefly before submitting
     // so we are sure the API has recieved and set the queryId
     task::sleep(Duration::from_secs(2)).await;

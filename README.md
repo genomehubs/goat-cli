@@ -14,9 +14,9 @@ E.g. get from the releases page.
 
 ```bash
 # for mac
-curl -L "https://github.com/genomehubs/goat-cli/releases/download/0.1.1/goat_mac_0.1.1" > goat && chmod +x goat
+curl -L "https://github.com/genomehubs/goat-cli/releases/download/0.1.3/goat_mac_0.1.3" > goat && chmod +x goat
 # and linux (ubuntu)
-curl -L "https://github.com/genomehubs/goat-cli/releases/download/0.1.1/goat_ubuntu_0.1.1" > goat && chmod +x goat
+curl -L "https://github.com/genomehubs/goat-cli/releases/download/0.1.3/goat_ubuntu_0.1.3" > goat && chmod +x goat
 ```
 
 ### Build from source

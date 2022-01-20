@@ -44,7 +44,7 @@ pub struct Lookups {
 
 // throw warnings if there are no hits
 impl Lookups {
-    fn new<'a>(matches: &clap::ArgMatches<'a>) -> Result<Self> {
+    fn new(matches: &clap::ArgMatches) -> Result<Self> {
         let tax_name_op = matches.value_of("taxon");
         let filename_op = matches.value_of("file");
         // safe to unwrap, as default is defined.
@@ -258,7 +258,7 @@ impl Collector {
 }
 
 // entry function
-pub async fn lookup<'a>(matches: &clap::ArgMatches<'a>, cli: bool) -> Result<Option<Vec<String>>> {
+pub async fn lookup(matches: &clap::ArgMatches, cli: bool) -> Result<Option<Vec<String>>> {
     let lookups = Lookups::new(matches)?;
     let url_vector_api = lookups.make_urls();
     let print_url = matches.is_present("url");

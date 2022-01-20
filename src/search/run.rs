@@ -6,7 +6,7 @@ use reqwest::header::ACCEPT;
 use crate::count::count;
 use crate::utils::{cli_matches, utils};
 
-pub async fn search<'a>(matches: &clap::ArgMatches<'a>) -> Result<()> {
+pub async fn search(matches: &clap::ArgMatches) -> Result<()> {
     let (_size_int, _url_vector, url_vector_api) =
         cli_matches::process_cli_args(matches, "search")?;
     let concurrent_requests = url_vector_api.len();

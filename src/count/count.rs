@@ -9,8 +9,8 @@ use crate::utils::cli_matches;
 // count is essentially identical to search, but prints to the console in the
 // CLI call, or to stderr in the search call. Hence the cli parameter.
 
-pub async fn count<'a>(
-    matches: &clap::ArgMatches<'a>,
+pub async fn count(
+    matches: &clap::ArgMatches,
     cli: bool,
     print_warning: bool,
 ) -> Result<Option<u64>> {

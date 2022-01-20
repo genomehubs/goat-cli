@@ -1,5 +1,5 @@
 use anyhow::{bail, Result};
-use clap::{App, Arg};
+use clap::{App, AppSettings, Arg};
 use futures::try_join;
 use tokio;
 
@@ -8,418 +8,424 @@ use goat::lookup::lookup::lookup;
 use goat::progress::progress;
 use goat::record::newick;
 use goat::search::run;
+use goat::utils::{
+    cli_matches::{UPPER_CLI_FILE_LIMIT, UPPER_CLI_SIZE_LIMIT},
+    utils::pretty_print_usize,
+};
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let matches = App::new("goat")
-        .version(clap::crate_version!())
+        .version("0.1.3")
+        .global_setting(AppSettings::PropagateVersion)
+        .global_setting(AppSettings::UseLongFormatForHelpSubcommand)
         .author("Max Brown <mb39@sanger.ac.uk>")
         .about("GoaTs on a terminal. Combine flags to query metadata for any species.")
         .subcommand(
-            clap::SubCommand::with_name("search")
+            App::new("search")
                 .about("Query the GoaT search API.")
                 .arg(
-                    Arg::with_name("taxon")
-                        .short("t")
+                    Arg::new("taxon")
+                        .short('t')
                         .long("taxon")
                         .takes_value(true)
-                        .required_unless("file")
+                        .required_unless_present("file")
                         .help("The taxon to search. An NCBI taxon ID, or the name of a taxon at any rank."),
                 )
                 .arg(
-                    Arg::with_name("file")
-                        .short("f")
+                    Arg::new("file")
+                        .short('f')
                         .long("file")
                         .takes_value(true)
-                        .required_unless("taxon")
-                        .help("A file of NCBI taxonomy ID's (tips) and/or binomial names.\nEach line should contain a single entry."),
+                        .required_unless_present("taxon")
+                        .help(&format!("A file of NCBI taxonomy ID's (tips) and/or binomial names.\nEach line should contain a single entry.\nFile size is limited to {} entries.", pretty_print_usize(*UPPER_CLI_FILE_LIMIT))[..]),
                 )
                 .arg(
-                    Arg::with_name("raw")
-                        .short("r")
+                    Arg::new("raw")
+                        .short('r')
                         .long("raw")
                         .help("Print raw values (i.e. no aggregation/summary)."),
                 )
                 .arg(
-                    Arg::with_name("all")
-                        .short("A")
+                    Arg::new("all")
+                        .short('A')
                         .long("all")
                         .help("Print all currently implemented GoaT variables."),
                 )
                 .arg(
-                    Arg::with_name("assembly")
-                        .short("a")
+                    Arg::new("assembly")
+                        .short('a')
                         .long("assembly")
                         .help("Print assembly data (span & level)"),
                 )
                 .arg(
-                    Arg::with_name("c-values")
-                        .short("c")
+                    Arg::new("c-values")
+                        .short('c')
                         .long("c-values")
                         .help("Print c-value data."),
                 )
                 .arg(
-                    Arg::with_name("karyotype")
-                        .short("k")
+                    Arg::new("karyotype")
+                        .short('k')
                         .long("karyotype")
                         .help("Print karyotype data (chromosome number & haploid number)."),
                 )
                 .arg(
-                    Arg::with_name("ploidy")
-                        .short("P")
+                    Arg::new("ploidy")
+                        .short('P')
                         .long("ploidy")
                         .help("Print ploidy estimates.")
                 )
                 .arg(
-                    Arg::with_name("sex-determination")
-                        .short("S")
+                    Arg::new("sex-determination")
+                        .short('S')
                         .long("sex-determination")
                         .help("Print sex determination data."),
                 )
                 .arg(
-                    Arg::with_name("genome-size")
-                        .short("g")
+                    Arg::new("genome-size")
+                        .short('g')
                         .long("genome-size")
                         .help("Print genome size data."),
                 )
                 .arg(
-                    Arg::with_name("legislation")
-                        .short("l")
+                    Arg::new("legislation")
+                        .short('l')
                         .long("legislation")
                         .help("Print legislation data."),
                 )
                 .arg(
-                    Arg::with_name("names")
-                        .short("n")
+                    Arg::new("names")
+                        .short('n')
                         .long("names")
                         .help("Print all associated name data (synonyms, Tree of Life ID, and common names)."),
                 )
                 .arg(
-                    Arg::with_name("url")
-                        .short("u")
+                    Arg::new("url")
+                        .short('u')
                         .long("url")
                         .help("Print the underlying GoaT API URL(s). Useful for debugging."),
                 )
                 .arg(
-                    Arg::with_name("descendents")
-                        .short("d")
+                    Arg::new("descendents")
+                        .short('d')
                         .long("descendents")
                         .help("Get information for all descendents of a common ancestor."),
                 )
                 .arg(
-                    Arg::with_name("busco")
-                        .short("b")
+                    Arg::new("busco")
+                        .short('b')
                         .long("busco")
                         .help("Print BUSCO estimates."),
                 )
                 .arg(
-                    Arg::with_name("size")
-                        .short("s")
+                    Arg::new("size")
+                        .short('s')
                         .long("size")
                         .default_value("50")
-                        .help("The number of results to return. Max 10,000 currently."),
+                        .help(&format!("The number of results to return. Max {} currently.", pretty_print_usize(*UPPER_CLI_SIZE_LIMIT))[..]),
                 )
                 .arg(
-                    Arg::with_name("mitochondria")
-                        .short("m")
+                    Arg::new("mitochondria")
+                        .short('m')
                         .long("mitochondria")
                         .help("Print mitochondrial genome size & GC%.")
                 )
                 .arg(
-                    Arg::with_name("plastid")
-                        .short("p")
+                    Arg::new("plastid")
+                        .short('p')
                         .long("plastid")
                         .help("Print plastid genome size & GC%.")
                 )
                 .arg(
-                    Arg::with_name("ranks")
-                        .short("R")
+                    Arg::new("ranks")
+                        .short('R')
                         .long("ranks")
                         .possible_values(&["none", "subspecies", "species", "genus", "family", "order", "class", "phylum", "kingdom", "superkingdom"])
                         .default_value("none")
                         .help("Choose a rank to display with the results. All ranks up to the given rank are displayed.")
                 )
                 .arg(
-                    Arg::with_name("target-lists")
-                        .short("t")
+                    Arg::new("target-lists")
+                        .short('t')
                         .long("target-lists")
                         .help("Print target list data associated with each taxon.")
                 )
                 .arg(
-                    Arg::with_name("n50")
-                        .short("N")
+                    Arg::new("n50")
+                        .short('N')
                         .long("n50")
                         .help("Print the contig & scaffold n50 of assemblies.")
                 )
                 .arg(
-                    Arg::with_name("bioproject")
-                        .short("B")
+                    Arg::new("bioproject")
+                        .short('B')
                         .long("bioproject")
                         .help("Print the bioproject and biosample ID of records.")
                 )
                 .arg(
-                    Arg::with_name("tidy")
+                    Arg::new("tidy")
                         .long("tidy")
-                        .short("T")
+                        .short('T')
                         .help("Print data in tidy format.")
                 )
                 .arg(
-                    Arg::with_name("gene-count")
-                        .short("G")
+                    Arg::new("gene-count")
+                        .short('G')
                         .long("gene-count")
                         .help("Print gene count data.")
                 )
                 .arg(
-                    Arg::with_name("date")
-                        .short("D")
+                    Arg::new("date")
+                        .short('D')
                         .long("date")
                         .help("Print EBP & assembly dates.")
                 )
                 .arg(
-                    Arg::with_name("country-list")
-                        .short("C")
+                    Arg::new("country-list")
+                        .short('C')
                         .long("country-list")
                         // what's the best description for this?
                         .help("Print list of countries where taxon is found.")
                 )
                 .arg(
-                    Arg::with_name("include-estimates")
-                        .short("i")
+                    Arg::new("include-estimates")
+                        .short('i')
                         .long("include-estimates")
                         .conflicts_with("raw")
                         .help("Include ancestral estimates. Omitting this flag includes only direct estimates from a taxon. Cannot be used with --raw.")
                 )
                 .arg(
-                    Arg::with_name("status")
+                    Arg::new("status")
                         .long("status")
                         .help("Print all data associated with how far this taxon has progressed with genomic sequencing.\nThis includes sample collection, acquisition, progress in sequencing, and whether submitted to INSDC.")
                 ),
         )
         // copy of the above.
         .subcommand(
-            clap::SubCommand::with_name("count")
+            App::new("count")
                 .about("Query the GoaT count API. Return the number of hits from any search.")
                 .arg(
-                    Arg::with_name("taxon")
-                        .short("t")
+                    Arg::new("taxon")
+                        .short('t')
                         .long("taxon")
                         .takes_value(true)
-                        .required_unless("file")
+                        .required_unless_present("file")
                         .help("The taxon to search. An NCBI taxon ID, or the name of a taxon at any rank."),
                 )
                 .arg(
-                    Arg::with_name("file")
-                        .short("f")
+                    Arg::new("file")
+                        .short('f')
                         .long("file")
                         .takes_value(true)
-                        .required_unless("taxon")
-                        .help("A file of NCBI taxonomy ID's (tips) and/or binomial names.\nEach line should contain a single entry."),
+                        .required_unless_present("taxon")
+                        .help(&format!("A file of NCBI taxonomy ID's (tips) and/or binomial names.\nEach line should contain a single entry.\nFile size is limited to {} entries.", pretty_print_usize(*UPPER_CLI_FILE_LIMIT))[..]),
                 )
                 .arg(
-                    Arg::with_name("raw")
-                        .short("r")
+                    Arg::new("raw")
+                        .short('r')
                         .long("raw")
                         .help("Print raw values (i.e. no aggregation/summary)."),
                 )
                 .arg(
-                    Arg::with_name("all")
-                        .short("A")
+                    Arg::new("all")
+                        .short('A')
                         .long("all")
                         .help("Print all currently implemented GoaT variables."),
                 )
                 .arg(
-                    Arg::with_name("assembly")
-                        .short("a")
+                    Arg::new("assembly")
+                        .short('a')
                         .long("assembly")
                         .help("Print assembly data (span & level)"),
                 )
                 .arg(
-                    Arg::with_name("c-values")
-                        .short("c")
+                    Arg::new("c-values")
+                        .short('c')
                         .long("c-values")
                         .help("Print c-value data."),
                 )
                 .arg(
-                    Arg::with_name("karyotype")
-                        .short("k")
+                    Arg::new("karyotype")
+                        .short('k')
                         .long("karyotype")
                         .help("Print karyotype data (chromosome number & haploid number)."),
                 )
                 .arg(
-                    Arg::with_name("ploidy")
-                        .short("P")
+                    Arg::new("ploidy")
+                        .short('P')
                         .long("ploidy")
                         .help("Print ploidy estimates.")
                 )
                 .arg(
-                    Arg::with_name("sex-determination")
-                        .short("S")
+                    Arg::new("sex-determination")
+                        .short('S')
                         .long("sex-determination")
                         .help("Print sex determination data."),
                 )
                 .arg(
-                    Arg::with_name("genome-size")
-                        .short("g")
+                    Arg::new("genome-size")
+                        .short('g')
                         .long("genome-size")
                         .help("Print genome size data."),
                 )
                 .arg(
-                    Arg::with_name("legislation")
-                        .short("l")
+                    Arg::new("legislation")
+                        .short('l')
                         .long("legislation")
                         .help("Print legislation data."),
                 )
                 .arg(
-                    Arg::with_name("names")
-                        .short("n")
+                    Arg::new("names")
+                        .short('n')
                         .long("names")
                         .help("Print all associated name data (synonyms, Tree of Life ID, and common names)."),
                 )
                 .arg(
-                    Arg::with_name("url")
-                        .short("u")
+                    Arg::new("url")
+                        .short('u')
                         .long("url")
                         .help("Print the underlying GoaT API URL(s). Useful for debugging."),
                 )
                 .arg(
-                    Arg::with_name("descendents")
-                        .short("d")
+                    Arg::new("descendents")
+                        .short('d')
                         .long("descendents")
                         .help("Get information for all descendents of a common ancestor."),
                 )
                 .arg(
-                    Arg::with_name("busco")
-                        .short("b")
+                    Arg::new("busco")
+                        .short('b')
                         .long("busco")
                         .help("Print BUSCO estimates."),
                 )
                 .arg(
-                    Arg::with_name("size")
-                        .short("s")
+                    Arg::new("size")
+                        .short('s')
                         .long("size")
                         .default_value("50")
-                        .help("The number of results to return. Max 10,000 currently."),
+                        .help(&format!("The number of results to return. Max {} currently.", pretty_print_usize(*UPPER_CLI_SIZE_LIMIT))[..]),
                 )
                 .arg(
-                    Arg::with_name("mitochondria")
-                        .short("m")
+                    Arg::new("mitochondria")
+                        .short('m')
                         .long("mitochondria")
                         .help("Print mitochondrial genome size & GC%.")
                 )
                 .arg(
-                    Arg::with_name("plastid")
-                        .short("p")
+                    Arg::new("plastid")
+                        .short('p')
                         .long("plastid")
                         .help("Print plastid genome size & GC%.")
                 )
                 .arg(
-                    Arg::with_name("ranks")
-                        .short("R")
+                    Arg::new("ranks")
+                        .short('R')
                         .long("ranks")
                         .possible_values(&["none", "subspecies", "species", "genus", "family", "order", "class", "phylum", "kingdom", "superkingdom"])
                         .default_value("none")
                         .help("Choose a rank to display with the results. All ranks up to the given rank are displayed.")
                 )
                 .arg(
-                    Arg::with_name("target-lists")
+                    Arg::new("target-lists")
                         .long("target-lists")
                         .help("Print target list data associated with each taxon.")
                 )
                 .arg(
-                    Arg::with_name("n50")
-                        .short("N")
+                    Arg::new("n50")
+                        .short('N')
                         .long("n50")
                         .help("Print the contig & scaffold n50 of assemblies.")
                 )
                 .arg(
-                    Arg::with_name("bioproject")
-                        .short("B")
+                    Arg::new("bioproject")
+                        .short('B')
                         .long("bioproject")
                         .help("Print the bioproject and biosample ID of records.")
                 )
                 .arg(
-                    Arg::with_name("tidy")
+                    Arg::new("tidy")
                         .long("tidy")
-                        .short("T")
+                        .short('T')
                         .help("Print data in tidy format.")
                 )
                 .arg(
-                    Arg::with_name("gene-count")
-                        .short("G")
+                    Arg::new("gene-count")
+                        .short('G')
                         .long("gene-count")
                         .help("Print gene count data.")
                 )
                 .arg(
-                    Arg::with_name("date")
-                        .short("D")
+                    Arg::new("date")
+                        .short('D')
                         .long("date")
                         .help("Print EBP & assembly dates.")
                 )
                 .arg(
-                    Arg::with_name("country-list")
-                        .short("C")
+                    Arg::new("country-list")
+                        .short('C')
                         .long("country-list")
                         // what's the best description for this?
                         .help("Print list of countries where taxon is found.")
                 )
                 .arg(
-                    Arg::with_name("include-estimates")
-                        .short("i")
+                    Arg::new("include-estimates")
+                        .short('i')
                         .long("include-estimates")
                         .conflicts_with("raw")
                         .help("Include ancestral estimates. Omitting this flag includes only direct estimates from a taxon. Cannot be used with --raw.")
                 )
                 .arg(
-                    Arg::with_name("status")
+                    Arg::new("status")
                         .long("status")
                         .help("Print all data associated with how far this taxon has progressed with genomic sequencing.\nThis includes sample collection, acquisition, progress in sequencing, and whether submitted to INSDC.")
                 ),
         )
         .subcommand(
-            clap::SubCommand::with_name("lookup")
+            App::new("lookup")
                 .about("Query the GoaT lookup API.")
                 .arg(
-                    Arg::with_name("taxon")
-                        .short("t")
+                    Arg::new("taxon")
+                        .short('t')
                         .long("taxon")
                         .takes_value(true)
-                        .required_unless("file")
+                        .required_unless_present("file")
                         .help("The taxon to search. An NCBI taxon ID, or the name of a taxon at any rank."),
                 )
                 .arg(
-                    Arg::with_name("url")
-                        .short("u")
+                    Arg::new("url")
+                        .short('u')
                         .long("url")
                         .help("Print lookup URL.")
                 )
                 .arg(
-                    Arg::with_name("size")
-                        .short("s")
+                    Arg::new("size")
+                        .short('s')
                         .long("size")
                         .default_value("10")
                         .help("The number of results to return."),
                 )
         )
         .subcommand(
-            clap::SubCommand::with_name("newick")
+            App::new("newick")
                 .about("Query the GoaT record API, and return a newick.")
                 .arg(
-                    Arg::with_name("taxon")
-                        .short("t")
+                    Arg::new("taxon")
+                        .short('t')
                         .long("taxon")
                         .takes_value(true)
-                        .required_unless("file")
+                        .required_unless_present("file")
                         .help("The taxon to return a newick of. Multiple taxa will return the joint tree."),
                 )
                 .arg(
-                    Arg::with_name("url")
-                        .short("u")
+                    Arg::new("url")
+                        .short('u')
                         .long("url")
                         .help("Print lookup URL.")
                 )
                 .arg(
-                    Arg::with_name("rank")
-                        .short("r")
+                    Arg::new("rank")
+                        .short('r')
                         .long("rank")
                         .default_value("species")
                         .possible_values(&["species", "genus", "family", "order"])
@@ -428,25 +434,20 @@ async fn main() -> Result<()> {
         )
         .get_matches();
 
-    let subcommand = matches.subcommand();
-    match subcommand.0 {
-        "search" => {
-            let matches = subcommand.1.unwrap();
+    match matches.subcommand() {
+        Some(("search", matches)) => {
             try_join!(
                 run::search(&matches),
                 progress::progress_bar(&matches, "search")
             )?;
         }
-        "count" => {
-            let matches = subcommand.1.unwrap();
+        Some(("count", matches)) => {
             count::count(&matches, true, false).await?;
         }
-        "lookup" => {
-            let matches = subcommand.1.unwrap();
+        Some(("lookup", matches)) => {
             lookup(&matches, true).await?;
         }
-        "newick" => {
-            let matches = subcommand.1.unwrap();
+        Some(("newick", matches)) => {
             try_join!(
                 newick::get_newick(matches),
                 progress::progress_bar(&matches, "newick")
