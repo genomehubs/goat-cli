@@ -254,6 +254,9 @@ impl<'a> CLIexpression<'a> {
                     match keyword_enums {
                         TypeOf::Keyword(k) => {
                             if !k.to_vec().contains(&&value_string[..]) {
+                                // commas for or statements to be done here.
+                                // FIXME: "complete genome" will not work as the space will be stripped
+                                // resulting in an error.
                                 bail!(ExpressionParseError::KeywordEnumError)
                             }
                             // build expression

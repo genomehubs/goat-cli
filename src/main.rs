@@ -16,7 +16,7 @@ use goat::utils::{
 #[tokio::main]
 async fn main() -> Result<()> {
     let matches = App::new("goat")
-        .version("0.1.3")
+        .version("0.1.4")
         .global_setting(AppSettings::PropagateVersion)
         .global_setting(AppSettings::UseLongFormatForHelpSubcommand)
         .author("Max Brown <mb39@sanger.ac.uk>")
