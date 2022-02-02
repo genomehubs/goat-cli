@@ -138,6 +138,7 @@ pub fn pretty_print_usize(i: usize) -> String {
     format!("{}", s)
 }
 
+// not sure this needs to be done... Rich?
 pub fn switch_string_to_url_encoding(string: &str) -> &str {
     match string {
         // "!=" => "%21%3D",
@@ -154,8 +155,4 @@ pub fn switch_string_to_url_encoding(string: &str) -> &str {
         ">=" => ">%3D",
         _ => panic!("Should not reach here."),
     }
-}
-
-pub fn remove_whitespace(s: &str) -> String {
-    s.chars().filter(|c| !c.is_whitespace()).collect()
 }

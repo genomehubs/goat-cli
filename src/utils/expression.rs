@@ -3,7 +3,7 @@
 // plastid_gc_percent < 33 AND gc_percent > 55
 
 use crate::error::error::ExpressionParseError;
-use crate::utils::utils::{remove_whitespace, switch_string_to_url_encoding};
+use crate::utils::utils::switch_string_to_url_encoding;
 use anyhow::{bail, ensure, Result};
 use lazy_static::lazy_static;
 use regex::{CaptureMatches, Captures, Regex};
@@ -230,41 +230,33 @@ impl<'a> CLIexpression<'a> {
                 );
             match curr_el_vec.len() {
                 3 => {
-                    let variable = curr_el_vec[0];
-                    let operator = switch_string_to_url_encoding(curr_el_vec[1]);
+                    // trim strings
+                    let variable = curr_el_vec[0].trim();
+                    let operator = switch_string_to_url_encoding(curr_el_vec[1]).trim();
                     // let operator = curr_el_vec[1];
-                    let value = curr_el_vec[2];
+                    let value = curr_el_vec[2].trim();
 
-                    // now remove white space from variable and value
-                    let variable_string = remove_whitespace(variable);
-                    let value_string = remove_whitespace(value);
-
-                    if !var_vec_check.contains(&&variable_string[..]) {
+                    if !var_vec_check.contains(&variable) {
                         // might be able to check max/min/length here.
                         // e.g. max(gc_content) > 0.3
                         bail!(ExpressionParseError::SplitVectorError)
                     }
 
-                    let keyword_enums = &GOAT_VARIABLE_DATA
-                        .get(&&variable_string[..])
-                        .unwrap()
-                        .type_of;
+                    let keyword_enums = &GOAT_VARIABLE_DATA.get(variable).unwrap().type_of;
 
                     // if there are keywords, make sure they are a match
                     match keyword_enums {
                         TypeOf::Keyword(k) => {
-                            if !k.to_vec().contains(&&value_string[..]) {
+                            if !k.to_vec().contains(&value) {
                                 // commas for or statements to be done here.
-                                // FIXME: "complete genome" will not work as the space will be stripped
-                                // resulting in an error.
                                 bail!(ExpressionParseError::KeywordEnumError)
                             }
                             // build expression
                             expression += "%20";
-                            expression += &variable_string;
+                            expression += variable;
                             // do operators need to be translated?
                             expression += operator;
-                            expression += &value_string;
+                            expression += value;
                             expression += "%20";
                             // end of sub expression
                             // assume there is another expression to follow
@@ -273,10 +265,10 @@ impl<'a> CLIexpression<'a> {
                         _ => {
                             // build expression
                             expression += "%20";
-                            expression += &variable_string;
+                            expression += variable;
                             // do operators need to be translated?
                             expression += operator;
-                            expression += &value_string;
+                            expression += value;
                             expression += "%20";
                             // end of sub expression
                             // assume there is another expression to follow
