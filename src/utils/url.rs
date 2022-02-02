@@ -1,3 +1,4 @@
+use anyhow::Result;
 use lazy_static::lazy_static;
 
 const GOAT_URL_BASE: &str = "https://goat.genomehubs.org/api/";
@@ -43,6 +44,14 @@ fn format_names(flag: bool) -> String {
         true => "&names=synonym%2Ctol_id%2Ccommon_name".to_string(),
         false => "".to_string(),
     }
+}
+
+// keep contained here for now
+use crate::utils::expression::CLIexpression;
+pub fn format_expression(exp: &str) -> Result<String> {
+    let mut new_exp = CLIexpression::new(exp);
+    let parsed_string = new_exp.parse()?;
+    Ok(parsed_string)
 }
 
 // Parse the fields from search.
@@ -97,7 +106,6 @@ impl FieldBuilder {
         ]
     }
 
-    // add
     pub fn build_fields_string(&self) -> String {
         let base = "&fields=";
         let delimiter = "%2C";
@@ -107,7 +115,9 @@ impl FieldBuilder {
         let busco_completeness_field = "busco_completeness";
         let chromosome_number_field = "chromosome_number";
         let haploid_number_field = "haploid_number";
+        // we also have genome size kmer & draft
         let genome_size_field = "genome_size";
+        // c value method & cell type
         let c_value_field = "c_value";
         // these are display level 2
         let mitochondrial_assembly_span_field = "mitochondrion_assembly_span";
@@ -302,6 +312,7 @@ pub fn make_goat_urls(
     size: &str,
     ranks: &str,
     fields: FieldBuilder,
+    expression: &str,
 ) -> Vec<String> {
     let mut res = Vec::new();
 
@@ -324,8 +335,8 @@ pub fn make_goat_urls(
         let query_id = format!("&queryId=goat_cli_{}", index);
         let url = format!(
         // hardcode tidy data for now.
-        "{goat_url}{api}?query=tax_{tax_tree}%28{taxon}%29&includeEstimates={include_estimates}&includeRawValues={include_raw_values}&summaryValues={summarise_values_by}&result={result}&taxonomy={taxonomy}&size={size}{rank_string}{fields_string}{tidy_data}{names}{query_id}",
-        goat_url = goat_url, api = api, tax_tree = tax_tree, taxon = el, include_estimates = include_estimates, include_raw_values = include_raw_values, summarise_values_by = summarise_values_by, result = result, taxonomy = taxonomy, size = size, rank_string = rank_string, fields_string = fields_string, tidy_data = tidy_data, names = names, query_id = query_id
+        "{goat_url}{api}?query=tax_{tax_tree}%28{taxon}%29{expression}&includeEstimates={include_estimates}&includeRawValues={include_raw_values}&summaryValues={summarise_values_by}&result={result}&taxonomy={taxonomy}&size={size}{rank_string}{fields_string}{tidy_data}{names}{query_id}",
+        goat_url = goat_url, api = api, tax_tree = tax_tree, taxon = el, expression = expression, include_estimates = include_estimates, include_raw_values = include_raw_values, summarise_values_by = summarise_values_by, result = result, taxonomy = taxonomy, size = size, rank_string = rank_string, fields_string = fields_string, tidy_data = tidy_data, names = names, query_id = query_id
     );
         res.push(url);
     }

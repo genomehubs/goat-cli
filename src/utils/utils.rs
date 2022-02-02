@@ -137,3 +137,25 @@ pub fn pretty_print_usize(i: usize) -> String {
     }
     format!("{}", s)
 }
+
+pub fn switch_string_to_url_encoding(string: &str) -> &str {
+    match string {
+        // "!=" => "%21%3D",
+        "!=" => "!%3D",
+        // "<" => "%3C",
+        "<" => "<",
+        // "<=" => "%3C%3D",
+        "<=" => "<%3D",
+        "=" => "%3D",
+        "==" => "%3D%3D",
+        // ">" => "%3E",
+        ">" => ">",
+        // ">=" => "%3E%3D",
+        ">=" => ">%3D",
+        _ => panic!("Should not reach here."),
+    }
+}
+
+pub fn remove_whitespace(s: &mut String) {
+    s.retain(|c| !c.is_whitespace());
+}

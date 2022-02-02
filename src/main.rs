@@ -29,7 +29,7 @@ async fn main() -> Result<()> {
                         .short('t')
                         .long("taxon")
                         .takes_value(true)
-                        .required_unless_present("file")
+                        .required_unless_present_any(["file", "print-expression"])
                         .help("The taxon to search. An NCBI taxon ID, or the name of a taxon at any rank."),
                 )
                 .arg(
@@ -37,7 +37,7 @@ async fn main() -> Result<()> {
                         .short('f')
                         .long("file")
                         .takes_value(true)
-                        .required_unless_present("taxon")
+                        .required_unless_present_any(["taxon", "print-expression"])
                         .help(&format!("A file of NCBI taxonomy ID's (tips) and/or binomial names.\nEach line should contain a single entry.\nFile size is limited to {} entries.", pretty_print_usize(*UPPER_CLI_FILE_LIMIT))[..]),
                 )
                 .arg(
@@ -199,6 +199,19 @@ async fn main() -> Result<()> {
                     Arg::new("status")
                         .long("status")
                         .help("Print all data associated with how far this taxon has progressed with genomic sequencing.\nThis includes sample collection, acquisition, progress in sequencing, and whether submitted to INSDC.")
+                )
+                .arg(
+                    Arg::new("expression")
+                        .short('e')
+                        .long("expression")
+                        .takes_value(true)
+                        .required(false)
+                        .help("Experimental expression parser.")
+                )
+                .arg(
+                    Arg::new("print-expression")
+                        .long("print-expression")
+                        .help("Print all variables in GoaT currently, with their associated variants.\nUseful for construction of expressions.")
                 ),
         )
         // copy of the above.
@@ -210,7 +223,7 @@ async fn main() -> Result<()> {
                         .short('t')
                         .long("taxon")
                         .takes_value(true)
-                        .required_unless_present("file")
+                        .required_unless_present_any(["file", "print-expression"])
                         .help("The taxon to search. An NCBI taxon ID, or the name of a taxon at any rank."),
                 )
                 .arg(
@@ -218,7 +231,7 @@ async fn main() -> Result<()> {
                         .short('f')
                         .long("file")
                         .takes_value(true)
-                        .required_unless_present("taxon")
+                        .required_unless_present_any(["taxon", "print-expression"])
                         .help(&format!("A file of NCBI taxonomy ID's (tips) and/or binomial names.\nEach line should contain a single entry.\nFile size is limited to {} entries.", pretty_print_usize(*UPPER_CLI_FILE_LIMIT))[..]),
                 )
                 .arg(
@@ -379,6 +392,19 @@ async fn main() -> Result<()> {
                     Arg::new("status")
                         .long("status")
                         .help("Print all data associated with how far this taxon has progressed with genomic sequencing.\nThis includes sample collection, acquisition, progress in sequencing, and whether submitted to INSDC.")
+                )
+                .arg(
+                    Arg::new("expression")
+                        .short('e')
+                        .long("expression")
+                        .takes_value(true)
+                        .required(false)
+                        .help("Experimental expression parser.")
+                )
+                .arg(
+                    Arg::new("print-expression")
+                        .long("print-expression")
+                        .help("Print all variables in GoaT currently, with their associated variants.\nUseful for construction of expressions.")
                 ),
         )
         .subcommand(

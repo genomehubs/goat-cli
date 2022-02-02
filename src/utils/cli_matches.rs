@@ -51,6 +51,18 @@ pub fn process_cli_args(
     let include_estimates = matches.is_present("include-estimates");
     // status
     let status = matches.is_present("status");
+    // expression
+    let expression = match matches.value_of("expression") {
+        Some(s) => url::format_expression(s)?,
+        None => "".to_string(),
+    };
+    // print expression table
+    let print_expression = matches.is_present("print-expression");
+
+    if print_expression {
+        crate::utils::expression::print_variable_data();
+        std::process::exit(0);
+    }
 
     // merge the field flags
     let fields = url::FieldBuilder {
@@ -149,6 +161,7 @@ pub fn process_cli_args(
         size,
         ranks,
         fields,
+        &expression,
     );
 
     if print_url {
