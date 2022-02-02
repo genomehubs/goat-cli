@@ -156,6 +156,6 @@ pub fn switch_string_to_url_encoding(string: &str) -> &str {
     }
 }
 
-pub fn remove_whitespace(s: &mut String) {
-    s.retain(|c| !c.is_whitespace());
+pub fn remove_whitespace(s: &str) -> String {
+    s.chars().filter(|c| !c.is_whitespace()).collect()
 }

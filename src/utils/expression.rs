@@ -41,13 +41,13 @@ pub enum TypeOf<'a> {
 impl<'a> fmt::Display for TypeOf<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match &*self {
-            TypeOf::Long => write!(f, "!=, <, <=, =, ==, >, >=, contains"),
-            TypeOf::Short => write!(f, "!=, <, <=, =, ==, >, >=, contains"),
-            TypeOf::OneDP => write!(f, "!=, <, <=, =, ==, >, >=, contains"),
-            TypeOf::TwoDP => write!(f, "!=, <, <=, =, ==, >, >=, contains"),
-            TypeOf::Integer => write!(f, "!=, <, <=, =, ==, >, >=, contains"),
-            TypeOf::Date => write!(f, "!=, <, <=, =, ==, >, >=, contains"),
-            TypeOf::HalfFloat => write!(f, "!=, <, <=, =, ==, >, >=, contains"),
+            TypeOf::Long => write!(f, "!=, <, <=, =, ==, >, >="),
+            TypeOf::Short => write!(f, "!=, <, <=, =, ==, >, >="),
+            TypeOf::OneDP => write!(f, "!=, <, <=, =, ==, >, >="),
+            TypeOf::TwoDP => write!(f, "!=, <, <=, =, ==, >, >="),
+            TypeOf::Integer => write!(f, "!=, <, <=, =, ==, >, >="),
+            TypeOf::Date => write!(f, "!=, <, <=, =, ==, >, >="),
+            TypeOf::HalfFloat => write!(f, "!=, <, <=, =, ==, >, >="),
             TypeOf::Keyword(k) => write!(f, "== {}", k.join(", ")),
         }
     }
@@ -137,7 +137,7 @@ impl<'a> CLIexpression<'a> {
         }
     }
 
-    pub fn split(&self) -> Self {
+    fn split(&self) -> Self {
         let mut res_vec = Vec::new();
         // commands only accept AND? Rich!
         let re = Regex::new("AND").unwrap();
@@ -180,7 +180,8 @@ impl<'a> CLIexpression<'a> {
         let exp_vec_len = exp_vec.len();
         let mut expression = String::new();
         // regular expression splitter
-        let re = Regex::new(r"!=|<|<=|=|==|>|>=").unwrap();
+        // precedence here matters
+        let re = Regex::new(r"!=|<=|<|==|=|>=|>").unwrap();
         if !re.is_match(self.inner) {
             bail!(ExpressionParseError::NoOperatorError)
         }
@@ -221,7 +222,7 @@ impl<'a> CLIexpression<'a> {
                 };
             }
 
-            // check this vector is length 3
+            // check this vector is length 3 or 1
             ensure!(
                     curr_el_vec.len() == 3 || curr_el_vec.len() == 1,
                     "[-]\tSplit vector on single expression is invalid - length = {}. Are the input variables or operands correct?",
@@ -235,13 +236,12 @@ impl<'a> CLIexpression<'a> {
                     let value = curr_el_vec[2];
 
                     // now remove white space from variable and value
-                    let mut variable_string = variable.to_string();
-                    let mut value_string = value.to_string();
-                    remove_whitespace(&mut variable_string);
-                    remove_whitespace(&mut value_string);
+                    let variable_string = remove_whitespace(variable);
+                    let value_string = remove_whitespace(value);
 
                     if !var_vec_check.contains(&&variable_string[..]) {
                         // might be able to check max/min/length here.
+                        // e.g. max(gc_content) > 0.3
                         bail!(ExpressionParseError::SplitVectorError)
                     }
 
@@ -253,8 +253,8 @@ impl<'a> CLIexpression<'a> {
                     // if there are keywords, make sure they are a match
                     match keyword_enums {
                         TypeOf::Keyword(k) => {
-                            if !k.to_vec().contains(&value) {
-                                bail!(ExpressionParseError::InputVariableError)
+                            if !k.to_vec().contains(&&value_string[..]) {
+                                bail!(ExpressionParseError::KeywordEnumError)
                             }
                             // build expression
                             expression += "%20";
@@ -287,6 +287,7 @@ impl<'a> CLIexpression<'a> {
 
             index += 1;
         }
+        // remove trailing AND%20
         match expression.len() - 6 > 0 {
             true => {
                 expression.drain(expression.len() - 6..);
