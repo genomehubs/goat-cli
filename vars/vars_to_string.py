@@ -30,13 +30,22 @@ with open("vars.json", "r") as json_file:
             type_ = data["fields"][field]["type"]
             type_of = type_to_type_of(type_)
 
+            # more functions may be supported in the future
+            # but only min/max for now.
+            fun = "Function::None"
+            
+            functions = data["fields"][field]["summary"]
+            if type(functions) is list:
+                if all(el in functions for el in ['min', 'max']):
+                    fun = "Function::Some(vec![\"min\", \"max\"])"
+    
             # print format
             # "mitochondrion_assembly_span" => Variable {display_name: "mitochondrion span", type_of: TypeOf::Long}, 
             if type_ == "keyword":
                 enum_list = data["fields"][field]["constraint"]["enum"]
                 enum_list_str = "\", \"".join(enum_list)
-                print(f"\"{name}\" => Variable {{ display_name: \"{display_name}\", type_of: TypeOf::{type_of}(vec![\"{enum_list_str}\"]) }},")
+                print(f"\"{name}\" => Variable {{ display_name: \"{display_name}\", type_of: TypeOf::{type_of}(vec![\"{enum_list_str}\"]), functions: {fun} }},")
             else:
-                print(f"\"{name}\" => Variable {{ display_name: \"{display_name}\", type_of: TypeOf::{type_of} }},")
+                print(f"\"{name}\" => Variable {{ display_name: \"{display_name}\", type_of: TypeOf::{type_of}, functions: {fun} }},")
         except KeyError:
             pass

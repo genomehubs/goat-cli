@@ -53,48 +53,64 @@ impl<'a> fmt::Display for TypeOf<'a> {
     }
 }
 
+// kind of an option alias here.
+pub enum Function<'a> {
+    None,
+    Some(Vec<&'a str>),
+}
+
+impl<'a> fmt::Display for Function<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match &*self {
+            Function::None => write!(f, ""),
+            Function::Some(fun) => write!(f, "{}", fun.join(", ")),
+        }
+    }
+}
+
 #[derive(Tabled)]
 pub struct Variable<'a> {
     #[header("Display Name")]
     pub display_name: &'a str,
     #[header("Operators/Keywords")]
     pub type_of: TypeOf<'a>,
+    #[header("Function(s)")]
+    pub functions: Function<'a>,
 }
 
 lazy_static! {
     pub static ref GOAT_VARIABLE_DATA: BTreeMap<&'static str, Variable<'static>> = collection!(
-        "mitochondrion_assembly_span" => Variable { display_name: "mitochondrion span", type_of: TypeOf::Long },
-        "mitochondrion_gc_percent" => Variable { display_name: "mitochondrion GC%", type_of: TypeOf::TwoDP },
-        "plastid_assembly_span" => Variable { display_name: "plastid span", type_of: TypeOf::Long },
-        "plastid_gc_percent" => Variable { display_name: "plastid GC%", type_of: TypeOf::TwoDP },
-        "isb_wildlife_act_1976" => Variable { display_name: "Irish Statute Book Wildlife Act, 1976", type_of: TypeOf::Keyword(vec!["iwa-nsch3", "iwa-sch5"]) },
-        "marhabreg-2017" => Variable { display_name: "Conservation of Offshore Marine Habitats and Species Regulations 2017", type_of: TypeOf::Keyword(vec!["marhabreg-sch1"]) },
-        "habreg_2017" => Variable { display_name: "Conservation of Habitats and Species Regulations 2017", type_of: TypeOf::Keyword(vec!["habreg-sch2", "habreg-sch5"]) },
-        "waca_1981" => Variable { display_name: "Wildlife and Countryside Act 1981", type_of: TypeOf::Keyword(vec!["waca-sch1", "waca-sch5"]) },
-        "protection_of_badgers_act_1992" => Variable { display_name: "Protection of Badgers Act 1992", type_of: TypeOf::Keyword(vec!["badgers92"]) },
-        "country_list" => Variable { display_name: "Country list", type_of: TypeOf::Keyword(vec!["gb"]) },
-        "echabs92" => Variable { display_name: "EC Habitats Directive 1992", type_of: TypeOf::Keyword(vec!["echabs92_annex_iib", "echabs92_annex_ivb", "echabs92_annex_iva"]) },
-        "assembly_level" => Variable { display_name: "Assembly level", type_of: TypeOf::Keyword(vec!["complete genome", "chromosome", "scaffold", "contig"]) },
-        "assembly_span" => Variable { display_name: "Assembly span", type_of: TypeOf::Long },
-        "contig_n50" => Variable { display_name: "Contig N50", type_of: TypeOf::Long },
-        "assembly_date" => Variable { display_name: "Last updated", type_of: TypeOf::Date },
-        "scaffold_n50" => Variable { display_name: "Scaffold N50", type_of: TypeOf::Long },
-        "gene_count" => Variable { display_name: "Gene count", type_of: TypeOf::Integer },
-        "ebp_metric_date" => Variable { display_name: "EBP metric date", type_of: TypeOf::Date },
-        "chromosome_number" => Variable { display_name: "Chromosome number", type_of: TypeOf::Short },
-        "haploid_number" => Variable { display_name: "Haploid number", type_of: TypeOf::Short },
-        "genome_size" => Variable { display_name: "Genome size", type_of: TypeOf::Long },
-        "c_value" => Variable { display_name: "C value", type_of: TypeOf::HalfFloat },
-        "genome_size_kmer" => Variable { display_name: "Genome size kmer", type_of: TypeOf::Long },
-        "genome_size_draft" => Variable { display_name: "Genome size draft", type_of: TypeOf::Long },
-        "ploidy" => Variable { display_name: "Ploidy", type_of: TypeOf::Short },
-        "c_value_method" => Variable { display_name: "C value method", type_of: TypeOf::Keyword(vec!["biochemical analysis", "bulk fluorometric assay", "complete genome sequencing", "feulgen densitometry", "feulgen image analysis densitometry", "flow cytometry", "flow karyotyping", "fluorescence fading analysis", "gallocyanin chrom alum densitometry", "methyl green densitometry", "not specified", "static cell fluorometry", "ultraviolet microscopy", "unknown"]) },
-        "c_value_cell_type" => Variable { display_name: "C value cell type", type_of: TypeOf::Keyword(vec!["antennae", "antennal gland", "blood cells", "brain", "buccal epithelium", "coelomocytes", "corneal epithelium", "digestive gland", "dorsal fin clip", "egg", "embyro", "epidermis", "exopodite", "fibroblasts", "fin clips", "germarium", "gills", "haemocytes", "heart cells", "individual chromosomes", "intestine", "kidney cells", "legs", "leukocytes", "liver", "lung (culture)", "mantle", "midgut", "muscle cells", "ne", "not specified", "oocytes", "ovaries", "pancreas", "pharynx", "polypide cells in suspension", "red blood cells", "retinal cells", "salivary gland", "somatic cells", "sperm", "spleen", "tentacles", "testes", "thymus", "tissue culture", "various", "ventral hypodermal chord", "whole body", "whole body squash"]) },
-        "busco_completeness" => Variable { display_name: "BUSCO completeness", type_of: TypeOf::OneDP },
-        "gc_percent" => Variable { display_name: "GC percent", type_of: TypeOf::OneDP },
-        "n_percent" => Variable { display_name: "N percent", type_of: TypeOf::OneDP },
-        "nohit" => Variable { display_name: "No hit", type_of: TypeOf::OneDP },
-        "target" => Variable { display_name: "Target", type_of: TypeOf::OneDP },
+        "mitochondrion_assembly_span" => Variable { display_name: "mitochondrion span", type_of: TypeOf::Long, functions: Function::None },
+        "mitochondrion_gc_percent" => Variable { display_name: "mitochondrion GC%", type_of: TypeOf::TwoDP, functions: Function::None },
+        "plastid_assembly_span" => Variable { display_name: "plastid span", type_of: TypeOf::Long, functions: Function::None },
+        "plastid_gc_percent" => Variable { display_name: "plastid GC%", type_of: TypeOf::TwoDP, functions: Function::None },
+        "isb_wildlife_act_1976" => Variable { display_name: "Irish Statute Book Wildlife Act, 1976", type_of: TypeOf::Keyword(vec!["iwa-nsch3", "iwa-sch5"]), functions: Function::None },
+        "marhabreg-2017" => Variable { display_name: "Conservation of Offshore Marine Habitats and Species Regulations 2017", type_of: TypeOf::Keyword(vec!["marhabreg-sch1"]), functions: Function::None },
+        "habreg_2017" => Variable { display_name: "Conservation of Habitats and Species Regulations 2017", type_of: TypeOf::Keyword(vec!["habreg-sch2", "habreg-sch5"]), functions: Function::None },
+        "waca_1981" => Variable { display_name: "Wildlife and Countryside Act 1981", type_of: TypeOf::Keyword(vec!["waca-sch1", "waca-sch5"]), functions: Function::None },
+        "protection_of_badgers_act_1992" => Variable { display_name: "Protection of Badgers Act 1992", type_of: TypeOf::Keyword(vec!["badgers92"]), functions: Function::None },
+        "country_list" => Variable { display_name: "Country list", type_of: TypeOf::Keyword(vec!["gb"]), functions: Function::None },
+        "echabs92" => Variable { display_name: "EC Habitats Directive 1992", type_of: TypeOf::Keyword(vec!["echabs92_annex_iib", "echabs92_annex_ivb", "echabs92_annex_iva"]), functions: Function::None },
+        "assembly_level" => Variable { display_name: "Assembly level", type_of: TypeOf::Keyword(vec!["complete genome", "chromosome", "scaffold", "contig"]), functions: Function::None },
+        "assembly_span" => Variable { display_name: "Assembly span", type_of: TypeOf::Long, functions: Function::Some(vec!["min", "max"]) },
+        "contig_n50" => Variable { display_name: "Contig N50", type_of: TypeOf::Long, functions: Function::Some(vec!["min", "max"]) },
+        "assembly_date" => Variable { display_name: "Last updated", type_of: TypeOf::Date, functions: Function::Some(vec!["min", "max"]) },
+        "scaffold_n50" => Variable { display_name: "Scaffold N50", type_of: TypeOf::Long, functions: Function::Some(vec!["min", "max"]) },
+        "gene_count" => Variable { display_name: "Gene count", type_of: TypeOf::Integer, functions: Function::Some(vec!["min", "max"]) },
+        "ebp_metric_date" => Variable { display_name: "EBP metric date", type_of: TypeOf::Date, functions: Function::Some(vec!["min", "max"]) },
+        "chromosome_number" => Variable { display_name: "Chromosome number", type_of: TypeOf::Short, functions: Function::Some(vec!["min", "max"]) },
+        "haploid_number" => Variable { display_name: "Haploid number", type_of: TypeOf::Short, functions: Function::Some(vec!["min", "max"]) },
+        "genome_size" => Variable { display_name: "Genome size", type_of: TypeOf::Long, functions: Function::Some(vec!["min", "max"]) },
+        "c_value" => Variable { display_name: "C value", type_of: TypeOf::HalfFloat, functions: Function::Some(vec!["min", "max"]) },
+        "genome_size_kmer" => Variable { display_name: "Genome size kmer", type_of: TypeOf::Long, functions: Function::Some(vec!["min", "max"]) },
+        "genome_size_draft" => Variable { display_name: "Genome size draft", type_of: TypeOf::Long, functions: Function::Some(vec!["min", "max"]) },
+        "ploidy" => Variable { display_name: "Ploidy", type_of: TypeOf::Short, functions: Function::Some(vec!["min", "max"]) },
+        "c_value_method" => Variable { display_name: "C value method", type_of: TypeOf::Keyword(vec!["biochemical analysis", "bulk fluorometric assay", "complete genome sequencing", "feulgen densitometry", "feulgen image analysis densitometry", "flow cytometry", "flow karyotyping", "fluorescence fading analysis", "gallocyanin chrom alum densitometry", "methyl green densitometry", "not specified", "static cell fluorometry", "ultraviolet microscopy", "unknown"]), functions: Function::None },
+        "c_value_cell_type" => Variable { display_name: "C value cell type", type_of: TypeOf::Keyword(vec!["antennae", "antennal gland", "blood cells", "brain", "buccal epithelium", "coelomocytes", "corneal epithelium", "digestive gland", "dorsal fin clip", "egg", "embyro", "epidermis", "exopodite", "fibroblasts", "fin clips", "germarium", "gills", "haemocytes", "heart cells", "individual chromosomes", "intestine", "kidney cells", "legs", "leukocytes", "liver", "lung (culture)", "mantle", "midgut", "muscle cells", "ne", "not specified", "oocytes", "ovaries", "pancreas", "pharynx", "polypide cells in suspension", "red blood cells", "retinal cells", "salivary gland", "somatic cells", "sperm", "spleen", "tentacles", "testes", "thymus", "tissue culture", "various", "ventral hypodermal chord", "whole body", "whole body squash"]), functions: Function::None },
+        "busco_completeness" => Variable { display_name: "BUSCO completeness", type_of: TypeOf::OneDP, functions: Function::None },
+        "gc_percent" => Variable { display_name: "GC percent", type_of: TypeOf::OneDP, functions: Function::None },
+        "nohit" => Variable { display_name: "No hit", type_of: TypeOf::OneDP, functions: Function::None },
+        "target" => Variable { display_name: "Target", type_of: TypeOf::OneDP, functions: Function::None },
     );
 }
 
@@ -193,6 +209,24 @@ impl<'a> CLIexpression<'a> {
             .iter()
             .map(|(e, _)| *e)
             .collect::<Vec<&str>>();
+        // we can also create another vector of variables
+        // with the appropriate max/min attached.
+        // TODO: this seems like a crazy way of doing this - any better ideas?
+        let var_vec_min_max_check = {
+            let mut collector = Vec::new();
+            for (goat_var, el) in &*GOAT_VARIABLE_DATA {
+                match &el.functions {
+                    Function::None => (),
+                    Function::Some(f) => {
+                        for pos in f {
+                            let format_pos = format!("{}({})", pos, goat_var);
+                            collector.push(format_pos);
+                        }
+                    }
+                }
+            }
+            collector
+        };
 
         // loop over the expression vector
         // splitting into further vectors
@@ -236,13 +270,33 @@ impl<'a> CLIexpression<'a> {
                     // let operator = curr_el_vec[1];
                     let value = curr_el_vec[2].trim();
 
-                    if !var_vec_check.contains(&variable) {
+                    if !var_vec_check.contains(&variable)
+                        && !var_vec_min_max_check.contains(&variable.to_string())
+                    {
                         // might be able to check max/min/length here.
                         // e.g. max(gc_content) > 0.3
                         bail!(ExpressionParseError::SplitVectorError)
                     }
 
-                    let keyword_enums = &GOAT_VARIABLE_DATA.get(variable).unwrap().type_of;
+                    // this panicks with min/max.
+                    // if min/max present, extract within the parentheses.
+                    let keyword_enums = match var_vec_min_max_check.contains(&variable.to_string())
+                    {
+                        true => {
+                            // this means we have min/max
+                            let re = Regex::new(r"\((.*?)\)").unwrap();
+                            // we guarantee getting here with a variable, so unwrap is fine
+                            // the second unwrap is always guaranteed too?
+                            let extract_var =
+                                re.captures(variable).unwrap().get(1).unwrap().as_str();
+                            &GOAT_VARIABLE_DATA.get(extract_var).unwrap().type_of
+                        }
+                        false => &GOAT_VARIABLE_DATA.get(variable).unwrap().type_of,
+                    };
+
+                    // if there are parentheses - i.e. in min()/max() functions
+                    let url_encoded_variable = variable.replace("(", "%28");
+                    let url_encoded_variable = url_encoded_variable.replace(")", "%29");
 
                     // if there are keywords, make sure they are a match
                     match keyword_enums {
@@ -253,7 +307,7 @@ impl<'a> CLIexpression<'a> {
                             }
                             // build expression
                             expression += "%20";
-                            expression += variable;
+                            expression += &url_encoded_variable;
                             // do operators need to be translated?
                             expression += operator;
                             expression += value;
@@ -265,7 +319,7 @@ impl<'a> CLIexpression<'a> {
                         _ => {
                             // build expression
                             expression += "%20";
-                            expression += variable;
+                            expression += &url_encoded_variable;
                             // do operators need to be translated?
                             expression += operator;
                             expression += value;
