@@ -1,6 +1,6 @@
 # GoaT variables
 
-This is mainly a developer note.
+This is mainly a developer note. Run `bash get_vars.bash` to retrieve latest GoaT variables.
 
 As variables are being continually added to GoaT, they need to be updated. The CLI has to add these in manually, as they will need additional CLI flags when the time comes. The expression option in the CLI however needs a database to compare against, to prevent against no-hits from the GoaT API.
 

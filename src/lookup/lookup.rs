@@ -1,3 +1,4 @@
+use crate::utils::cli_matches::UPPER_CLI_FILE_LIMIT;
 use crate::utils::url::{GOAT_URL, TAXONOMY};
 use crate::utils::utils::{
     lines_from_file, parse_multiple_taxids, some_kind_of_uppercase_first_letter,
@@ -58,8 +59,11 @@ impl Lookups {
                 Some(s) => {
                     tax_name_vector = lines_from_file(s)?;
                     // check length of vector and bail if > 1000
-                    if tax_name_vector.len() > 10000 {
-                        bail!("[-]\tNumber of taxa specified cannot exceed 10000.")
+                    if tax_name_vector.len() > *UPPER_CLI_FILE_LIMIT {
+                        bail!(
+                            "[-]\tNumber of taxa specified cannot exceed {}.",
+                            *UPPER_CLI_FILE_LIMIT
+                        )
                     }
                 }
                 None => bail!("[-]\tOne of -f (--file) or -t (--tax-id) should be specified."),

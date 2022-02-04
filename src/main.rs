@@ -147,7 +147,6 @@ async fn main() -> Result<()> {
                 )
                 .arg(
                     Arg::new("target-lists")
-                        .short('t')
                         .long("target-lists")
                         .help("Print target list data associated with each taxon.")
                 )
