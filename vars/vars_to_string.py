@@ -24,28 +24,38 @@ def type_to_type_of(string):
 with open("vars.json", "r") as json_file:
     data = json.load(json_file)
     for field in data["fields"]:
-        try:
-            display_name = data["fields"][field]["display_name"]
+        # try:
             name = data["fields"][field]["name"]
+            # print(name)
+            try:
+                display_name = data["fields"][field]["display_name"]
+            except KeyError:
+                display_name = name
+            # print(display_name)
             type_ = data["fields"][field]["type"]
             type_of = type_to_type_of(type_)
 
             # more functions may be supported in the future
             # but only min/max for now.
             fun = "Function::None"
+            try:
+                functions = data["fields"][field]["summary"]
+                if type(functions) is list:
+                    if all(el in functions for el in ['min', 'max']):
+                        fun = "Function::Some(vec![\"min\", \"max\"])"
+            except KeyError:
+                fun = "Function::None"
             
-            functions = data["fields"][field]["summary"]
-            if type(functions) is list:
-                if all(el in functions for el in ['min', 'max']):
-                    fun = "Function::Some(vec![\"min\", \"max\"])"
-    
             # print format
             # "mitochondrion_assembly_span" => Variable {display_name: "mitochondrion span", type_of: TypeOf::Long}, 
             if type_ == "keyword":
-                enum_list = data["fields"][field]["constraint"]["enum"]
+                try:
+                    enum_list = data["fields"][field]["constraint"]["enum"]
+                except KeyError:
+                    enum_list = []
                 enum_list_str = "\", \"".join(enum_list)
                 print(f"\"{name}\" => Variable {{ display_name: \"{display_name}\", type_of: TypeOf::{type_of}(vec![\"{enum_list_str}\"]), functions: {fun} }},")
             else:
                 print(f"\"{name}\" => Variable {{ display_name: \"{display_name}\", type_of: TypeOf::{type_of}, functions: {fun} }},")
-        except KeyError:
-            pass
+        # except KeyError:
+            # pass
