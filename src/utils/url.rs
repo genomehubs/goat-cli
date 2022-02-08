@@ -1,3 +1,4 @@
+use crate::utils::variables::Variables;
 use anyhow::Result;
 use lazy_static::lazy_static;
 
@@ -312,14 +313,20 @@ pub fn make_goat_urls(
     size: &str,
     ranks: &str,
     fields: FieldBuilder,
+    variables: Option<&str>,
     expression: &str,
-) -> Vec<String> {
+) -> Result<Vec<String>> {
     let mut res = Vec::new();
 
     // make the rank string
     let rank_string = format_rank(ranks);
     // make the fields string
-    let fields_string = fields.build_fields_string();
+    // either from hand coded variables by the user
+    // or from flag switches
+    let fields_string = match variables {
+        Some(v) => Variables::new(v).parse()?,
+        None => fields.build_fields_string(),
+    };
     let names = format_names(fields.names);
 
     let tidy_data: &str;
@@ -340,5 +347,5 @@ pub fn make_goat_urls(
     );
         res.push(url);
     }
-    res
+    Ok(res)
 }

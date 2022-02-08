@@ -132,7 +132,7 @@ pub fn print_variable_data() {
             "Variable names in GoaT, with functional operator annotation.",
         ))
         // wrap the text!
-        .with(Modify::new(Row(1..)).with(MaxWidth::wrapping(40)))
+        .with(Modify::new(Row(1..)).with(MaxWidth::wrapping(30)))
         .to_string();
 
     println!("{}", table_string);

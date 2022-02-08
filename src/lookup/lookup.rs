@@ -1,7 +1,7 @@
 use crate::utils::cli_matches::UPPER_CLI_FILE_LIMIT;
 use crate::utils::url::{GOAT_URL, TAXONOMY};
 use crate::utils::utils::{
-    lines_from_file, parse_multiple_taxids, some_kind_of_uppercase_first_letter,
+    lines_from_file, parse_comma_separated, some_kind_of_uppercase_first_letter,
 };
 
 use anyhow::{bail, Result};
@@ -54,7 +54,7 @@ impl Lookups {
 
         let tax_name_vector: Vec<String>;
         match tax_name_op {
-            Some(s) => tax_name_vector = parse_multiple_taxids(s),
+            Some(s) => tax_name_vector = parse_comma_separated(s),
             None => match filename_op {
                 Some(s) => {
                     tax_name_vector = lines_from_file(s)?;

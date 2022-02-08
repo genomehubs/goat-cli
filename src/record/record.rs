@@ -28,7 +28,7 @@ impl Record {
 
         // turn tax_name_op into a vector of taxon names
         let search = match search_op {
-            Some(s) => utils::parse_multiple_taxids(s),
+            Some(s) => utils::parse_comma_separated(s),
             None => bail!("There was no taxon input."),
         };
 

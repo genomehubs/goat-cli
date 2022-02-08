@@ -58,6 +58,7 @@ pub fn process_cli_args(
     };
     // print expression table
     let print_expression = matches.is_present("print-expression");
+    let variable_string = matches.value_of("variables");
 
     if print_expression {
         crate::utils::expression::print_variable_data();
@@ -131,7 +132,7 @@ pub fn process_cli_args(
     let url_vector: Vec<String>;
     // if -t use this
     match tax_name_op {
-        Some(s) => url_vector = utils::parse_multiple_taxids(s),
+        Some(s) => url_vector = utils::parse_comma_separated(s),
         None => match filename_op {
             Some(s) => {
                 url_vector = utils::lines_from_file(s)?;
@@ -161,8 +162,9 @@ pub fn process_cli_args(
         size,
         ranks,
         fields,
+        variable_string,
         &expression,
-    );
+    )?;
 
     if print_url {
         for (index, url) in url_vector_api.iter().enumerate() {

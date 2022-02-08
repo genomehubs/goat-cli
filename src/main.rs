@@ -4,7 +4,7 @@ use futures::try_join;
 use tokio;
 
 use goat::count::count;
-use goat::lookup::lookup::lookup;
+use goat::lookup::lookup;
 use goat::progress::progress;
 use goat::record::newick;
 use goat::search::run;
@@ -29,7 +29,7 @@ async fn main() -> Result<()> {
                         .short('t')
                         .long("taxon")
                         .takes_value(true)
-                        .required_unless_present_any(["file", "print-expression"])
+                        .required_unless_present_any(["file", "print-expression", "variables"])
                         .help("The taxon to search. An NCBI taxon ID, or the name of a taxon at any rank."),
                 )
                 .arg(
@@ -37,7 +37,7 @@ async fn main() -> Result<()> {
                         .short('f')
                         .long("file")
                         .takes_value(true)
-                        .required_unless_present_any(["taxon", "print-expression"])
+                        .required_unless_present_any(["taxon", "print-expression", "variables"])
                         .help(&format!("A file of NCBI taxonomy ID's (tips) and/or binomial names.\nEach line should contain a single entry.\nFile size is limited to {} entries.", pretty_print_usize(*UPPER_CLI_FILE_LIMIT))[..]),
                 )
                 .arg(
@@ -211,6 +211,14 @@ async fn main() -> Result<()> {
                     Arg::new("print-expression")
                         .long("print-expression")
                         .help("Print all variables in GoaT currently, with their associated variants.\nUseful for construction of expressions.")
+                )
+                .arg(
+                    Arg::new("variables")
+                        .short('v')
+                        .long("variables")
+                        .takes_value(true)
+                        .required_unless_present_any(["file", "print-expression", "taxon"])
+                        .help("Variable parser. Input a comma separated string of variables.")
                 ),
         )
         // copy of the above.
@@ -222,7 +230,7 @@ async fn main() -> Result<()> {
                         .short('t')
                         .long("taxon")
                         .takes_value(true)
-                        .required_unless_present_any(["file", "print-expression"])
+                        .required_unless_present_any(["file", "print-expression", "variables"])
                         .help("The taxon to search. An NCBI taxon ID, or the name of a taxon at any rank."),
                 )
                 .arg(
@@ -230,7 +238,7 @@ async fn main() -> Result<()> {
                         .short('f')
                         .long("file")
                         .takes_value(true)
-                        .required_unless_present_any(["taxon", "print-expression"])
+                        .required_unless_present_any(["taxon", "print-expression", "variables"])
                         .help(&format!("A file of NCBI taxonomy ID's (tips) and/or binomial names.\nEach line should contain a single entry.\nFile size is limited to {} entries.", pretty_print_usize(*UPPER_CLI_FILE_LIMIT))[..]),
                 )
                 .arg(
@@ -404,7 +412,15 @@ async fn main() -> Result<()> {
                     Arg::new("print-expression")
                         .long("print-expression")
                         .help("Print all variables in GoaT currently, with their associated variants.\nUseful for construction of expressions.")
-                ),
+                )
+                .arg(
+                    Arg::new("variables")
+                        .short('v')
+                        .long("variables")
+                        .takes_value(true)
+                        .required_unless_present_any(["file", "print-expression", "taxon"])
+                        .help("Variable parser. Input a comma separated string of variables.")
+                ),        
         )
         .subcommand(
             App::new("lookup")
@@ -470,7 +486,7 @@ async fn main() -> Result<()> {
             count::count(&matches, true, false).await?;
         }
         Some(("lookup", matches)) => {
-            lookup(&matches, true).await?;
+            lookup::lookup(&matches, true).await?;
         }
         Some(("newick", matches)) => {
             try_join!(

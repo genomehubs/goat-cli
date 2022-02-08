@@ -1,11 +1,10 @@
+// TODO: I think these errors could be better.
 use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum NotYetImplemented {
     #[error("[-]\tThis feature is not yet implemented :(")]
     NotYetImplemented,
-    #[error(
-        "[-]\tPlease use `goat search` or `goat count`. Other subcommands are not implemented yet."
-    )]
+    #[error("[-]\tgoat requires a subcommand. Run `goat help` to see more.")]
     CLIError,
 }
 

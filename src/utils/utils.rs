@@ -20,7 +20,7 @@ pub fn lines_from_file(filename: impl AsRef<Path>) -> Result<Vec<String>> {
 // taxids should be comma separated
 // remove whitespace from beginning and end of each element of the vec.
 // TODO: check structure of each element in vec.
-pub fn parse_multiple_taxids(taxids: &str) -> Vec<String> {
+pub fn parse_comma_separated(taxids: &str) -> Vec<String> {
     let res: Vec<&str> = taxids.split(",").map(|s| s).collect();
 
     let mut res2 = Vec::new();
