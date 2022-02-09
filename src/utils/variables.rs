@@ -2,7 +2,7 @@
 // more fine grained control over which fields are
 // returned
 
-use crate::utils::expression::GOAT_VARIABLE_DATA;
+use crate::utils::variable_data::GOAT_VARIABLE_DATA;
 use crate::utils::utils::parse_comma_separated;
 use anyhow::{ensure, Result};
 

@@ -1,3 +1,25 @@
+use crate::utils::expression::{Function, TypeOf, Variable};
+use lazy_static::lazy_static;
+use std::collections::BTreeMap;
+
+// https://stackoverflow.com/questions/27582739/how-do-i-create-a-hashmap-literal
+
+macro_rules! collection {
+    // map-like
+    ($($k:expr => $v:expr),* $(,)?) => {{
+        use std::iter::{Iterator, IntoIterator};
+        Iterator::collect(IntoIterator::into_iter([$(($k, $v),)*]))
+    }};
+    // set-like
+    ($($v:expr),* $(,)?) => {{
+        use std::iter::{Iterator, IntoIterator};
+        Iterator::collect(IntoIterator::into_iter([$($v,)*]))
+    }};
+}
+
+lazy_static! {
+    pub static ref GOAT_VARIABLE_DATA: BTreeMap<&'static str, Variable<'static>> = collection!(
+        // automated input start
 		"mitochondrion_assembly_span" => Variable { display_name: "mitochondrion span", type_of: TypeOf::Long, functions: Function::None },
 		"mitochondrion_gc_percent" => Variable { display_name: "mitochondrion GC%", type_of: TypeOf::TwoDP, functions: Function::None },
 		"plastid_assembly_span" => Variable { display_name: "plastid span", type_of: TypeOf::Long, functions: Function::None },
@@ -46,3 +68,6 @@
 		"n_percent" => Variable { display_name: "N percent", type_of: TypeOf::OneDP, functions: Function::None },
 		"nohit" => Variable { display_name: "No hit", type_of: TypeOf::OneDP, functions: Function::None },
 		"target" => Variable { display_name: "Target", type_of: TypeOf::OneDP, functions: Function::None },
+        // automated input end
+    );
+}
