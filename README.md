@@ -1,3 +1,5 @@
+[![GitHub Downloads](https://img.shields.io/github/downloads/genomehubs/goat-cli/total.svg?style=social&logo=github&label=Download)](https://github.com/genomehubs/goat-cli/releases/)
+
 # GoaT CLI
 
 A command line interface for GoaT (Genomes on a Tree). GoaT presents metadata for taxa across the tree of life. 
