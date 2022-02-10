@@ -10,11 +10,6 @@ macro_rules! collection {
         use std::iter::{Iterator, IntoIterator};
         Iterator::collect(IntoIterator::into_iter([$(($k, $v),)*]))
     }};
-    // set-like
-    ($($v:expr),* $(,)?) => {{
-        use std::iter::{Iterator, IntoIterator};
-        Iterator::collect(IntoIterator::into_iter([$($v,)*]))
-    }};
 }
 
 lazy_static! {

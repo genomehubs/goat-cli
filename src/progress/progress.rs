@@ -10,6 +10,7 @@ use std::time::Duration;
 use crate::count::count;
 use crate::utils::cli_matches;
 use crate::utils::cli_matches::UPPER_CLI_SIZE_LIMIT;
+use crate::utils::url::GOAT_URL;
 
 // a function to create and display a progress bar
 // for large requests. Currently limited to single large requests.
@@ -42,10 +43,7 @@ pub async fn progress_bar(matches: &clap::ArgMatches, api: &str) -> Result<()> {
     // add the query ID's to a vec
     let mut query_id_vec = Vec::new();
     for el in 0..concurrent_requests {
-        let query_id = format!(
-            "https://goat.genomehubs.org/api/v0.0.1/progress?queryId=goat_cli_{}",
-            el
-        );
+        let query_id = format!("{}progress?queryId=goat_cli_{}", *GOAT_URL, el);
         query_id_vec.push(query_id);
     }
 

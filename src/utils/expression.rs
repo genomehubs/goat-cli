@@ -253,19 +253,43 @@ impl<'a> CLIexpression<'a> {
                     // if there are keywords, make sure they are a match
                     match keyword_enums {
                         TypeOf::Keyword(k) => {
-                            if !k.to_vec().contains(&value) {
-                                // commas for or statements to be done here.
-                                // also ! <- for not
+                            // split on commas here
+                            // and trim
+                            let value_split_commas = value
+                                .split(",")
+                                .map(|e| {
+                                    let trimmed = e.trim();
+                                    let remove_bools = trimmed.replace("!", "");
+                                    remove_bools
+                                })
+                                .collect::<Vec<String>>();
+
+                            if !value_split_commas.iter().all(|e| k.contains(&&e[..])) {
                                 // BUG: if there are parentheses in the enum variant
+                                // but I think GoaT central can fix this.
                                 // then the URL encoding fails.
                                 bail!(ExpressionParseError::KeywordEnumError)
                             }
+                            // now modify value_split_commas to parse parentheses
+                            let parsed_value_split_commas = value
+                                .split(",")
+                                .map(|e| {
+                                    // trim again but keep bool flags
+                                    let f = e.trim();
+                                    // janky but will do for now.
+                                    let f = f.replace("(", "%28");
+                                    let f = f.replace(")", "%29");
+                                    let f = f.replace(" ", "%20");
+                                    let f = f.replace("!", "%21");
+                                    f
+                                })
+                                .collect::<Vec<String>>();
                             // build expression
                             expression += "%20";
                             expression += &url_encoded_variable;
                             // do operators need to be translated?
                             expression += operator;
-                            expression += value;
+                            expression += &parsed_value_split_commas.join("%2C");
                             expression += "%20";
                             // end of sub expression
                             // assume there is another expression to follow
