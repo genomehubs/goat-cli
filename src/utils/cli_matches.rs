@@ -132,7 +132,13 @@ pub fn process_cli_args(
     let url_vector: Vec<String>;
     // if -t use this
     match tax_name_op {
-        Some(s) => url_vector = utils::parse_comma_separated(s),
+        Some(s) => {
+            // catch empty string hanging here.
+            if s == "" {
+                bail!("[-]\tEmpty string found, please specify a taxon.")
+            }
+            url_vector = utils::parse_comma_separated(s)
+        }
         None => match filename_op {
             Some(s) => {
                 url_vector = utils::lines_from_file(s)?;
