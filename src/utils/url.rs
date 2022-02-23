@@ -65,6 +65,7 @@ pub struct FieldBuilder {
     pub country_list: bool,
     pub cvalues: bool,
     pub date: bool,
+    pub gc_percent: bool,
     pub gene_count: bool,
     pub gs: bool,
     pub karyotype: bool,
@@ -82,7 +83,7 @@ pub struct FieldBuilder {
 
 impl FieldBuilder {
     // private fn used below in build_fields_string
-    fn as_array(&self) -> [bool; 20] {
+    fn as_array(&self) -> [bool; 21] {
         [
             self.all,
             self.assembly,
@@ -91,6 +92,7 @@ impl FieldBuilder {
             self.country_list,
             self.cvalues,
             self.date,
+            self.gc_percent,
             self.gene_count,
             self.gs,
             self.karyotype,
@@ -116,6 +118,7 @@ impl FieldBuilder {
         let busco_completeness_field = "busco_completeness";
         let chromosome_number_field = "chromosome_number";
         let haploid_number_field = "haploid_number";
+        let gc_percent_field = "gc_percent";
         // we also have genome size kmer & draft
         let genome_size_field = "genome_size";
         // c value method & cell type
@@ -176,6 +179,11 @@ impl FieldBuilder {
         // busco stats
         if self.busco || self.all {
             field_string += busco_completeness_field;
+            field_string += delimiter;
+        }
+        // gc_percent
+        if self.gc_percent || self.all {
+            field_string += gc_percent_field;
             field_string += delimiter;
         }
         // default karyotype stats

@@ -23,6 +23,7 @@ pub fn process_cli_args(
     let print_url = matches.is_present("url");
     let tax_tree_bool = matches.is_present("descendents");
     let busco = matches.is_present("busco");
+    let gc_percent = matches.is_present("gc-percent");
     // non-default fields.
     let mitochondrion = matches.is_present("mitochondria");
     let plastid = matches.is_present("plastid");
@@ -79,6 +80,7 @@ pub fn process_cli_args(
         country_list,
         cvalues,
         date,
+        gc_percent,
         gene_count,
         gs,
         karyotype,
