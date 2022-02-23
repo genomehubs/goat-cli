@@ -1,13 +1,13 @@
 [package]
 name = "goat"
-version = "0.1.4"
+version = "0.1.5"
 authors = ["Max Brown <mb39@sanger.ac.uk>"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = { version = "3.0.10", features = ["derive"] }
+clap = { version = "3.1.1", features = ["cargo"] }
 reqwest = "0.11.5"
 tokio = { version = "1.12.0", features = ["full"] }
 lazy_static = "1.4.0"
@@ -19,4 +19,4 @@ again = "0.1"
 async-std = "1.10.0"
 indicatif = "0.16.2"
 regex = "1.5.4"
-tabled = "0.4.2"
+tabled = "0.5.0"

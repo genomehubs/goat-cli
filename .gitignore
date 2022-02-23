@@ -5,3 +5,4 @@ test.tsv
 # /src/search/raw_values_update.rs
 /old_code
 /unix_bin
+/taxdump

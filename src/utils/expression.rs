@@ -4,12 +4,14 @@
 // TODO: ADD TAX_RANKS?
 
 use crate::error::error::ExpressionParseError;
+use crate::utils::tax_ranks::TaxRanks;
 use crate::utils::utils::switch_string_to_url_encoding;
 use crate::utils::variable_data::GOAT_VARIABLE_DATA;
+
 use anyhow::{bail, ensure, Result};
 use regex::{CaptureMatches, Captures, Regex};
 use std::fmt;
-use tabled::{Header, MaxWidth, Modify, Row, Table, Tabled};
+use tabled::{Footer, Header, MaxWidth, Modify, Row, Table, Tabled};
 
 #[derive(Tabled)]
 pub enum TypeOf<'a> {
@@ -78,13 +80,18 @@ pub fn print_variable_data() {
         .iter()
         .map(|(e, f)| (ColHeader(e), f))
         .collect::<Vec<(ColHeader, &Variable)>>();
+    // add taxon ranks at end...
+    let footer_data = TaxRanks::init();
 
     let table_string = Table::new(table_data)
         .with(Header(
             "Variable names in GoaT, with functional operator annotation.",
         ))
         // wrap the text!
-        .with(Modify::new(Row(1..)).with(MaxWidth::wrapping(30)))
+        .with(Footer(format!("NCBI taxon ranks:\n\n{}", footer_data)))
+        .with(Modify::new(Row(1..table_data.len() - 1)).with(MaxWidth::wrapping(30).keep_words()))
+        // 4 rows
+        .with(Modify::new(Row(table_data.len()..)).with(MaxWidth::wrapping(30 * 4).keep_words()))
         .to_string();
 
     println!("{}", table_string);
@@ -218,7 +225,7 @@ impl<'a> CLIexpression<'a> {
                 3 => {
                     // trim strings
                     let variable = curr_el_vec[0].trim();
-                    let operator = switch_string_to_url_encoding(curr_el_vec[1]).trim();
+                    let operator = switch_string_to_url_encoding(curr_el_vec[1])?.trim();
                     // let operator = curr_el_vec[1];
                     let value = curr_el_vec[2].trim();
 
@@ -230,7 +237,7 @@ impl<'a> CLIexpression<'a> {
                         bail!(ExpressionParseError::SplitVectorError)
                     }
 
-                    // this panicks with min/max.
+                    // this panics with min/max.
                     // if min/max present, extract within the parentheses.
                     let keyword_enums = match var_vec_min_max_check.contains(&variable.to_string())
                     {

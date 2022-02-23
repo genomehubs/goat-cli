@@ -4,17 +4,26 @@ use std::{
     path::Path,
 };
 
-use crate::error::error::FileError;
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 
 // read taxids or binomials from file.
 pub fn lines_from_file(filename: impl AsRef<Path>) -> Result<Vec<String>> {
-    let file = File::open(filename).map_err(|_| FileError::FileOpenError)?;
+    let file = File::open(&filename)
+        .with_context(|| format!("Could not open {:?}", filename.as_ref().as_os_str()))?;
     let buf = BufReader::new(file);
-    Ok(buf
+    let buf_res: Result<Vec<String>> = buf
         .lines()
-        .map(|l| l.map_err(|_| FileError::FileOpenError).unwrap())
-        .collect())
+        .map(|l| {
+            let x = l.with_context(|| {
+                format!(
+                    "Error in mapping buf_lines from {:?}",
+                    filename.as_ref().as_os_str()
+                )
+            });
+            x
+        })
+        .collect();
+    Ok(buf_res?)
 }
 
 // taxids should be comma separated
@@ -85,8 +94,8 @@ pub fn format_tsv_output(awaited_fetches: Vec<Result<String, anyhow::Error>>) ->
 
     // mainly a guard - but Rich I think fixed this so shouldn't need to be done.
     let header = headers.iter().fold(headers[0], |acc, &item| {
-        let acc = acc.unwrap();
-        let item = item.unwrap();
+        let acc = acc?;
+        let item = item?;
         if item.len() > acc.len() {
             Some(item)
         } else {
@@ -139,8 +148,8 @@ pub fn pretty_print_usize(i: usize) -> String {
 }
 
 // not sure this needs to be done... Rich?
-pub fn switch_string_to_url_encoding(string: &str) -> &str {
-    match string {
+pub fn switch_string_to_url_encoding(string: &str) -> Result<&str> {
+    let res = match string {
         // "!=" => "%21%3D",
         "!=" => "!%3D",
         // "<" => "%3C",
@@ -153,6 +162,7 @@ pub fn switch_string_to_url_encoding(string: &str) -> &str {
         ">" => ">",
         // ">=" => "%3E%3D",
         ">=" => ">%3D",
-        _ => panic!("Should not reach here."),
-    }
+        _ => bail!("Should not reach here."),
+    };
+    Ok(res)
 }

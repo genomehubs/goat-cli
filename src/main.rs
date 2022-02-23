@@ -1,5 +1,8 @@
-use anyhow::{bail, Result};
-use clap::{App, AppSettings, Arg};
+// Max Brown
+// Wellcome Sanger Institute: 2022
+
+use anyhow::Result;
+use clap::{crate_version, Arg, Command};
 use futures::try_join;
 use tokio;
 
@@ -15,15 +18,15 @@ use goat::utils::{
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let matches = App::new("goat")
-        .version("0.1.4")
-        .global_setting(AppSettings::PropagateVersion)
-        .global_setting(AppSettings::UseLongFormatForHelpSubcommand)
+    let matches = Command::new("goat")
+        .version(crate_version!())
+        .propagate_version(true)
+        .arg_required_else_help(true)
         .author("Max Brown <mb39@sanger.ac.uk>")
-        .about("GoaTs on a terminal. Combine flags to query metadata for any species.")
+        .about("Genomes on a Tree. Query metadata across the tree of life.")
         .subcommand(
-            App::new("search")
-                .about("Query the GoaT search API.")
+            Command::new("search")
+                .about("Query metadata for any taxon across the tree of life.")
                 .arg(
                     Arg::new("taxon")
                         .short('t')
@@ -219,12 +222,19 @@ async fn main() -> Result<()> {
                         .takes_value(true)
                         .required_unless_present_any(["file", "print-expression", "taxon"])
                         .help("Variable parser. Input a comma separated string of variables.")
+                )
+                .arg(
+                    Arg::new("tax-rank")
+                        .long("tax-rank")
+                        .takes_value(true)
+                        .required(false)
+                        .help("The taxonomic rank to return the results at.")
                 ),
         )
         // copy of the above.
         .subcommand(
-            App::new("count")
-                .about("Query the GoaT count API. Return the number of hits from any search.")
+            Command::new("count")
+                .about("Return the number of hits from any \"goat search\" query.")
                 .arg(
                     Arg::new("taxon")
                         .short('t')
@@ -420,11 +430,18 @@ async fn main() -> Result<()> {
                         .takes_value(true)
                         .required_unless_present_any(["file", "print-expression", "taxon"])
                         .help("Variable parser. Input a comma separated string of variables.")
-                ),        
+                )
+                .arg(
+                    Arg::new("tax-rank")
+                        .long("tax-rank")
+                        .takes_value(true)
+                        .required(false)
+                        .help("The taxonomic rank to return the results at.")
+                ),
         )
         .subcommand(
-            App::new("lookup")
-                .about("Query the GoaT lookup API.")
+            Command::new("lookup")
+                .about("Return information relating to a taxon name, e.g. synonyms, authorities.")
                 .arg(
                     Arg::new("taxon")
                         .short('t')
@@ -448,8 +465,8 @@ async fn main() -> Result<()> {
                 )
         )
         .subcommand(
-            App::new("newick")
-                .about("Query the GoaT record API, and return a newick.")
+            Command::new("newick")
+                .about("Generate a newick tree from input taxa.")
                 .arg(
                     Arg::new("taxon")
                         .short('t')
@@ -495,7 +512,7 @@ async fn main() -> Result<()> {
             )?;
         }
         _ => {
-            bail!(goat::error::error::NotYetImplemented::CLIError)
+            unreachable!()
         }
     }
 

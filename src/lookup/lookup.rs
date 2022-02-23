@@ -298,10 +298,14 @@ pub async fn lookup(matches: &clap::ArgMatches, cli: bool) -> Result<Option<Vec<
                     // print a warning if number of hits > size specified.
                     let request_size_op = &v["status"]["hits"].as_u64();
                     match request_size_op {
-                        Some(s) => eprintln!(
-                            "[-]\tFor seach query {}, size specified ({}) was less than the number of results returned, ({}).",
-                            search_query, size, s
-                        ),
+                        Some(s) => {
+                            if size.parse::<u64>()? < *s {
+                                eprintln!(
+                                "[-]\tFor seach query {}, size specified ({}) was less than the number of results returned, ({}).",
+                                search_query, size, s
+                            )
+                        }
+                    },
                         None => (),
                     }
 

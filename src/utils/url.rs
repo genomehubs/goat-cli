@@ -300,6 +300,7 @@ impl FieldBuilder {
     }
 }
 
+// the master function to make all of the
 pub fn make_goat_urls(
     api: &str,
     taxids: &Vec<String>,
@@ -315,6 +316,7 @@ pub fn make_goat_urls(
     fields: FieldBuilder,
     variables: Option<&str>,
     expression: &str,
+    tax_rank: &str,
 ) -> Result<Vec<String>> {
     let mut res = Vec::new();
 
@@ -342,8 +344,8 @@ pub fn make_goat_urls(
         let query_id = format!("&queryId=goat_cli_{}", index);
         let url = format!(
         // hardcode tidy data for now.
-        "{goat_url}{api}?query=tax_{tax_tree}%28{taxon}%29{expression}&includeEstimates={include_estimates}&includeRawValues={include_raw_values}&summaryValues={summarise_values_by}&result={result}&taxonomy={taxonomy}&size={size}{rank_string}{fields_string}{tidy_data}{names}{query_id}",
-        goat_url = goat_url, api = api, tax_tree = tax_tree, taxon = el, expression = expression, include_estimates = include_estimates, include_raw_values = include_raw_values, summarise_values_by = summarise_values_by, result = result, taxonomy = taxonomy, size = size, rank_string = rank_string, fields_string = fields_string, tidy_data = tidy_data, names = names, query_id = query_id
+        "{goat_url}{api}?query=tax_{tax_tree}%28{taxon}%29{tax_rank}{expression}&includeEstimates={include_estimates}&includeRawValues={include_raw_values}&summaryValues={summarise_values_by}&result={result}&taxonomy={taxonomy}&size={size}{rank_string}{fields_string}{tidy_data}{names}{query_id}",
+        goat_url = goat_url, api = api, tax_tree = tax_tree, taxon = el, tax_rank = tax_rank, expression = expression, include_estimates = include_estimates, include_raw_values = include_raw_values, summarise_values_by = summarise_values_by, result = result, taxonomy = taxonomy, size = size, rank_string = rank_string, fields_string = fields_string, tidy_data = tidy_data, names = names, query_id = query_id
     );
         res.push(url);
     }

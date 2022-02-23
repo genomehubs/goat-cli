@@ -1,5 +1,5 @@
 // a module to parse the command line args
-use crate::{utils::url, utils::utils};
+use crate::utils::{tax_ranks, url, utils};
 
 use anyhow::{bail, Result};
 use lazy_static::lazy_static;
@@ -64,6 +64,11 @@ pub fn process_cli_args(
         crate::utils::expression::print_variable_data();
         std::process::exit(0);
     }
+    // tax rank to return
+    let tax_rank = match matches.value_of("tax-rank") {
+        Some(t) => tax_ranks::TaxRanks::init().parse(t)?,
+        None => "".to_string(),
+    };
 
     // merge the field flags
     let fields = url::FieldBuilder {
@@ -170,6 +175,7 @@ pub fn process_cli_args(
         fields,
         variable_string,
         &expression,
+        &tax_rank,
     )?;
 
     if print_url {

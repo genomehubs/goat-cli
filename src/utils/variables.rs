@@ -2,8 +2,8 @@
 // more fine grained control over which fields are
 // returned
 
-use crate::utils::variable_data::GOAT_VARIABLE_DATA;
 use crate::utils::utils::parse_comma_separated;
+use crate::utils::variable_data::GOAT_VARIABLE_DATA;
 use anyhow::{ensure, Result};
 
 pub struct Variables<'a> {
@@ -31,7 +31,7 @@ impl<'a> Variables<'a> {
             .collect::<Vec<String>>();
 
         // TODO: perhaps say which one it is?
-        ensure!(split_vec.iter().all(|item| var_vec_check.contains(item)), "One of the variables you passed does not match the database. Please check all of your variables are spelled correctly.\nError: Run `goat search --print-expressions` to see a list of possible variables.");
+        ensure!(split_vec.iter().all(|item| var_vec_check.contains(item)), "One of the variables you passed does not match the database. Please check all of your variables are spelled correctly.\nError: Run `goat search --print-expression` to see a list of possible variables.");
 
         parsed_string += base;
         for el in split_vec {
