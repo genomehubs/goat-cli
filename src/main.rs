@@ -23,7 +23,7 @@ async fn main() -> Result<()> {
         .propagate_version(true)
         .arg_required_else_help(true)
         .global_setting(AppSettings::DeriveDisplayOrder)
-        .author("Max Brown <mb39@sanger.ac.uk>")
+        .author("Max Brown, Richard Challis, Sujai Kumar, Cibele Sotero-Caio <goat@genomehubs.org>")
         .about("Genomes on a Tree. Query metadata across the tree of life.")
         .subcommand(
             Command::new("search")
