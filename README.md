@@ -1,4 +1,6 @@
 [![GitHub Downloads](https://img.shields.io/github/downloads/genomehubs/goat-cli/total.svg?style=social&logo=github&label=Download)](https://github.com/genomehubs/goat-cli/releases/)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/goat/badges/downloads.svg)](https://anaconda.org/bioconda/goat)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/goat/badges/installer/conda.svg)](https://conda.anaconda.org/bioconda)
 
 <p align="center">
     <img width="300" height="145" src="https://goat.genomehubs.org/static/about/browse.png?8385e304da2611db1a5f3b2f6f0adce9528dcf3b">
