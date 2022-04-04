@@ -20,9 +20,9 @@ lazy_static! {
 		"bioproject" => Variable { display_name: "Bioproject", type_of: TypeOf::Keyword(vec![""]), functions: Function::None },
 		"biosample" => Variable { display_name: "Biosample", type_of: TypeOf::Keyword(vec![""]), functions: Function::None },
 		"contig_n50" => Variable { display_name: "Contig N50", type_of: TypeOf::Long, functions: Function::Some(vec!["min", "max"]) },
+		"gene_count" => Variable { display_name: "Gene count", type_of: TypeOf::Integer, functions: Function::Some(vec!["min", "max"]) },
 		"assembly_date" => Variable { display_name: "Last updated", type_of: TypeOf::Date, functions: Function::Some(vec!["min", "max"]) },
 		"scaffold_n50" => Variable { display_name: "Scaffold N50", type_of: TypeOf::Long, functions: Function::Some(vec!["min", "max"]) },
-		"gene_count" => Variable { display_name: "Gene count", type_of: TypeOf::Integer, functions: Function::Some(vec!["min", "max"]) },
 		"sample_sex" => Variable { display_name: "Sample sex", type_of: TypeOf::Keyword(vec![""]), functions: Function::None },
 		"ebp_metric_date" => Variable { display_name: "EBP metric date", type_of: TypeOf::Date, functions: Function::Some(vec!["min", "max"]) },
 		"mitochondrion_assembly_span" => Variable { display_name: "mitochondrion span", type_of: TypeOf::Long, functions: Function::None },
@@ -60,9 +60,9 @@ lazy_static! {
 		"genome_size" => Variable { display_name: "Genome size", type_of: TypeOf::Long, functions: Function::Some(vec!["min", "max"]) },
 		"genome_size_kmer" => Variable { display_name: "Genome size kmer", type_of: TypeOf::Long, functions: Function::Some(vec!["min", "max"]) },
 		"genome_size_draft" => Variable { display_name: "Genome size draft", type_of: TypeOf::Long, functions: Function::Some(vec!["min", "max"]) },
-		"long_list" => Variable { display_name: "long_list", type_of: TypeOf::Keyword(vec!["asg", "cbp", "ebpn", "cfgp", "dtol", "ebpn", "endemixit", "erga", "eurofish", "gaga", "squalomix", "vgp"]), functions: Function::None },
-		"other_priority" => Variable { display_name: "other_priority", type_of: TypeOf::Keyword(vec!["asg", "cbp", "ebpn", "cfgp", "dtol", "ebpn", "endemixit", "erga", "eurofish", "gaga", "squalomix", "vgp"]), functions: Function::None },
-		"family_representative" => Variable { display_name: "family_representative", type_of: TypeOf::Keyword(vec!["asg", "cbp", "ebpn", "cfgp", "dtol", "ebpn", "endemixit", "erga", "eurofish", "gaga", "squalomix", "vgp"]), functions: Function::None },
+		"long_list" => Variable { display_name: "long_list", type_of: TypeOf::Keyword(vec!["asg", "cbp", "ebpn", "cfgp", "dtol", "ebpn", "endemixit", "erga", "eurofish", "gaga", "squalomix", "vgp", "agi", "arg", "gap", "gbr", "omg", "tsi"]), functions: Function::None },
+		"other_priority" => Variable { display_name: "other_priority", type_of: TypeOf::Keyword(vec!["asg", "cbp", "ebpn", "cfgp", "dtol", "ebpn", "endemixit", "erga", "eurofish", "gaga", "squalomix", "vgp", "agi", "arg", "gap", "gbr", "omg", "tsi"]), functions: Function::None },
+		"family_representative" => Variable { display_name: "family_representative", type_of: TypeOf::Keyword(vec!["asg", "cbp", "ebpn", "cfgp", "dtol", "ebpn", "endemixit", "erga", "eurofish", "gaga", "squalomix", "vgp", "agi", "arg", "gap", "gbr", "omg", "tsi"]), functions: Function::None },
         // automated input end
     );
 }
