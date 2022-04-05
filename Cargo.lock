@@ -499,7 +499,7 @@ dependencies = [
 
 [[package]]
 name = "goat-cli"
-version = "0.1.51"
+version = "0.1.52"
 dependencies = [
  "again",
  "anyhow",
