@@ -1,5 +1,5 @@
 [package]
-name = "goat"
+name = "goat-cli"
 version = "0.1.51"
 authors = ["Max Brown <mb39@sanger.ac.uk>"]
 edition = "2021"
@@ -24,4 +24,4 @@ again = "0.1"
 async-std = "1.10.0"
 indicatif = "0.16.2"
 regex = "1.5.4"
-tabled = "0.5.0"
+tabled = "0.6.0"

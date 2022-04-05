@@ -11,7 +11,7 @@ use crate::utils::variable_data::GOAT_VARIABLE_DATA;
 use anyhow::{bail, ensure, Result};
 use regex::{CaptureMatches, Captures, Regex};
 use std::fmt;
-use tabled::{Footer, Header, MaxWidth, Modify, Row, Table, Tabled};
+use tabled::{Footer, Header, MaxWidth, Modify, Rows, Table, Tabled};
 
 #[derive(Tabled)]
 pub enum TypeOf<'a> {
@@ -60,16 +60,16 @@ impl<'a> fmt::Display for Function<'a> {
 
 #[derive(Tabled)]
 pub struct Variable<'a> {
-    #[header("Display Name")]
+    #[tabled(rename = "Display Name")]
     pub display_name: &'a str,
-    #[header("Operators/Keywords")]
+    #[tabled(rename = "Operators/Keywords")]
     pub type_of: TypeOf<'a>,
-    #[header("Function(s)")]
+    #[tabled(rename = "Function(s)")]
     pub functions: Function<'a>,
 }
 
 #[derive(Tabled)]
-struct ColHeader(#[header("Expression Name")] &'static str);
+struct ColHeader(#[tabled(rename = "Expression Name")] &'static str);
 
 pub fn print_variable_data() {
     // for some space
@@ -89,9 +89,15 @@ pub fn print_variable_data() {
         ))
         // wrap the text!
         .with(Footer(format!("NCBI taxon ranks:\n\n{}", footer_data)))
-        .with(Modify::new(Row(1..table_data.len() - 1)).with(MaxWidth::wrapping(30).keep_words()))
+        .with(
+            Modify::new(Rows::new(1..table_data.len() - 1))
+                .with(MaxWidth::wrapping(30).keep_words()),
+        )
         // 4 rows
-        .with(Modify::new(Row(table_data.len()..)).with(MaxWidth::wrapping(30 * 4).keep_words()))
+        .with(
+            Modify::new(Rows::new(table_data.len()..))
+                .with(MaxWidth::wrapping(30 * 4).keep_words()),
+        )
         .to_string();
 
     println!("{}", table_string);

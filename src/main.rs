@@ -6,12 +6,12 @@ use clap::{crate_version, AppSettings, Arg, Command};
 use futures::try_join;
 use tokio;
 
-use goat::count::count;
-use goat::lookup::lookup;
-use goat::progress::progress;
-use goat::record::newick;
-use goat::search::run;
-use goat::utils::{
+use goat_cli::count::count;
+use goat_cli::lookup::lookup;
+use goat_cli::progress::progress;
+use goat_cli::record::newick;
+use goat_cli::search::run;
+use goat_cli::utils::{
     cli_matches::{UPPER_CLI_FILE_LIMIT, UPPER_CLI_SIZE_LIMIT},
     utils::pretty_print_usize,
 };
