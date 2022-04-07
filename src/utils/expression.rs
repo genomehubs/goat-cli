@@ -230,10 +230,11 @@ impl<'a> CLIexpression<'a> {
             match curr_el_vec.len() {
                 3 => {
                     // trim strings
-                    let variable = curr_el_vec[0].trim();
+                    // replace rogue quotes (not sure why this is happening now, but was not before...)
+                    // manually escape these...
+                    let variable = &curr_el_vec[0].trim().replace("\"", "").replace("'", "")[..];
                     let operator = switch_string_to_url_encoding(curr_el_vec[1])?.trim();
-                    // let operator = curr_el_vec[1];
-                    let value = curr_el_vec[2].trim();
+                    let value = &curr_el_vec[2].trim().replace("\"", "").replace("'", "")[..];
 
                     if !var_vec_check.contains(&variable)
                         && !var_vec_min_max_check.contains(&variable.to_string())

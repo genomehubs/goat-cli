@@ -17,6 +17,4 @@ Please consult the <b><a href="https://github.com/genomehubs/goat-cli/wiki">wiki
 
 ## Misc
 
-This CLI is actively being built so no guarantees are made for stability or bugs.
-
 Please test `goat`. Please try and break `goat`. Please find bugs and tell me. Please send feature requests. Creating an issue in this repo is probably the best way to go!
