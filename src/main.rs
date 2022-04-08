@@ -239,6 +239,11 @@ async fn main() -> Result<()> {
                         .short('u')
                         .long("url")
                         .help("Print the underlying GoaT API URL(s). Useful for debugging."),
+                )
+                .arg(
+                    Arg::new("progress-bar")
+                        .long("progress-bar")
+                        .help("Add a progress bar to large queries, to estimate time left.")
                 ),
         )
         // copy of the above.
@@ -454,6 +459,11 @@ async fn main() -> Result<()> {
                         .short('u')
                         .long("url")
                         .help("Print the underlying GoaT API URL(s). Useful for debugging."),
+                )
+                .arg(
+                    Arg::new("progress-bar")
+                        .long("progress-bar")
+                        .help("Add a progress bar to large queries, to estimate time left.")
                 ),
         )
         .subcommand(
@@ -506,15 +516,27 @@ async fn main() -> Result<()> {
                         .possible_values(&["species", "genus", "family", "order"])
                         .help("The number of results to return."),
                 )
+                .arg(
+                    Arg::new("progress-bar")
+                        .long("progress-bar")
+                        .help("Add a progress bar to large queries, to estimate time left.")
+                ),
         )
         .get_matches();
 
     match matches.subcommand() {
         Some(("search", matches)) => {
-            try_join!(
-                run::search(&matches),
-                progress::progress_bar(&matches, "search")
-            )?;
+            let progress_bar = matches.is_present("progress-bar");
+
+            match progress_bar {
+                true => {
+                    try_join!(
+                        run::search(&matches),
+                        progress::progress_bar(&matches, "search")
+                    )?;
+                }
+                false => run::search(&matches).await?,
+            }
         }
         Some(("count", matches)) => {
             count::count(&matches, true, false).await?;
@@ -523,10 +545,17 @@ async fn main() -> Result<()> {
             lookup::lookup(&matches, true).await?;
         }
         Some(("newick", matches)) => {
-            try_join!(
-                newick::get_newick(matches),
-                progress::progress_bar(&matches, "newick")
-            )?;
+            let progress_bar = matches.is_present("progress-bar");
+
+            match progress_bar {
+                true => {
+                    try_join!(
+                        newick::get_newick(matches),
+                        progress::progress_bar(&matches, "newick")
+                    )?;
+                }
+                false => newick::get_newick(matches).await?,
+            }
         }
         _ => {
             unreachable!()
