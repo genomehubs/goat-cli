@@ -46,7 +46,13 @@ pub fn parse_comma_separated(taxids: &str) -> Vec<String> {
             index += 1;
             str = &str[index..];
         }
-        res2.push(str.to_string());
+        // in addition, remove any quotes
+        // so we can parse things like:
+        // `-v"assembly_level"`, where there is
+        // no space between the `-v` and `assembly_level`
+        let replaced = str.replace("\"", "").replace("'", "");
+
+        res2.push(replaced);
     }
     res2.sort_unstable();
     res2.dedup();
