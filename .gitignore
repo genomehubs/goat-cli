@@ -6,3 +6,5 @@ test.tsv
 /old_code
 /unix_bin
 /taxdump
+/all_genera.tsv
+/get_random_genus_for_release.nu
