@@ -19,6 +19,8 @@ use goat_cli::utils::{
 #[tokio::main]
 async fn main() -> Result<()> {
     let matches = Command::new("goat")
+        // to fix the binary name in the help messages
+        .bin_name("goat")
         .version(crate_version!())
         .propagate_version(true)
         .arg_required_else_help(true)
