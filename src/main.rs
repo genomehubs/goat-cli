@@ -235,15 +235,15 @@ async fn main() -> Result<()> {
                         .help("Print all variables in GoaT currently, with their associated variants.\nUseful for construction of expressions.")
                 )
                 .arg(
+                    Arg::new("progress-bar")
+                        .long("progress-bar")
+                        .help("Add a progress bar to large queries, to estimate time left.")
+                )
+                .arg(
                     Arg::new("url")
                         .short('u')
                         .long("url")
                         .help("Print the underlying GoaT API URL(s). Useful for debugging."),
-                )
-                .arg(
-                    Arg::new("progress-bar")
-                        .long("progress-bar")
-                        .help("Add a progress bar to large queries, to estimate time left.")
                 ),
         )
         // copy of the above.
@@ -455,15 +455,15 @@ async fn main() -> Result<()> {
                         .help("Print all variables in GoaT currently, with their associated variants.\nUseful for construction of expressions.")
                 )
                 .arg(
+                    Arg::new("progress-bar")
+                        .long("progress-bar")
+                        .help("Add a progress bar to large queries, to estimate time left.")
+                )
+                .arg(
                     Arg::new("url")
                         .short('u')
                         .long("url")
                         .help("Print the underlying GoaT API URL(s). Useful for debugging."),
-                )
-                .arg(
-                    Arg::new("progress-bar")
-                        .long("progress-bar")
-                        .help("Add a progress bar to large queries, to estimate time left.")
                 ),
         )
         .subcommand(
