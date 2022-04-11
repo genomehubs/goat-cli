@@ -5,7 +5,7 @@
 
 use crate::error::error::ExpressionParseError;
 use crate::utils::tax_ranks::TaxRanks;
-use crate::utils::utils::switch_string_to_url_encoding;
+use crate::utils::utils::{did_you_mean, switch_string_to_url_encoding};
 use crate::utils::variable_data::GOAT_VARIABLE_DATA;
 
 use anyhow::{bail, ensure, Result};
@@ -239,9 +239,33 @@ impl<'a> CLIexpression<'a> {
                     if !var_vec_check.contains(&variable)
                         && !var_vec_min_max_check.contains(&variable.to_string())
                     {
-                        // might be able to check max/min/length here.
-                        // e.g. max(gc_content) > 0.3
-                        bail!(ExpressionParseError::SplitVectorError)
+                        // ew
+                        // just combining the min/max and normal variable vectors
+                        // into a single vector.
+                        let combined_checks = var_vec_check
+                            .iter()
+                            .map(|e| String::from(*e))
+                            .collect::<Vec<String>>()
+                            .iter()
+                            .chain(
+                                var_vec_min_max_check
+                                    .iter()
+                                    .map(|e| String::from(e))
+                                    .collect::<Vec<String>>()
+                                    .iter(),
+                            )
+                            .map(|e| String::from(e))
+                            .collect::<Vec<String>>();
+
+                        let var_vec_mean = did_you_mean(&combined_checks, variable);
+
+                        if let Some(value) = var_vec_mean {
+                            bail!(
+                                "In your expression (`-e`) you typed \"{}\" - did you mean \"{}\"?",
+                                variable,
+                                value
+                            )
+                        }
                     }
 
                     // this panics with min/max.

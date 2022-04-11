@@ -2,9 +2,9 @@
 // more fine grained control over which fields are
 // returned
 
-use crate::utils::utils::parse_comma_separated;
+use crate::utils::utils::{did_you_mean, parse_comma_separated};
 use crate::utils::variable_data::GOAT_VARIABLE_DATA;
-use anyhow::{ensure, Result};
+use anyhow::{bail, Result};
 
 pub struct Variables<'a> {
     variables: &'a str,
@@ -30,8 +30,19 @@ impl<'a> Variables<'a> {
             .map(|(e, _)| e.to_string())
             .collect::<Vec<String>>();
 
-        // TODO: perhaps say which one it is?
-        ensure!(split_vec.iter().all(|item| var_vec_check.contains(item)), "One of the variables you passed does not match the database. Please check all of your variables are spelled correctly.\nError: Run `goat search --print-expression` to see a list of possible variables.");
+            for variable in &split_vec {
+            // only if we find something which does not match...
+            if !var_vec_check.contains(variable) {
+                let var_vec_mean = did_you_mean(&var_vec_check, variable);
+                if let Some(value) = var_vec_mean {
+                    bail!(
+                        "In your variable (`-v`) you typed \"{}\" - did you mean \"{}\"?",
+                        variable,
+                        value
+                    )
+                }
+            }
+        }
 
         parsed_string += base;
         for el in split_vec {

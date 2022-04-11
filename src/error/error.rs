@@ -31,8 +31,6 @@ pub enum ExpressionParseError {
     KeywordTaxError,
     #[error("[-]\tNo operators were found in the expression.")]
     NoOperatorError,
-    #[error("[-]\tSplit vector on single expression is invalid. Are the input variables or operands correct?")]
-    SplitVectorError,
     #[error("[-]\tThe input variable is not recognised.")]
     InputVariableError,
     #[error("[-]\tInput keyword enum does not match database.")]
