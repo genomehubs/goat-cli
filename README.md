@@ -15,6 +15,12 @@ The CLI here builds URLs to query the <b><a href="https://goat.genomehubs.org/ap
 
 Please consult the <b><a href="https://github.com/genomehubs/goat-cli/wiki">wiki</a></b> for more information, tutorials, and examples.
 
+## `goat-cli` documentation
+
+If you fancy delving into the Rust code, I've had a first pass at documenting everything. Helped me iron out a few bugs too.
+
+<p align="center"><b><a href="https://genomehubs.github.io/goat-cli/">API documentation</a></b></p>
+
 ## Misc
 
 Please test `goat`. Please try and break `goat`. Please find bugs and tell me. Please send feature requests. Creating an issue in this repo is probably the best way to go!
