@@ -1,13 +1,13 @@
 [package]
 name = "goat-cli"
-version = "0.1.53"
-authors = ["Max Brown <mb39@sanger.ac.uk>"]
+version = "0.1.54"
+authors = ["Max Brown <mb39@sanger.ac.uk>", "Rich Challis <goat@genomehubs.org>", "Sujai Kumar <goat@genomehubs.org>", "Cibele Sotero-Caio <goat@genomehubs.org>"]
 edition = "2021"
 license = "MIT"
 description = "Query metadata for any species across the tree of life."
-homepage = "https://github.com/genomehubs/goat-cli"
+homepage = "https://github.com/genomehubs/goat-cli/wiki"
 repository = "https://github.com/genomehubs/goat-cli"
-documentation = "https://github.com/genomehubs/goat-cli/wiki"
+documentation = "https://genomehubs.github.io/goat-cli/goat_cli/"
 keywords = ["goat", "genome", "tree", "ncbi", "genomics"]
 categories = ["command-line-utilities", "science"]
 
