@@ -478,6 +478,14 @@ async fn main() -> Result<()> {
                         .help("The taxon to search. An NCBI taxon ID, or the name of a taxon at any rank."),
                 )
                 .arg(
+                    Arg::new("file")
+                        .short('f')
+                        .long("file")
+                        .takes_value(true)
+                        .required_unless_present_any(["taxon"])
+                        .help(&format!("A file of NCBI taxonomy ID's (tips) and/or binomial names.\nEach line should contain a single entry.\nFile size is limited to {} entries.", pretty_print_usize(*UPPER_CLI_FILE_LIMIT))[..]),
+                )
+                .arg(
                     Arg::new("url")
                         .short('u')
                         .long("url")

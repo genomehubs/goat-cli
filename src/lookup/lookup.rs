@@ -39,6 +39,7 @@ impl Lookup {
     }
 }
 
+#[derive(Debug)]
 pub struct Lookups {
     pub entries: Vec<Lookup>,
 }
@@ -85,10 +86,11 @@ impl Lookups {
     // make urls, these are slightly different, and simpler than those
     // made for the main search program
 
-    pub fn make_urls(&self) -> Vec<String> {
+    pub fn make_urls(&self) -> Vec<(String, String)> {
         let mut url_vector = Vec::new();
         for el in &self.entries {
-            url_vector.push(el.make_url());
+            let id = el.search.clone();
+            url_vector.push((el.make_url(), id));
         }
         url_vector
     }
@@ -268,14 +270,8 @@ pub async fn lookup(matches: &clap::ArgMatches, cli: bool) -> Result<Option<Vec<
     let print_url = matches.is_present("url");
     let size = matches.value_of("size").unwrap();
 
-    let search_query_op = lookups.entries.get(0);
-    let search_query = match search_query_op {
-        Some(q) => &q.search,
-        None => "None",
-    };
-
     if print_url {
-        for (index, url) in url_vector_api.iter().enumerate() {
+        for (index, (url, _)) in url_vector_api.iter().enumerate() {
             println!("{}.\tGoaT lookup API URL: {}", index, url);
         }
         // don't exit here internally; we'll exit later
@@ -286,7 +282,7 @@ pub async fn lookup(matches: &clap::ArgMatches, cli: bool) -> Result<Option<Vec<
     // so we can make as many concurrent requests
     let concurrent_requests = url_vector_api.len();
 
-    let fetches = futures::stream::iter(url_vector_api.into_iter().map(|path| async move {
+    let fetches = futures::stream::iter(url_vector_api.into_iter().map(|(path, search_query)| async move {
         // possibly make a again::RetryPolicy
         // to catch all the values in a *very* large request.
         let client = reqwest::Client::new();
