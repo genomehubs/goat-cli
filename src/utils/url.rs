@@ -1,17 +1,24 @@
+use crate::utils::expression::CLIexpression;
 use crate::utils::variables::Variables;
+
 use anyhow::Result;
 use lazy_static::lazy_static;
 
+/// The base URL for GoaT.
 const GOAT_URL_BASE: &str = "https://goat.genomehubs.org/api/";
+/// The current version of the GoaT API.
 const GOAT_API_VERSION: &str = "v0.0.1/";
 
 lazy_static! {
+    /// The current GoaT URL.
     pub static ref GOAT_URL: String = format!("{}{}", GOAT_URL_BASE, GOAT_API_VERSION);
+    /// The taxonomy that `goat-cli` uses.
     pub static ref TAXONOMY: String = "ncbi".to_string();
 }
 
 // format the ranks for the URL.
 
+/// Function to format the rank into a GoaT URL segment.
 fn format_rank(r: &str) -> String {
     // fixed vector of ranks.
     // "none" by default will return an empty string here.
@@ -39,7 +46,8 @@ fn format_rank(r: &str) -> String {
     rank_string
 }
 
-// for now, let's put all names in.
+/// If names appears in [`FieldBuilder`], then we add the
+/// GoaT URL segment for that.
 fn format_names(flag: bool) -> String {
     match flag {
         true => "&names=synonym%2Ctol_id%2Ccommon_name".to_string(),
@@ -47,42 +55,69 @@ fn format_names(flag: bool) -> String {
     }
 }
 
-// keep contained here for now
-use crate::utils::expression::CLIexpression;
+/// Format an expression put into the `-e` flag on the CLI.
 pub fn format_expression(exp: &str) -> Result<String> {
     let mut new_exp = CLIexpression::new(exp);
     let parsed_string = new_exp.parse()?;
     Ok(parsed_string)
 }
 
-// Parse the fields from search.
+/// Boolean struct containing all of the CLI flag information
+/// passed from the user.
 #[derive(Copy, Clone)]
 pub struct FieldBuilder {
+    /// Add all of the current GoaT fields.
     pub all: bool,
+    /// Add only assembly level/span GoaT fields.
     pub assembly: bool,
+    /// Add bioproject GoaT field.
     pub bioproject: bool,
+    /// Add BUSCO completeness.
     pub busco: bool,
+    /// Add country list GoaT field.
     pub country_list: bool,
+    /// Add C-value information GoaT field.
     pub cvalues: bool,
+    /// Add assembly & EBP metric date GoaT fields.
     pub date: bool,
+    /// Add GC percent GoaT field.
     pub gc_percent: bool,
+    /// Add gene count GoaT field.
     pub gene_count: bool,
+    /// Add genome size GoaT fields.
     pub gs: bool,
+    /// Add karyotype GoaT fields; chromosome number and
+    /// haploid number.
     pub karyotype: bool,
+    /// Add return information for `isb_wildlife_act_1976`,
+    /// `habreg_2017`, `marhabreg-2017`, `waca_1981`,
+    /// `protection_of_badgers_act_1992`, `echabs92`
     pub legislation: bool,
+    /// Add mitochondrial assembly span and gc percent
+    /// GoaT fields.
     pub mitochondrion: bool,
+    /// Add contig and scaffold n50 GoaT fields.
     pub n50: bool,
+    /// Add synonym, tolID, and common name GoaT fields.
     pub names: bool,
+    /// Add plastid assembly span and gc percent GoaT
+    /// fields.
     pub plastid: bool,
+    /// Add ploidy GoaT field.
     pub ploidy: bool,
+    /// Add sex determination GoaT field.
     pub sex_determination: bool,
+    /// Add sample tracking information GoaT field.
     pub status: bool,
+    /// Add `long_list`, `other_priority`, and `family_representative`
+    /// GoaT fields.
     pub target_lists: bool,
+    /// Render output in tidy format?
     pub tidy: bool,
 }
 
 impl FieldBuilder {
-    // private fn used below in build_fields_string
+    // Used for checking absence of any fields.
     fn as_array(&self) -> [bool; 21] {
         [
             self.all,
@@ -109,6 +144,8 @@ impl FieldBuilder {
         ]
     }
 
+    /// A function which formats all of the GoaT fields
+    /// together into a URL segment.
     pub fn build_fields_string(&self) -> String {
         let base = "&fields=";
         let delimiter = "%2C";
@@ -308,7 +345,8 @@ impl FieldBuilder {
     }
 }
 
-// the master function to make all of the
+/// The function which creats the GoaT API URLs
+/// which are then used as GET requests.
 pub fn make_goat_urls(
     api: &str,
     taxids: &Vec<String>,

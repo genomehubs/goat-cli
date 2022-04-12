@@ -8,6 +8,7 @@ use crate::record::record::{Record, RecordType};
 // TODO: maybe newick can accept multiple taxa for separate newicks?
 // e.g. goat newick -f "taxon 1, taxon2" "taxon3" ?
 
+/// CLI entry point to get the Newick file from the GoaT API.
 pub async fn get_newick(matches: &clap::ArgMatches) -> Result<()> {
     let record = Record::new(matches)?;
     let newick_url = record.make_url(RecordType::Newick);

@@ -6,18 +6,24 @@ use anyhow::{bail, Result};
 // enumerate types to return
 // currently only newick implemented
 
-// does not check spelling currently.
+/// The record type to return. Currently only
+/// Newick is supported.
 pub enum RecordType {
     Newick,
 }
 
+/// The record struct to make URLs from.
 pub struct Record {
+    /// A vector of taxon ID's/names.
     pub search: Vec<String>,
+    /// The rank of the return type.
     pub rank: String,
+    ///
     pub url: bool,
 }
 
 impl Record {
+    /// Constructor function for [`Record`].
     pub fn new(matches: &clap::ArgMatches) -> Result<Self> {
         // simply return the populated struct
         // taxon, url, rank
@@ -35,6 +41,7 @@ impl Record {
         Ok(Self { search, rank, url })
     }
 
+    /// Make the URL. Currently only [`RecordType::Newick`] supported.
     pub fn make_url(&self, record_type: RecordType) -> String {
         match record_type {
             RecordType::Newick => {
@@ -53,7 +60,7 @@ impl Record {
                 };
                 // the x value source
                 let x_value_source = format!(
-                    "&x=x%3Dtax_rank%28{}%29%20AND%20tax_tree%28{}%29",
+                    "&x=tax_rank%28{}%29%20AND%20tax_tree%28{}%29",
                     self.rank, csqs
                 );
                 url += &x_value_source;

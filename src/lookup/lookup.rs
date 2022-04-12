@@ -10,10 +10,12 @@ use reqwest;
 use reqwest::header::ACCEPT;
 use serde_json::Value;
 
+/// The lookup struct
 #[derive(Clone, Debug)]
 pub struct Lookup {
-    // the user search
+    /// the users search
     pub search: String,
+    /// The size for each search (default = 10)
     pub size: u64,
 }
 
@@ -21,6 +23,7 @@ pub struct Lookup {
 // https://goat.genomehubs.org/api/v0.0.1/lookup?searchTerm=english%20oak&result=taxon&taxonomy=ncbi
 
 impl Lookup {
+    /// From our lookup struct we can make an individual URL.
     pub fn make_url(&self) -> String {
         let mut url = String::new();
         // add the base
@@ -39,13 +42,17 @@ impl Lookup {
     }
 }
 
+/// A vector of [`Lookup`] structs.
 #[derive(Debug)]
 pub struct Lookups {
+    /// The entries in [`Lookups`].
     pub entries: Vec<Lookup>,
 }
 
 // throw warnings if there are no hits
 impl Lookups {
+    /// Constructor which takes the CLI args and returns
+    /// `Self`.
     fn new(matches: &clap::ArgMatches) -> Result<Self> {
         let tax_name_op = matches.value_of("taxon");
         let filename_op = matches.value_of("file");
@@ -86,6 +93,7 @@ impl Lookups {
     // make urls, these are slightly different, and simpler than those
     // made for the main search program
 
+    /// Make URLs calls [`Lookup::make_url`] on each element.
     pub fn make_urls(&self) -> Vec<(String, String)> {
         let mut url_vector = Vec::new();
         for el in &self.entries {
@@ -96,25 +104,26 @@ impl Lookups {
     }
 }
 
+/// Collect the results from concurrent `goat-cli lookup`
+/// queries.
 #[derive(Clone)]
-// change these to vecs
 pub struct Collector {
-    // the user search
-    // single value
+    /// User search value.
     pub search: Option<String>,
-    // the taxon id, that we fetch
-    // can return multiple taxon id's
+    /// The taxon id that we fetch.
+    /// Can return multiple taxon id's.
     pub taxon_id: Vec<Option<String>>,
-    // the taxon rank
+    /// The taxon rank.
     pub taxon_rank: Vec<Option<String>>,
-    // maybe a map of name: class pairs? Might be empty
+    /// A vector of optional taxon names.
     pub taxon_names: Vec<Option<Vec<(String, String)>>>,
-    // suggestion.
+    /// The suggestions vector.
     pub suggestions: Option<Vec<Option<String>>>,
 }
 
 impl Collector {
-    // add an index, so we don't repeat headers
+    /// Print the result from a collector struct.
+    /// add an index, so we don't repeat headers
     pub fn print_result(&self, index: usize) -> Result<()> {
         // if we got a hit
         match &self.search {
@@ -213,6 +222,10 @@ impl Collector {
     // currently deprecated - don't use this in `search` or `count`
     // there is the possibility of URL's being too long...
     // might be useful for `record` API at some point?
+
+    #[deprecated(
+        note = "Currently deprecated. Might be used in future to suggest spelling corrections in search."
+    )]
     pub fn return_taxid_vec(&self) -> Result<Option<String>> {
         // if we got a hit
         match &self.search {
@@ -263,7 +276,7 @@ impl Collector {
     }
 }
 
-// entry function
+/// Main entry point for `goat-cli lookup`.
 pub async fn lookup(matches: &clap::ArgMatches, cli: bool) -> Result<Option<Vec<String>>> {
     let lookups = Lookups::new(matches)?;
     let url_vector_api = lookups.make_urls();

@@ -1,8 +1,3 @@
-// parse expressions on the command line
-// example expressions will be:
-// plastid_gc_percent < 33 AND gc_percent > 55
-// TODO: ADD TAX_RANKS?
-
 use crate::error::error::ExpressionParseError;
 use crate::utils::tax_ranks::TaxRanks;
 use crate::utils::utils::{did_you_mean, switch_string_to_url_encoding};
@@ -13,15 +8,24 @@ use regex::{CaptureMatches, Captures, Regex};
 use std::fmt;
 use tabled::{Footer, Header, MaxWidth, Modify, Rows, Table, Tabled};
 
+/// Serialize GoaT variables into their types.
 #[derive(Tabled)]
 pub enum TypeOf<'a> {
+    /// Floating point number.
     Long,
+    /// Another floating point number?
     Short,
+    /// Float with one decimal place.
     OneDP,
+    /// Float with two decimal places.
     TwoDP,
+    /// An integer.
     Integer,
+    /// A date.
     Date,
+    /// Don't know.
     HalfFloat,
+    /// A variable which itself is an enumeration.
     Keyword(Vec<&'a str>),
 }
 
@@ -43,7 +47,9 @@ impl<'a> fmt::Display for TypeOf<'a> {
     }
 }
 
-// kind of an option alias here.
+/// Kind of an option alias. Does a
+/// particular variable have a function
+/// associated with it? Usually min/max.
 pub enum Function<'a> {
     None,
     Some(Vec<&'a str>),
@@ -58,6 +64,7 @@ impl<'a> fmt::Display for Function<'a> {
     }
 }
 
+/// The GoaT variable of interest.
 #[derive(Tabled)]
 pub struct Variable<'a> {
     #[tabled(rename = "Display Name")]
@@ -68,9 +75,11 @@ pub struct Variable<'a> {
     pub functions: Function<'a>,
 }
 
+/// The column headers for `goat-cli search --print-expression`.
 #[derive(Tabled)]
 struct ColHeader(#[tabled(rename = "Expression Name")] &'static str);
 
+/// Print the table of GoaT variable data.
 pub fn print_variable_data() {
     // for some space
     println!("");
@@ -103,6 +112,7 @@ pub fn print_variable_data() {
     println!("{}", table_string);
 }
 
+/// The CLI expression which needs to be parsed.
 pub struct CLIexpression<'a> {
     pub inner: &'a str,
     pub length: usize, // these queries can't be crazy long.
@@ -110,6 +120,7 @@ pub struct CLIexpression<'a> {
 }
 
 impl<'a> CLIexpression<'a> {
+    /// Constructor for [`CLIexpression`].
     pub fn new(string: &'a str) -> Self {
         Self {
             inner: string,
@@ -118,6 +129,7 @@ impl<'a> CLIexpression<'a> {
         }
     }
 
+    /// The initial split on the keyword `AND`.
     fn split(&self) -> Self {
         let mut res_vec = Vec::new();
         // commands only accept AND? Rich!
@@ -137,6 +149,8 @@ impl<'a> CLIexpression<'a> {
         }
     }
 
+    /// The main function which parses a [`CLIexpression`]. A bit of a
+    /// monster of a function. Might need cleaning up at some point.
     pub fn parse(&mut self) -> Result<String> {
         if self.length > 100 {
             bail!(ExpressionParseError::QueryTooLong)
@@ -366,9 +380,8 @@ impl<'a> CLIexpression<'a> {
     }
 }
 
-// thanks https://github.com/rust-lang/regex/issues/330
-// for splitting a string and keeping the delimiter.
-
+/// Split a string and keep the delimiter.
+/// Thanks [`BurntSushi`](https://github.com/rust-lang/regex/issues/330)
 #[derive(Debug)]
 struct SplitCaptures<'r, 't> {
     finder: CaptureMatches<'r, 't>,
@@ -381,7 +394,7 @@ impl<'r, 't> SplitCaptures<'r, 't> {
     pub fn new(re: &'r Regex, text: &'t str) -> SplitCaptures<'r, 't> {
         SplitCaptures {
             finder: re.captures_iter(text),
-            text: text,
+            text,
             last: 0,
             caps: None,
         }

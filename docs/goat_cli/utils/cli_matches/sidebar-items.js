@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["process_cli_args","Take CLI arguments and parse them. Return a tuple of:"]],"struct":[["UPPER_CLI_FILE_LIMIT","Upper limit for the number of entries in the file for CLI arg `-f`."],["UPPER_CLI_SIZE_LIMIT","Upper limit for the CLI arg `--size`."]]});

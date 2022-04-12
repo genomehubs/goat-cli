@@ -1,5 +1,6 @@
-// TODO: I think these errors could be better.
 use thiserror::Error;
+
+/// Errors pertaining to implementations not yet there.
 #[derive(Error, Debug)]
 pub enum NotYetImplemented {
     #[error("[-]\tThis feature is not yet implemented :(")]
@@ -8,6 +9,7 @@ pub enum NotYetImplemented {
     CLIError,
 }
 
+/// Errors in parsing files.
 #[derive(Error, Debug)]
 pub enum FileError {
     #[error("[-]\tCould not parse the line.")]
@@ -16,7 +18,7 @@ pub enum FileError {
     FileOpenError,
 }
 
-// will need some parsing errors.
+/// Errors in parsing expressions.
 #[derive(Error, Debug)]
 pub enum ExpressionParseError {
     #[error("[-]\tThis expression query is greater than 100 chars.")]

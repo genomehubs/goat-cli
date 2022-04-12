@@ -1,4 +1,3 @@
-// a module to parse the command line args
 use crate::utils::{tax_ranks, url, utils};
 
 use anyhow::{bail, Result};
@@ -6,10 +5,15 @@ use lazy_static::lazy_static;
 
 // global size limits on pinging the API
 lazy_static! {
+    /// Upper limit for the CLI arg `--size`.
     pub static ref UPPER_CLI_SIZE_LIMIT: usize = 50000;
+    /// Upper limit for the number of entries in the file for CLI arg `-f`.
     pub static ref UPPER_CLI_FILE_LIMIT: usize = 500;
 }
 
+/// Take CLI arguments and parse them. Return a tuple of:
+///
+/// (the size arg you passed, vector of taxon ID's, vector of URLs).
 pub fn process_cli_args(
     matches: &clap::ArgMatches,
     api: &str,
@@ -114,7 +118,7 @@ pub fn process_cli_args(
                 )
             }
         }
-        Err(e) => bail!("Did you pass an integer? {}", e),
+        Err(e) => bail!("Did you pass an integer to `--size`? Info: {}", e),
     }
     let ranks = match matches.value_of("ranks") {
         Some(r) => r,

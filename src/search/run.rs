@@ -6,6 +6,7 @@ use reqwest::header::ACCEPT;
 use crate::count::count;
 use crate::utils::{cli_matches, utils};
 
+/// Execute the `search` subcommand from `goat-cli`. Print a TSV.
 pub async fn search(matches: &clap::ArgMatches) -> Result<()> {
     let (_size_int, _url_vector, url_vector_api) =
         cli_matches::process_cli_args(matches, "search")?;

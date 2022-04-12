@@ -15,6 +15,7 @@ use crate::utils::url::GOAT_URL;
 // a function to create and display a progress bar
 // for large requests. Currently limited to single large requests.
 
+/// Adds a progress bar to large requests.
 pub async fn progress_bar(matches: &clap::ArgMatches, api: &str) -> Result<()> {
     // wait briefly before submitting
     // so we are sure the API has recieved and set the queryId

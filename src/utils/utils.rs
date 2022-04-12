@@ -6,7 +6,8 @@ use std::{
 
 use anyhow::{bail, Context, Result};
 
-// read taxids or binomials from file.
+/// Read NCBI taxon ID's or binomial names of species,
+/// or higher order taxa from a file.
 pub fn lines_from_file(filename: impl AsRef<Path>) -> Result<Vec<String>> {
     let file = File::open(&filename)
         .with_context(|| format!("Could not open {:?}", filename.as_ref().as_os_str()))?;
@@ -29,6 +30,9 @@ pub fn lines_from_file(filename: impl AsRef<Path>) -> Result<Vec<String>> {
 // taxids should be comma separated
 // remove whitespace from beginning and end of each element of the vec.
 // TODO: check structure of each element in vec.
+
+/// Parse a comma separated string and return each of the elements
+/// stripped of whitespace in a vector.
 pub fn parse_comma_separated(taxids: &str) -> Vec<String> {
     let res: Vec<&str> = taxids.split(",").map(|s| s).collect();
 
@@ -59,10 +63,8 @@ pub fn parse_comma_separated(taxids: &str) -> Vec<String> {
     res2
 }
 
-// needed so that the output headers for ranks can be formatted properly
-// similar to the function `format_rank` but return the vector
-// of ranks the user has chosen
-
+/// Creates a vector of taxon ranks which will eventually form the
+/// headers of the taxon ranks in the returned TSV file.
 pub fn get_rank_vector(r: &str) -> Vec<String> {
     let ranks = vec![
         "subspecies".to_string(),
@@ -84,8 +86,8 @@ pub fn get_rank_vector(r: &str) -> Vec<String> {
     updated_ranks
 }
 
-// if you query multiple taxa, headers pop up for every new taxon.
-
+/// If multiple taxa are queried at once, headers will return for every new taxon.
+/// We can suppress this by storing the whole return as a string.
 pub fn format_tsv_output(awaited_fetches: Vec<Result<String, anyhow::Error>>) -> Result<()> {
     // if there is a single element, return this.
     // is there a way to get all the headers, and compare them...
@@ -129,7 +131,8 @@ pub fn format_tsv_output(awaited_fetches: Vec<Result<String, anyhow::Error>>) ->
     Ok(())
 }
 
-// https://stackoverflow.com/questions/38406793/why-is-capitalizing-the-first-letter-of-a-string-so-convoluted-in-rust
+/// Thanks to [this](https://stackoverflow.com/questions/38406793/why-is-capitalizing-the-first-letter-of-a-string-so-convoluted-in-rust)
+/// post on stack overflow. Make a string uppercase on the first character.
 pub fn some_kind_of_uppercase_first_letter(s: &str) -> String {
     let mut c = s.chars();
     match c.next() {
@@ -138,8 +141,9 @@ pub fn some_kind_of_uppercase_first_letter(s: &str) -> String {
     }
 }
 
-// https://stackoverflow.com/questions/26998485/is-it-possible-to-print-a-number-formatted-with-thousand-separator-in-rust
-// for error messages above cli query limit
+/// Thanks to  [`this`](https://stackoverflow.com/questions/26998485/is-it-possible-to-print-a-number-formatted-with-thousand-separator-in-rust)
+/// post on stack overflow. For error messages above cli query limit, print
+/// the [`usize`] prettily.
 pub fn pretty_print_usize(i: usize) -> String {
     let mut s = String::new();
     let i_str = i.to_string();
@@ -153,7 +157,9 @@ pub fn pretty_print_usize(i: usize) -> String {
     format!("{}", s)
 }
 
-// not sure this needs to be done... Rich?
+/// A function to replace certain combinations of characters
+/// as their URL encoded variations. Not entirely sure if this is
+/// necessary.
 pub fn switch_string_to_url_encoding(string: &str) -> Result<&str> {
     let res = match string {
         // "!=" => "%21%3D",
@@ -173,10 +179,8 @@ pub fn switch_string_to_url_encoding(string: &str) -> Result<&str> {
     Ok(res)
 }
 
-// levenshtein suggestions
-// taken from nushell
-// https://github.com/nushell/nushell/blob/690ec9abfa994e6cf8b85ec38173ee5f0c91011c/crates/nu-protocol/src/shell_error.rs
-
+/// Shamelessly poached from the [Nushell core code](https://github.com/nushell/nushell/blob/690ec9abfa994e6cf8b85ec38173ee5f0c91011c/crates/nu-protocol/src/shell_error.rs).
+/// Suggest the closest match to a string.
 pub fn did_you_mean(possibilities: &[String], tried: &str) -> Option<String> {
     let mut possible_matches: Vec<_> = possibilities
         .iter()
@@ -195,7 +199,8 @@ pub fn did_you_mean(possibilities: &[String], tried: &str) -> Option<String> {
     }
 }
 
-// Borrowed from here https://github.com/wooorm/levenshtein-rs
+/// Compute the Levenshtein distance between two strings.
+/// Borrowed from [here](https://github.com/wooorm/levenshtein-rs).
 fn levenshtein_distance(a: &str, b: &str) -> usize {
     let mut result = 0;
 

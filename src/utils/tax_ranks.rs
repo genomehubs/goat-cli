@@ -1,12 +1,13 @@
-// add tax ranks to URL queries
-
 use anyhow::{bail, Result};
 use std::fmt;
 
 use crate::utils::utils;
 
-// taken from the NCBI taxdump
-// on date: 22.02.22
+/// Taken from the NCBI taxdump
+/// on the date: 22.02.22.
+///
+/// These are all possible ranks that
+/// a user can return results as.
 const TAX_RANKS: &[&str; 44] = &[
     "biotype",
     "clade",
@@ -57,18 +58,21 @@ const TAX_RANKS: &[&str; 44] = &[
 // we only really need to do two things
 // check if user has input a real tax rank
 // and display the tax ranks
+
+/// The [`TaxRanks`] struct holds the NCBI taxon
+/// ranks defined in the [`TAX_RANKS`] const.
 pub struct TaxRanks<'a> {
     pub ranks: &'a [&'a str; 44],
 }
 
 impl<'a> TaxRanks<'a> {
-    // shove the tax ranks where they should be
+    /// Constructor for [`TaxRanks`].
     pub fn init() -> Self {
         Self { ranks: TAX_RANKS }
     }
-    // take the string from the cli
-    // which may contain commas
-    // and convert it to a URL encoded string of tax ranks.
+
+    /// Convert a `--tax-rank` CLI comma separated string
+    /// into a URL encoded string of taxon ranks.
     pub fn parse(&self, cmp: &str) -> Result<String> {
         // split the string on commas
         let split = utils::parse_comma_separated(cmp);
@@ -98,8 +102,8 @@ impl<'a> TaxRanks<'a> {
     }
 }
 
-// I think a comma separated list is okay?
 impl<'a> fmt::Display for TaxRanks<'a> {
+    /// Format [`TaxRanks`] into a comma separated list.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // Use `self.number` to refer to each positional data point.
         let tax_ranks_csv = self.ranks.join(", ");

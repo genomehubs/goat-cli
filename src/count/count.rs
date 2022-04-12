@@ -9,6 +9,8 @@ use crate::utils::cli_matches;
 // count is essentially identical to search, but prints to the console in the
 // CLI call, or to stderr in the search call. Hence the cli parameter.
 
+/// `goat-cli count` presents an identical CLI to `goat-cli search` but prints
+/// to the console in the CLI call here, and to the stderr in the `goat-cli search` call.
 pub async fn count(
     matches: &clap::ArgMatches,
     cli: bool,

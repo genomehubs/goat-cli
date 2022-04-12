@@ -1,22 +1,24 @@
-// this module allows the user to have
-// more fine grained control over which fields are
-// returned
-
 use crate::utils::utils::{did_you_mean, parse_comma_separated};
 use crate::utils::variable_data::GOAT_VARIABLE_DATA;
 use anyhow::{bail, Result};
 
+/// A struct to store the variables
+/// passed in the `-v` flag on the
+/// CLI.
 pub struct Variables<'a> {
+    /// Variables which need to be parsed.
     variables: &'a str,
 }
 
 impl<'a> Variables<'a> {
+    /// Constructor for [`Variables`].
     pub fn new(str: &'a str) -> Self {
         Self { variables: str }
     }
-    // split comma sep list
-    // check against the database
-    // format the string.
+
+    /// Simple parsing of a comma separated string,
+    /// which will error if the variable is not found
+    /// with a suggestion as to which one you meant.
     pub fn parse(&self) -> Result<String> {
         let base = "&fields=";
         let delimiter = "%2C";
@@ -30,7 +32,7 @@ impl<'a> Variables<'a> {
             .map(|(e, _)| e.to_string())
             .collect::<Vec<String>>();
 
-            for variable in &split_vec {
+        for variable in &split_vec {
             // only if we find something which does not match...
             if !var_vec_check.contains(variable) {
                 let var_vec_mean = did_you_mean(&var_vec_check, variable);
