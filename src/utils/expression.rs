@@ -275,7 +275,7 @@ impl<'a> CLIexpression<'a> {
 
                         if let Some(value) = var_vec_mean {
                             bail!(
-                                "In your expression (`-e`) you typed \"{}\" - did you mean \"{}\"?",
+                                "In your expression (LHS) you typed \"{}\" - did you mean \"{}\"?",
                                 variable,
                                 value
                             )
@@ -316,12 +316,19 @@ impl<'a> CLIexpression<'a> {
                                 })
                                 .collect::<Vec<String>>();
 
-                            if !value_split_commas.iter().all(|e| k.contains(&&e[..])) {
-                                // BUG: if there are parentheses in the enum variant
-                                // but I think GoaT central can fix this.
-                                // then the URL encoding fails.
-                                bail!(ExpressionParseError::KeywordEnumError)
+                            // now check our keyword enums
+                            for val in &value_split_commas {
+                                let possibilities =
+                                    k.iter().map(|e| String::from(*e)).collect::<Vec<_>>();
+                                let did_you_mean_str = did_you_mean(&possibilities, &val);
+
+                                if let Some(value) = did_you_mean_str {
+                                    if value != val.to_owned() {
+                                        bail!("In your expression (RHS) you typed \"{}\" - did you mean \"{}\"?", val, value)
+                                    }
+                                }
                             }
+
                             // now modify value_split_commas to parse parentheses
                             let parsed_value_split_commas = value
                                 .split(",")
@@ -347,6 +354,7 @@ impl<'a> CLIexpression<'a> {
                             // assume there is another expression to follow
                             expression += "AND%20"
                         }
+                        // here can we type check input?
                         _ => {
                             // build expression
                             expression += "%20";
