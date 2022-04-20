@@ -1,3 +1,7 @@
+// TODO:
+// - type checks on expression (https://github.com/genomehubs/goat-cli/issues/3)
+// -
+
 use crate::error::error::ExpressionParseError;
 use crate::utils::tax_ranks::TaxRanks;
 use crate::utils::utils::{did_you_mean, switch_string_to_url_encoding};
@@ -9,24 +13,73 @@ use std::fmt;
 use tabled::{Footer, Header, MaxWidth, Modify, Rows, Table, Tabled};
 
 /// Serialize GoaT variables into their types.
+///
+/// See [here](https://www.elastic.co/guide/en/elasticsearch/reference/current/number.html)
+/// for more details.
 #[derive(Tabled)]
 pub enum TypeOf<'a> {
-    /// Floating point number.
+    /// Signed 64 bit int.
     Long,
-    /// Another floating point number?
+    /// Signed 16 bit int.
     Short,
     /// Float with one decimal place.
     OneDP,
     /// Float with two decimal places.
     TwoDP,
-    /// An integer.
+    /// Signed 32 bit int.
     Integer,
     /// A date.
     Date,
-    /// Don't know.
+    /// Half precision 16 bit float.
     HalfFloat,
     /// A variable which itself is an enumeration.
     Keyword(Vec<&'a str>),
+}
+
+impl<'a> TypeOf<'a> {
+    /// Check the values input by a user, so `goat-cli` displays meaningful help.
+    fn check(&self, other: &str, variable: &str) -> Result<()> {
+        // we will have to parse the `other` conditionally on what the
+        // `TypeOf` is.
+        let _ = match self {
+            TypeOf::Long => match other.parse::<i64>() {
+                Ok(_) => (),
+                Err(_) => bail!(format!("For variable \"{variable}\" in the expression, an input error was found. Pass an integer as a value.")),
+            },
+            TypeOf::Short => match other.parse::<i16>() {
+                Ok(_) => (),
+                Err(_) => bail!(format!("For variable \"{variable}\" in the expression, an input error was found. Pass an integer as a value.")),
+            },
+            TypeOf::OneDP => match other.parse::<f32>() {
+                Ok(_) => (),
+                Err(_) => bail!(format!("For variable \"{variable}\" in the expression, an input error was found. Pass a float as a value.")),
+            },
+            TypeOf::TwoDP => match other.parse::<f32>() {
+                Ok(_) => (),
+                Err(_) => bail!(format!("For variable \"{variable}\" in the expression, an input error was found. Pass a float as a value.")),
+            },
+            TypeOf::Integer => match other.parse::<i32>() {
+                Ok(_) => (),
+                Err(_) => bail!(format!("For variable \"{variable}\" in the expression, an input error was found. Pass an integer as a value.")),
+            },
+            // dates should be in a specified format
+            // yyyy-mm-dd
+            TypeOf::Date => {
+                let tokens = other.split("-").collect::<Vec<_>>();
+                ensure!(
+                    tokens.len() == 1 || tokens.len() == 3,
+                    "Improperly formatted date. Please make sure date is in the format yyyy-mm-dd, or yyyy."
+                )
+            }
+            TypeOf::HalfFloat => match other.parse::<f32>() {
+                Ok(_) => (),
+                Err(_) => bail!(format!("For variable \"{variable}\" in the expression, an input error was found. Pass a float as a value.")),
+            },
+            // keywords handled elsewhere
+            TypeOf::Keyword(_) => (),
+        };
+        Ok(())
+    }
 }
 
 impl<'a> fmt::Display for TypeOf<'a> {
@@ -238,7 +291,7 @@ impl<'a> CLIexpression<'a> {
             // check this vector is length 3 or 1
             ensure!(
                     curr_el_vec.len() == 3 || curr_el_vec.len() == 1,
-                    "[-]\tSplit vector on single expression is invalid - length = {}. Are the input variables or operands correct?",
+                    "Split vector on single expression is invalid - length = {}. Are the input variables or operands correct?",
                     curr_el_vec.len()
                 );
             match curr_el_vec.len() {
@@ -354,8 +407,10 @@ impl<'a> CLIexpression<'a> {
                             // assume there is another expression to follow
                             expression += "AND%20"
                         }
-                        // here can we type check input?
-                        _ => {
+                        t => {
+                            // here can we type check input
+                            TypeOf::check(t, value, variable)?;
+
                             // build expression
                             expression += "%20";
                             expression += &url_encoded_variable;

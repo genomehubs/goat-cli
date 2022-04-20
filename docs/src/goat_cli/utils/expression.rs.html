@@ -439,7 +439,74 @@
 <span id="434">434</span>
 <span id="435">435</span>
 <span id="436">436</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::error::error::ExpressionParseError</span>;
+<span id="437">437</span>
+<span id="438">438</span>
+<span id="439">439</span>
+<span id="440">440</span>
+<span id="441">441</span>
+<span id="442">442</span>
+<span id="443">443</span>
+<span id="444">444</span>
+<span id="445">445</span>
+<span id="446">446</span>
+<span id="447">447</span>
+<span id="448">448</span>
+<span id="449">449</span>
+<span id="450">450</span>
+<span id="451">451</span>
+<span id="452">452</span>
+<span id="453">453</span>
+<span id="454">454</span>
+<span id="455">455</span>
+<span id="456">456</span>
+<span id="457">457</span>
+<span id="458">458</span>
+<span id="459">459</span>
+<span id="460">460</span>
+<span id="461">461</span>
+<span id="462">462</span>
+<span id="463">463</span>
+<span id="464">464</span>
+<span id="465">465</span>
+<span id="466">466</span>
+<span id="467">467</span>
+<span id="468">468</span>
+<span id="469">469</span>
+<span id="470">470</span>
+<span id="471">471</span>
+<span id="472">472</span>
+<span id="473">473</span>
+<span id="474">474</span>
+<span id="475">475</span>
+<span id="476">476</span>
+<span id="477">477</span>
+<span id="478">478</span>
+<span id="479">479</span>
+<span id="480">480</span>
+<span id="481">481</span>
+<span id="482">482</span>
+<span id="483">483</span>
+<span id="484">484</span>
+<span id="485">485</span>
+<span id="486">486</span>
+<span id="487">487</span>
+<span id="488">488</span>
+<span id="489">489</span>
+<span id="490">490</span>
+<span id="491">491</span>
+<span id="492">492</span>
+<span id="493">493</span>
+<span id="494">494</span>
+<span id="495">495</span>
+<span id="496">496</span>
+<span id="497">497</span>
+<span id="498">498</span>
+<span id="499">499</span>
+</pre><pre class="rust"><code><span class="comment">// TODO:</span>
+<span class="comment">// - type checks on expression (https://github.com/genomehubs/goat-cli/issues/3)</span>
+<span class="comment">// -</span>
+
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::error::error::ExpressionParseError</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils::tax_ranks::TaxRanks</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils::utils</span>::{<span class="ident">did_you_mean</span>, <span class="ident">switch_string_to_url_encoding</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils::variable_data::GOAT_VARIABLE_DATA</span>;
@@ -450,24 +517,73 @@
 <span class="kw">use</span> <span class="ident">tabled</span>::{<span class="ident">Footer</span>, <span class="ident">Header</span>, <span class="ident">MaxWidth</span>, <span class="ident">Modify</span>, <span class="ident">Rows</span>, <span class="ident">Table</span>, <span class="ident">Tabled</span>};
 
 <span class="doccomment">/// Serialize GoaT variables into their types.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// See [here](https://www.elastic.co/guide/en/elasticsearch/reference/current/number.html)</span>
+<span class="doccomment">/// for more details.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Tabled</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">TypeOf</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="doccomment">/// Floating point number.</span>
+    <span class="doccomment">/// Signed 64 bit int.</span>
     <span class="ident">Long</span>,
-    <span class="doccomment">/// Another floating point number?</span>
+    <span class="doccomment">/// Signed 16 bit int.</span>
     <span class="ident">Short</span>,
     <span class="doccomment">/// Float with one decimal place.</span>
     <span class="ident">OneDP</span>,
     <span class="doccomment">/// Float with two decimal places.</span>
     <span class="ident">TwoDP</span>,
-    <span class="doccomment">/// An integer.</span>
+    <span class="doccomment">/// Signed 32 bit int.</span>
     <span class="ident">Integer</span>,
     <span class="doccomment">/// A date.</span>
     <span class="ident">Date</span>,
-    <span class="doccomment">/// Don&#39;t know.</span>
+    <span class="doccomment">/// Half precision 16 bit float.</span>
     <span class="ident">HalfFloat</span>,
     <span class="doccomment">/// A variable which itself is an enumeration.</span>
     <span class="ident">Keyword</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">str</span><span class="op">&gt;</span>),
+}
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">TypeOf</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
+    <span class="doccomment">/// Check the values input by a user, so `goat-cli` displays meaningful help.</span>
+    <span class="kw">fn</span> <span class="ident">check</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">variable</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="comment">// we will have to parse the `other` conditionally on what the</span>
+        <span class="comment">// `TypeOf` is.</span>
+        <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span> {
+            <span class="ident">TypeOf::Long</span> =&gt; <span class="kw">match</span> <span class="ident">other</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">i64</span><span class="op">&gt;</span>() {
+                <span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; (),
+                <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="macro">bail!</span>(<span class="macro">format!</span>(<span class="string">&quot;For variable \&quot;{variable}\&quot; in the expression, an input error was found. Pass an integer as a value.&quot;</span>)),
+            },
+            <span class="ident">TypeOf::Short</span> =&gt; <span class="kw">match</span> <span class="ident">other</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">i16</span><span class="op">&gt;</span>() {
+                <span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; (),
+                <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="macro">bail!</span>(<span class="macro">format!</span>(<span class="string">&quot;For variable \&quot;{variable}\&quot; in the expression, an input error was found. Pass an integer as a value.&quot;</span>)),
+            },
+            <span class="ident">TypeOf::OneDP</span> =&gt; <span class="kw">match</span> <span class="ident">other</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span>() {
+                <span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; (),
+                <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="macro">bail!</span>(<span class="macro">format!</span>(<span class="string">&quot;For variable \&quot;{variable}\&quot; in the expression, an input error was found. Pass a float as a value.&quot;</span>)),
+            },
+            <span class="ident">TypeOf::TwoDP</span> =&gt; <span class="kw">match</span> <span class="ident">other</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span>() {
+                <span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; (),
+                <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="macro">bail!</span>(<span class="macro">format!</span>(<span class="string">&quot;For variable \&quot;{variable}\&quot; in the expression, an input error was found. Pass a float as a value.&quot;</span>)),
+            },
+            <span class="ident">TypeOf::Integer</span> =&gt; <span class="kw">match</span> <span class="ident">other</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">i32</span><span class="op">&gt;</span>() {
+                <span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; (),
+                <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="macro">bail!</span>(<span class="macro">format!</span>(<span class="string">&quot;For variable \&quot;{variable}\&quot; in the expression, an input error was found. Pass an integer as a value.&quot;</span>)),
+            },
+            <span class="comment">// dates should be in a specified format</span>
+            <span class="comment">// yyyy-mm-dd</span>
+            <span class="ident">TypeOf::Date</span> =&gt; {
+                <span class="kw">let</span> <span class="ident">tokens</span> <span class="op">=</span> <span class="ident">other</span>.<span class="ident">split</span>(<span class="string">&quot;-&quot;</span>).<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>();
+                <span class="macro">ensure!</span>(
+                    <span class="ident">tokens</span>.<span class="ident">len</span>() <span class="op">==</span> <span class="number">1</span> <span class="op">|</span><span class="op">|</span> <span class="ident">tokens</span>.<span class="ident">len</span>() <span class="op">==</span> <span class="number">3</span>,
+                    <span class="string">&quot;Improperly formatted date. Please make sure date is in the format yyyy-mm-dd, or yyyy.&quot;</span>
+                )
+            }
+            <span class="ident">TypeOf::HalfFloat</span> =&gt; <span class="kw">match</span> <span class="ident">other</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">f32</span><span class="op">&gt;</span>() {
+                <span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; (),
+                <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="macro">bail!</span>(<span class="macro">format!</span>(<span class="string">&quot;For variable \&quot;{variable}\&quot; in the expression, an input error was found. Pass a float as a value.&quot;</span>)),
+            },
+            <span class="comment">// keywords handled elsewhere</span>
+            <span class="ident">TypeOf::Keyword</span>(<span class="kw">_</span>) =&gt; (),
+        };
+        <span class="prelude-val">Ok</span>(())
+    }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">fmt::Display</span> <span class="kw">for</span> <span class="ident">TypeOf</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
@@ -679,7 +795,7 @@
             <span class="comment">// check this vector is length 3 or 1</span>
             <span class="macro">ensure!</span>(
                     <span class="ident">curr_el_vec</span>.<span class="ident">len</span>() <span class="op">==</span> <span class="number">3</span> <span class="op">|</span><span class="op">|</span> <span class="ident">curr_el_vec</span>.<span class="ident">len</span>() <span class="op">==</span> <span class="number">1</span>,
-                    <span class="string">&quot;[-]\tSplit vector on single expression is invalid - length = {}. Are the input variables or operands correct?&quot;</span>,
+                    <span class="string">&quot;Split vector on single expression is invalid - length = {}. Are the input variables or operands correct?&quot;</span>,
                     <span class="ident">curr_el_vec</span>.<span class="ident">len</span>()
                 );
             <span class="kw">match</span> <span class="ident">curr_el_vec</span>.<span class="ident">len</span>() {
@@ -716,7 +832,7 @@
 
                         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">value</span>) <span class="op">=</span> <span class="ident">var_vec_mean</span> {
                             <span class="macro">bail!</span>(
-                                <span class="string">&quot;In your expression (`-e`) you typed \&quot;{}\&quot; - did you mean \&quot;{}\&quot;?&quot;</span>,
+                                <span class="string">&quot;In your expression (LHS) you typed \&quot;{}\&quot; - did you mean \&quot;{}\&quot;?&quot;</span>,
                                 <span class="ident">variable</span>,
                                 <span class="ident">value</span>
                             )
@@ -757,12 +873,19 @@
                                 })
                                 .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span>();
 
-                            <span class="kw">if</span> <span class="op">!</span><span class="ident">value_split_commas</span>.<span class="ident">iter</span>().<span class="ident">all</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">k</span>.<span class="ident">contains</span>(<span class="op">&amp;&amp;</span><span class="ident">e</span>[..])) {
-                                <span class="comment">// BUG: if there are parentheses in the enum variant</span>
-                                <span class="comment">// but I think GoaT central can fix this.</span>
-                                <span class="comment">// then the URL encoding fails.</span>
-                                <span class="macro">bail!</span>(<span class="ident">ExpressionParseError::KeywordEnumError</span>)
+                            <span class="comment">// now check our keyword enums</span>
+                            <span class="kw">for</span> <span class="ident">val</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">value_split_commas</span> {
+                                <span class="kw">let</span> <span class="ident">possibilities</span> <span class="op">=</span>
+                                    <span class="ident">k</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">String::from</span>(<span class="kw-2">*</span><span class="ident">e</span>)).<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>();
+                                <span class="kw">let</span> <span class="ident">did_you_mean_str</span> <span class="op">=</span> <span class="ident">did_you_mean</span>(<span class="kw-2">&amp;</span><span class="ident">possibilities</span>, <span class="kw-2">&amp;</span><span class="ident">val</span>);
+
+                                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">value</span>) <span class="op">=</span> <span class="ident">did_you_mean_str</span> {
+                                    <span class="kw">if</span> <span class="ident">value</span> <span class="op">!</span><span class="op">=</span> <span class="ident">val</span>.<span class="ident">to_owned</span>() {
+                                        <span class="macro">bail!</span>(<span class="string">&quot;In your expression (RHS) you typed \&quot;{}\&quot; - did you mean \&quot;{}\&quot;?&quot;</span>, <span class="ident">val</span>, <span class="ident">value</span>)
+                                    }
+                                }
                             }
+
                             <span class="comment">// now modify value_split_commas to parse parentheses</span>
                             <span class="kw">let</span> <span class="ident">parsed_value_split_commas</span> <span class="op">=</span> <span class="ident">value</span>
                                 .<span class="ident">split</span>(<span class="string">&quot;,&quot;</span>)
@@ -788,7 +911,10 @@
                             <span class="comment">// assume there is another expression to follow</span>
                             <span class="ident">expression</span> <span class="op">+</span><span class="op">=</span> <span class="string">&quot;AND%20&quot;</span>
                         }
-                        <span class="kw">_</span> =&gt; {
+                        <span class="ident">t</span> =&gt; {
+                            <span class="comment">// here can we type check input</span>
+                            <span class="ident">TypeOf::check</span>(<span class="ident">t</span>, <span class="ident">value</span>, <span class="ident">variable</span>)<span class="question-mark">?</span>;
+
                             <span class="comment">// build expression</span>
                             <span class="ident">expression</span> <span class="op">+</span><span class="op">=</span> <span class="string">&quot;%20&quot;</span>;
                             <span class="ident">expression</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">url_encoded_variable</span>;
