@@ -26,7 +26,7 @@ async fn main() -> Result<()> {
         .arg_required_else_help(true)
         .global_setting(AppSettings::DeriveDisplayOrder)
         .author("Max Brown, Richard Challis, Sujai Kumar, Cibele Sotero-Caio <goat@genomehubs.org>")
-        .about("Genomes on a Tree. Query metadata across the tree of life.")
+        .about("Genomes on a Tree. Query metadata across the tree of life.\n\nFor a tutorial on usage, visit: https://github.com/genomehubs/goat-cli/wiki\nVisit the GoaT website here: https://goat.genomehubs.org/")
         .subcommand(
             Command::new("search")
                 .about("Query metadata for any taxon across the tree of life.")
