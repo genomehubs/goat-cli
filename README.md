@@ -4,7 +4,7 @@
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/goat/badges/platforms.svg)](https://anaconda.org/bioconda/goat)
 
 <p align="center">
-    <img width="300" height="145" src="https://goat.genomehubs.org/static/about/browse.png?8385e304da2611db1a5f3b2f6f0adce9528dcf3b">
+    <img width="300" height="365" src="./goat-cli-mbing-code.png">
 </p>
 
 # GoaT CLI
