@@ -6,14 +6,9 @@ use clap::{crate_version, AppSettings, Arg, Command};
 use futures::try_join;
 use tokio;
 
-use goat_cli::count::count;
-use goat_cli::lookup::lookup;
-use goat_cli::progress::progress;
-use goat_cli::record::newick;
-use goat_cli::search::run;
-use goat_cli::utils::{
-    cli_matches::{UPPER_CLI_FILE_LIMIT, UPPER_CLI_SIZE_LIMIT},
-    utils::pretty_print_usize,
+use goat_cli::{
+    count, lookup, progress, record::newick, search, utils::utils::pretty_print_usize,
+    UPPER_CLI_FILE_LIMIT, UPPER_CLI_SIZE_LIMIT,
 };
 
 #[tokio::main]
@@ -539,11 +534,11 @@ async fn main() -> Result<()> {
             match progress_bar {
                 true => {
                     try_join!(
-                        run::search(&matches),
+                        search::search(&matches),
                         progress::progress_bar(&matches, "search")
                     )?;
                 }
-                false => run::search(&matches).await?,
+                false => search::search(&matches).await?,
             }
         }
         Some(("count", matches)) => {

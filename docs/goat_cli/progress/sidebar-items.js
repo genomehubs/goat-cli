@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["progress","Add a progress bar to large searches."]]});
+initSidebarItems({"fn":[["progress_bar","Adds a progress bar to large requests."]]});

@@ -1,4 +1,4 @@
-use crate::utils::url::{GOAT_URL, TAXONOMY};
+use crate::{GOAT_URL, TAXONOMY};
 use crate::utils::utils;
 use anyhow::{bail, Result};
 

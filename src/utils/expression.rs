@@ -1,8 +1,4 @@
-// TODO:
-// - type checks on expression (https://github.com/genomehubs/goat-cli/issues/3)
-// -
-
-use crate::error::error::ExpressionParseError;
+use crate::error::ExpressionParseError;
 use crate::utils::tax_ranks::TaxRanks;
 use crate::utils::utils::{did_you_mean, switch_string_to_url_encoding};
 use crate::utils::variable_data::GOAT_VARIABLE_DATA;

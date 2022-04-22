@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["error","Errors used in the CLI."]]});
+initSidebarItems({"enum":[["ExpressionParseError","Errors in parsing expressions."],["FileError","Errors in parsing files."],["NotYetImplemented","Errors pertaining to implementations not yet there."]]});

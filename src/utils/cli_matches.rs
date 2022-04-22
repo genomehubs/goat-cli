@@ -1,15 +1,7 @@
 use crate::utils::{tax_ranks, url, utils};
+use crate::{GOAT_URL, TAXONOMY, UPPER_CLI_FILE_LIMIT, UPPER_CLI_SIZE_LIMIT};
 
 use anyhow::{bail, Result};
-use lazy_static::lazy_static;
-
-// global size limits on pinging the API
-lazy_static! {
-    /// Upper limit for the CLI arg `--size`.
-    pub static ref UPPER_CLI_SIZE_LIMIT: usize = 50000;
-    /// Upper limit for the number of entries in the file for CLI arg `-f`.
-    pub static ref UPPER_CLI_FILE_LIMIT: usize = 500;
-}
 
 /// Take CLI arguments and parse them. Return a tuple of:
 ///
@@ -169,13 +161,13 @@ pub fn process_cli_args(
     let url_vector_api = url::make_goat_urls(
         api,
         &url_vector,
-        &*url::GOAT_URL,
+        &*GOAT_URL,
         tax_tree,
         include_estimates,
         include_raw_values,
         summarise_values_by,
         result,
-        &*url::TAXONOMY,
+        &*TAXONOMY,
         size,
         ranks,
         fields,

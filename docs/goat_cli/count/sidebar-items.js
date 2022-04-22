@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["count","Query the GoaT count API."]]});
+initSidebarItems({"fn":[["count","`goat-cli count` presents an identical CLI to `goat-cli search` but prints to the console in the CLI call here, and to the stderr in the `goat-cli search` call."]]});

@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["run","Prints a TSV from a `goat-cli search` run."]]});
+initSidebarItems({"fn":[["search","Execute the `search` subcommand from `goat-cli`. Print a TSV."]]});

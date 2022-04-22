@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["lookup","Main entry point for `goat-cli lookup`."]],"struct":[["Collector","Collect the results from concurrent `goat-cli lookup` queries."],["Lookup","The lookup struct"],["Lookups","A vector of [`Lookup`] structs."]]});
+initSidebarItems({"struct":[["Collector","Collect the results from concurrent `goat-cli lookup` queries."],["Lookup","The lookup struct"],["Lookups","A vector of [`Lookup`] structs."]]});

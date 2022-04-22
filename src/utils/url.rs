@@ -2,19 +2,6 @@ use crate::utils::expression::CLIexpression;
 use crate::utils::variables::Variables;
 
 use anyhow::Result;
-use lazy_static::lazy_static;
-
-/// The base URL for GoaT.
-const GOAT_URL_BASE: &str = "https://goat.genomehubs.org/api/";
-/// The current version of the GoaT API.
-const GOAT_API_VERSION: &str = "v0.0.1/";
-
-lazy_static! {
-    /// The current GoaT URL.
-    pub static ref GOAT_URL: String = format!("{}{}", GOAT_URL_BASE, GOAT_API_VERSION);
-    /// The taxonomy that `goat-cli` uses.
-    pub static ref TAXONOMY: String = "ncbi".to_string();
-}
 
 // format the ranks for the URL.
 
