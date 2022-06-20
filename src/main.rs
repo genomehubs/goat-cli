@@ -166,9 +166,15 @@ async fn main() -> Result<()> {
                 )
                 .arg(
                     Arg::new("legislation")
-                        .short('l')
                         .long("legislation")
                         .help("Print legislation data."),
+                )
+                .arg(
+                    Arg::new("lineage")
+                        .short('l')
+                        .long("lineage")
+                        .conflicts_with("descendents")
+                        .help("Displays lineage information. I.e. from this node in the tree go back and give all the nodes to the root. Conflicts with descendents."),
                 )
                 .arg(
                     Arg::new("target-lists")
@@ -386,9 +392,15 @@ async fn main() -> Result<()> {
                 )
                 .arg(
                     Arg::new("legislation")
-                        .short('l')
                         .long("legislation")
                         .help("Print legislation data."),
+                )
+                .arg(
+                    Arg::new("lineage")
+                        .short('l')
+                        .long("lineage")
+                        .conflicts_with("descendents")
+                        .help("Displays lineage information. I.e. from this node in the tree go back and give all the nodes to the root. Conflicts with descendents."),
                 )
                 .arg(
                     Arg::new("target-lists")

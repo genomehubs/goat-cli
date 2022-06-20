@@ -3,6 +3,20 @@ use crate::{GOAT_URL, TAXONOMY, UPPER_CLI_FILE_LIMIT, UPPER_CLI_SIZE_LIMIT};
 
 use anyhow::{bail, Result};
 
+/// The type of result to return.
+enum TaxType {
+    /// tax_tree() returns a node and all
+    /// of its descendants.
+    Tree,
+    /// tax_name() returns only the taxon of
+    /// interest.
+    Name,
+    /// tax_lineage() returns all of the nodes
+    /// from a given taxon back to the root of the
+    /// tree.
+    Lineage,
+}
+
 /// Take CLI arguments and parse them. Return a tuple of:
 ///
 /// (the size arg you passed, vector of taxon ID's, vector of URLs).
@@ -17,7 +31,16 @@ pub fn process_cli_args(
     let gs = matches.is_present("genome-size");
     let all = matches.is_present("all");
     let print_url = matches.is_present("url");
-    let tax_tree_bool = matches.is_present("descendents");
+    // This may be over-engineering.
+    // The CLI will error if descendents and lineage are both given.
+    let tax_tree_enum = match matches.is_present("descendents") {
+        true => TaxType::Tree,
+        false => TaxType::Name,
+    };
+    let tax_lineage_enum = match matches.is_present("lineage") {
+        true => TaxType::Lineage,
+        false => TaxType::Name,
+    };
     let busco = matches.is_present("busco");
     let gc_percent = matches.is_present("gc-percent");
     // non-default fields.
@@ -119,9 +142,11 @@ pub fn process_cli_args(
     };
 
     // tree includes all descendents of a node
-    let tax_tree = match tax_tree_bool {
-        true => "tree",
-        false => "name",
+    let tax_tree = match (tax_tree_enum, tax_lineage_enum) {
+        (TaxType::Tree, TaxType::Name) => "tree",
+        (TaxType::Name, TaxType::Lineage) => "lineage",
+        (TaxType::Name, TaxType::Name) => "name",
+        (_, _) => bail!("If we get here, I've done something wrong in the `TaxType` enum logic. Please file an issue."),
     };
 
     // some GoaT defaults. https://goat.genomehubs.org/search?query=tax_name%28Drosophila%29&result=taxon&fields=all&includeEstimates=true&summaryValues=count&taxonomy=ncbi#tax_name(Drosophila)
