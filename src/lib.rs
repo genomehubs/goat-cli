@@ -17,7 +17,7 @@ pub mod lookup;
 /// bar.
 pub mod progress;
 /// Query the GoaT record API.
-pub mod record;
+pub mod report;
 /// Query the GoaT search API.
 pub mod search;
 /// Collection of utility functions

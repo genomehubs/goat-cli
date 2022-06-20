@@ -7,7 +7,7 @@ use futures::try_join;
 use tokio;
 
 use goat_cli::{
-    count, lookup, progress, record::newick, search, utils::utils::pretty_print_usize,
+    count, lookup, progress, report::newick, search, utils::utils::pretty_print_usize,
     UPPER_CLI_FILE_LIMIT, UPPER_CLI_SIZE_LIMIT,
 };
 
