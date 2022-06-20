@@ -27,7 +27,7 @@ pub mod utils;
 /// The base URL for GoaT.
 const GOAT_URL_BASE: &str = "https://goat.genomehubs.org/api/";
 /// The current version of the GoaT API.
-const GOAT_API_VERSION: &str = "v0.0.1/";
+const GOAT_API_VERSION: &str = "v2/";
 
 lazy_static! {
     /// The current GoaT URL.
