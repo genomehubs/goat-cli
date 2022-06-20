@@ -1,6 +1,6 @@
 [package]
 name = "goat-cli"
-version = "0.1.55"
+version = "0.1.6"
 authors = ["Max Brown <mb39@sanger.ac.uk>", "Rich Challis <goat@genomehubs.org>", "Sujai Kumar <goat@genomehubs.org>", "Cibele Sotero-Caio <goat@genomehubs.org>"]
 edition = "2021"
 license = "MIT"
@@ -24,4 +24,4 @@ again = "0.1"
 async-std = "1.10.0"
 indicatif = "0.16.2"
 regex = "1.5.4"
-tabled = "0.6.0"
+tabled = "0.7.0"

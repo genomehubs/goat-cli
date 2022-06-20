@@ -6,7 +6,7 @@ use crate::utils::variable_data::GOAT_VARIABLE_DATA;
 use anyhow::{bail, ensure, Result};
 use regex::{CaptureMatches, Captures, Regex};
 use std::fmt;
-use tabled::{Footer, Header, MaxWidth, Modify, Rows, Table, Tabled};
+use tabled::{Footer, Header, MaxWidth, Modify, Table, Tabled, object::Rows};
 
 /// Serialize GoaT variables into their types.
 ///
