@@ -16,6 +16,15 @@ use rand::{thread_rng, Rng};
 pub fn generate_unique_strings(matches: &clap::ArgMatches) -> Result<Vec<String>> {
     let tax_name_op = matches.value_of("taxon");
     let filename_op = matches.value_of("file");
+    // print expression table
+    // got to include this here, otherwise we error.
+    let print_expression = matches.is_present("print-expression");
+
+    if print_expression {
+        crate::utils::expression::print_variable_data();
+        std::process::exit(0);
+    }
+
     let url_vector: Vec<String>;
     // if -t use this
     match tax_name_op {
