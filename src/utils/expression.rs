@@ -396,7 +396,9 @@ impl<'a> CLIexpression<'a> {
                             expression += "%20";
                             expression += &url_encoded_variable;
                             // do operators need to be translated?
+                            expression += "%20";
                             expression += operator;
+                            expression += "%20";
                             expression += &parsed_value_split_commas.join("%2C");
                             expression += "%20";
                             // end of sub expression
@@ -411,7 +413,9 @@ impl<'a> CLIexpression<'a> {
                             expression += "%20";
                             expression += &url_encoded_variable;
                             // do operators need to be translated?
+                            expression += "%20";
                             expression += operator;
+                            expression += "%20";
                             expression += value;
                             expression += "%20";
                             // end of sub expression

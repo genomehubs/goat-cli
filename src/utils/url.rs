@@ -350,6 +350,7 @@ pub fn make_goat_urls(
     variables: Option<&str>,
     expression: &str,
     tax_rank: &str,
+    unique_ids: Vec<String>,
 ) -> Result<Vec<String>> {
     let mut res = Vec::new();
 
@@ -373,8 +374,8 @@ pub fn make_goat_urls(
 
     // enumeration of the taxa will be 0 -> n,
     // corresponding to alphabetical order of taxa
-    for (index, el) in taxids.iter().enumerate() {
-        let query_id = format!("&queryId=goat_cli_{}", index);
+    for (el, chars) in taxids.iter().zip(unique_ids.iter()) {
+        let query_id = format!("&queryId=goat_cli_{}", chars);
         let url = format!(
         // hardcode tidy data for now.
         "{goat_url}{api}?query=tax_{tax_tree}%28{taxon}%29{tax_rank}{expression}&includeEstimates={include_estimates}&includeRawValues={include_raw_values}&summaryValues={summarise_values_by}&result={result}&taxonomy={taxonomy}&size={size}{rank_string}{fields_string}{tidy_data}{names}{query_id}",

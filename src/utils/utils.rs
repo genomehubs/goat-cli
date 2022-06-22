@@ -4,7 +4,55 @@ use std::{
     path::Path,
 };
 
+use crate::UPPER_CLI_FILE_LIMIT;
 use anyhow::{bail, Context, Result};
+use rand::distributions::Alphanumeric;
+use rand::{thread_rng, Rng};
+
+/// Determine from the CLI matches how many URLs
+/// are needing to be generated, and return a
+/// vector of random character strings to use as
+/// unique identifiers.
+pub fn generate_unique_strings(matches: &clap::ArgMatches) -> Result<Vec<String>> {
+    let tax_name_op = matches.value_of("taxon");
+    let filename_op = matches.value_of("file");
+    let url_vector: Vec<String>;
+    // if -t use this
+    match tax_name_op {
+        Some(s) => {
+            // catch empty string hanging here.
+            if s == "" {
+                bail!("[-]\tEmpty string found, please specify a taxon.");
+            }
+            url_vector = parse_comma_separated(s);
+        }
+        None => match filename_op {
+            Some(s) => {
+                url_vector = lines_from_file(s)?;
+                // check length of vector and bail if > 1000
+                if url_vector.len() > *UPPER_CLI_FILE_LIMIT {
+                    let limit_string = pretty_print_usize(*UPPER_CLI_FILE_LIMIT);
+                    bail!(
+                        "[-]\tNumber of taxa specified cannot exceed {}.",
+                        limit_string
+                    )
+                }
+            }
+            None => bail!("[-]\tOne of -f (--file) or -t (--tax-id) should be specified."),
+        },
+    }
+
+    let url_vector_len = url_vector.len();
+
+    let mut chars_vec = vec![];
+    for _ in 0..url_vector_len {
+        let mut rng = thread_rng();
+        let chars: String = (0..15).map(|_| rng.sample(Alphanumeric) as char).collect();
+        chars_vec.push(chars.clone());
+    }
+
+    Ok(chars_vec)
+}
 
 /// Read NCBI taxon ID's or binomial names of species,
 /// or higher order taxa from a file.
@@ -165,13 +213,13 @@ pub fn switch_string_to_url_encoding(string: &str) -> Result<&str> {
         // "!=" => "%21%3D",
         "!=" => "!%3D",
         // "<" => "%3C",
-        "<" => "<",
+        "<" => "%3C",
         // "<=" => "%3C%3D",
         "<=" => "<%3D",
         "=" => "%3D",
         "==" => "%3D%3D",
         // ">" => "%3E",
-        ">" => ">",
+        ">" => "%3E",
         // ">=" => "%3E%3D",
         ">=" => ">%3D",
         _ => bail!("Should not reach here."),

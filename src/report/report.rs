@@ -1,5 +1,5 @@
-use crate::{GOAT_URL, TAXONOMY};
 use crate::utils::utils;
+use crate::{GOAT_URL, TAXONOMY};
 use anyhow::{bail, Result};
 
 // might re-jig this later,
@@ -42,7 +42,8 @@ impl Report {
     }
 
     /// Make the URL. Currently only [`RecordType::Newick`] supported.
-    pub fn make_url(&self, record_type: ReportType) -> String {
+    /// Also return the unique identifier so a progress bar can be made.
+    pub fn make_url(&self, record_type: ReportType, unique_ids: Vec<String>) -> String {
         match record_type {
             ReportType::Newick => {
                 let mut url = String::new();
@@ -68,7 +69,7 @@ impl Report {
                 url += &"&includeEstimates=true";
                 url += &format!("&taxonomy={}", &*TAXONOMY);
                 // fix this for now, as only single requests can be submitted
-                url += "&queryId=goat_cli_0";
+                url += &format!("&queryId=goat_cli_{}", unique_ids[0]);
                 url
             }
         }

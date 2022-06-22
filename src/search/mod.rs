@@ -11,13 +11,13 @@ use crate::count;
 use crate::utils::{cli_matches, utils};
 
 /// Execute the `search` subcommand from `goat-cli`. Print a TSV.
-pub async fn search(matches: &clap::ArgMatches) -> Result<()> {
+pub async fn search(matches: &clap::ArgMatches, unique_ids: Vec<String>) -> Result<()> {
     let (_size_int, _url_vector, url_vector_api) =
-        cli_matches::process_cli_args(matches, "search")?;
+        cli_matches::process_cli_args(matches, "search", unique_ids.clone())?;
     let concurrent_requests = url_vector_api.len();
 
     // print count warnings.
-    count::count(matches, false, true).await?;
+    count::count(matches, false, true, unique_ids).await?;
 
     let fetches = futures::stream::iter(url_vector_api.into_iter().map(|path| async move {
         // possibly make a again::RetryPolicy

@@ -9,9 +9,9 @@ use crate::report::report::{Report, ReportType};
 // e.g. goat newick -f "taxon 1, taxon2" "taxon3" ?
 
 /// CLI entry point to get the Newick file from the GoaT API.
-pub async fn get_newick(matches: &clap::ArgMatches) -> Result<()> {
+pub async fn get_newick(matches: &clap::ArgMatches, unique_ids: Vec<String>) -> Result<()> {
     let record = Report::new(matches)?;
-    let newick_url = record.make_url(ReportType::Newick);
+    let newick_url = record.make_url(ReportType::Newick, unique_ids);
 
     let print_url = matches.is_present("url");
     if print_url {

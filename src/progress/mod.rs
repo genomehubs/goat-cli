@@ -4,7 +4,7 @@
 //! Add with `--progress-bar` in `goat-cli search` and
 //! `goat-cli newick`.
 
-use anyhow::{bail, Result};
+use anyhow::{bail, ensure, Result};
 use async_std::task;
 use futures::StreamExt;
 use indicatif;
@@ -21,7 +21,11 @@ use crate::{GOAT_URL, UPPER_CLI_SIZE_LIMIT};
 // for large requests. Currently limited to single large requests.
 
 /// Adds a progress bar to large requests.
-pub async fn progress_bar(matches: &clap::ArgMatches, api: &str) -> Result<()> {
+pub async fn progress_bar(
+    matches: &clap::ArgMatches,
+    api: &str,
+    unique_ids: Vec<String>,
+) -> Result<()> {
     // wait briefly before submitting
     // so we are sure the API has recieved and set the queryId
     task::sleep(Duration::from_secs(2)).await;
@@ -29,13 +33,22 @@ pub async fn progress_bar(matches: &clap::ArgMatches, api: &str) -> Result<()> {
     let (size_int, _url_vector, url_vector_api) = match api {
         // doesn't matter what is in the vecs, they just need to be length 1
         // as newick only supports single url calls right now.
+        // this is really bad coding...
         "newick" => (0u64, vec!["init".to_string()], vec!["init".to_string()]),
-        other => cli_matches::process_cli_args(matches, other)?,
+        other => cli_matches::process_cli_args(matches, other, unique_ids.clone())?,
     };
+
+    ensure!(
+        unique_ids.len() == url_vector_api.len(),
+        "No reason these lengths should be different."
+    );
+
     let concurrent_requests = url_vector_api.len();
 
     // should be fine to always unwrap this
-    let no_query_hits = count::count(matches, false, false).await?.unwrap();
+    let no_query_hits = count::count(matches, false, false, unique_ids.clone())
+        .await?
+        .unwrap();
     // might need tweaking...
     // special case newick
     if api != "newick" {
@@ -48,8 +61,8 @@ pub async fn progress_bar(matches: &clap::ArgMatches, api: &str) -> Result<()> {
 
     // add the query ID's to a vec
     let mut query_id_vec = Vec::new();
-    for el in 0..concurrent_requests {
-        let query_id = format!("{}progress?queryId=goat_cli_{}", *GOAT_URL, el);
+    for i in 0..concurrent_requests {
+        let query_id = format!("{}progress?queryId=goat_cli_{}", *GOAT_URL, unique_ids[i]);
         query_id_vec.push(query_id);
     }
 

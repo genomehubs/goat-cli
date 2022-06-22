@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["process_cli_args","Take CLI arguments and parse them. Return a tuple of:"]]});
+initSidebarItems({"enum":[["TaxType","The type of result to return."]],"fn":[["process_cli_args","Take CLI arguments and parse them. Return a tuple of:"]]});

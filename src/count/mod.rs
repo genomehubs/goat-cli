@@ -16,8 +16,10 @@ pub async fn count(
     matches: &clap::ArgMatches,
     cli: bool,
     print_warning: bool,
+    unique_ids: Vec<String>,
 ) -> Result<Option<u64>> {
-    let (size_int, url_vector, url_vector_api) = cli_matches::process_cli_args(matches, "count")?;
+    let (size_int, url_vector, url_vector_api) =
+        cli_matches::process_cli_args(matches, "count", unique_ids)?;
     let concurrent_requests = url_vector_api.len();
 
     let fetches = futures::stream::iter(url_vector_api.iter().map(|path| async move {

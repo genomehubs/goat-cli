@@ -3,11 +3,17 @@
 
 use anyhow::Result;
 use clap::{crate_version, AppSettings, Arg, Command};
+// I think I am going to have to generate the unique ID's based on number of
+// input queries, then pass these to both the search/newick and then the
+// progress bar functions in a try_join?
 use futures::try_join;
 use tokio;
 
 use goat_cli::{
-    count, lookup, progress, report::newick, search, utils::utils::pretty_print_usize,
+    count, lookup, progress,
+    report::newick,
+    search,
+    utils::utils::{generate_unique_strings, pretty_print_usize},
     UPPER_CLI_FILE_LIMIT, UPPER_CLI_SIZE_LIMIT,
 };
 
@@ -542,34 +548,39 @@ async fn main() -> Result<()> {
     match matches.subcommand() {
         Some(("search", matches)) => {
             let progress_bar = matches.is_present("progress-bar");
+            let unique_ids = generate_unique_strings(matches)?;
 
             match progress_bar {
                 true => {
                     try_join!(
-                        search::search(&matches),
-                        progress::progress_bar(&matches, "search")
+                        search::search(&matches, unique_ids.clone()),
+                        progress::progress_bar(&matches, "search", unique_ids)
                     )?;
                 }
-                false => search::search(&matches).await?,
+                false => {
+                    let _ = search::search(&matches, unique_ids).await?;
+                }
             }
         }
         Some(("count", matches)) => {
-            count::count(&matches, true, false).await?;
+            let unique_ids = generate_unique_strings(matches)?;
+            count::count(&matches, true, false, unique_ids).await?;
         }
         Some(("lookup", matches)) => {
             lookup::lookup(&matches, true).await?;
         }
         Some(("newick", matches)) => {
             let progress_bar = matches.is_present("progress-bar");
+            let unique_ids = generate_unique_strings(matches)?;
 
             match progress_bar {
                 true => {
                     try_join!(
-                        newick::get_newick(matches),
-                        progress::progress_bar(&matches, "newick")
+                        newick::get_newick(matches, unique_ids.clone()),
+                        progress::progress_bar(&matches, "newick", unique_ids)
                     )?;
                 }
-                false => newick::get_newick(matches).await?,
+                false => newick::get_newick(matches, unique_ids).await?,
             }
         }
         _ => {

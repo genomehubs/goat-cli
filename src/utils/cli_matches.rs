@@ -19,10 +19,12 @@ enum TaxType {
 
 /// Take CLI arguments and parse them. Return a tuple of:
 ///
-/// (the size arg you passed, vector of taxon ID's, vector of URLs).
+/// (the size arg you passed, vector of taxon ID's, vector of URLs, and a vector
+/// of unique ID's).
 pub fn process_cli_args(
     matches: &clap::ArgMatches,
     api: &str,
+    unique_ids: Vec<String>,
 ) -> Result<(u64, Vec<String>, Vec<String>)> {
     let include_raw_values = matches.is_present("raw");
     let assembly = matches.is_present("assembly");
@@ -199,6 +201,7 @@ pub fn process_cli_args(
         variable_string,
         &expression,
         &tax_rank,
+        unique_ids,
     )?;
 
     if print_url {

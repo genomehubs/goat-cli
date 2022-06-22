@@ -1,1 +1,0 @@
-initSidebarItems({"mod":[["newick","Module to return a Newick file from GoaT."],["record","The record API may change, and this will need to be adapted accordingly."]]});
