@@ -502,6 +502,12 @@
 <span id="497">497</span>
 <span id="498">498</span>
 <span id="499">499</span>
+<span id="500">500</span>
+<span id="501">501</span>
+<span id="502">502</span>
+<span id="503">503</span>
+<span id="504">504</span>
+<span id="505">505</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::error::ExpressionParseError</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils::tax_ranks::TaxRanks</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils::utils</span>::{<span class="ident">did_you_mean</span>, <span class="ident">switch_string_to_url_encoding</span>};
@@ -510,7 +516,7 @@
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">bail</span>, <span class="ident">ensure</span>, <span class="prelude-ty">Result</span>};
 <span class="kw">use</span> <span class="ident">regex</span>::{<span class="ident">CaptureMatches</span>, <span class="ident">Captures</span>, <span class="ident">Regex</span>};
 <span class="kw">use</span> <span class="ident">std::fmt</span>;
-<span class="kw">use</span> <span class="ident">tabled</span>::{<span class="ident">Footer</span>, <span class="ident">Header</span>, <span class="ident">MaxWidth</span>, <span class="ident">Modify</span>, <span class="ident">Table</span>, <span class="ident">Tabled</span>, <span class="ident">object::Rows</span>};
+<span class="kw">use</span> <span class="ident">tabled</span>::{<span class="ident">object::Rows</span>, <span class="ident">Footer</span>, <span class="ident">Header</span>, <span class="ident">MaxWidth</span>, <span class="ident">Modify</span>, <span class="ident">Table</span>, <span class="ident">Tabled</span>};
 
 <span class="doccomment">/// Serialize GoaT variables into their types.</span>
 <span class="doccomment">///</span>
@@ -534,6 +540,8 @@
     <span class="ident">HalfFloat</span>,
     <span class="doccomment">/// A variable which itself is an enumeration.</span>
     <span class="ident">Keyword</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">str</span><span class="op">&gt;</span>),
+    <span class="doccomment">/// None to catch parsing errors</span>
+    <span class="prelude-val">None</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">TypeOf</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
@@ -577,6 +585,8 @@
             },
             <span class="comment">// keywords handled elsewhere</span>
             <span class="ident">TypeOf::Keyword</span>(<span class="kw">_</span>) =&gt; (),
+            <span class="comment">// None to catch errors.</span>
+            <span class="ident">TypeOf::None</span> =&gt; (),
         };
         <span class="prelude-val">Ok</span>(())
     }
@@ -585,6 +595,8 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">fmt::Display</span> <span class="kw">for</span> <span class="ident">TypeOf</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span>) -&gt; <span class="ident">fmt::Result</span> {
         <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="self">self</span> {
+            <span class="comment">// do nothing with None at the moment.</span>
+            <span class="ident">TypeOf::None</span> =&gt; <span class="prelude-val">Ok</span>(()),
             <span class="ident">TypeOf::Long</span> =&gt; <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;!=, &lt;, &lt;=, =, ==, &gt;, &gt;=&quot;</span>),
             <span class="ident">TypeOf::Short</span> =&gt; <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;!=, &lt;, &lt;=, =, ==, &gt;, &gt;=&quot;</span>),
             <span class="ident">TypeOf::OneDP</span> =&gt; <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;!=, &lt;, &lt;=, =, ==, &gt;, &gt;=&quot;</span>),
