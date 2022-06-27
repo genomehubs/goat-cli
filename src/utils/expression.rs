@@ -6,7 +6,7 @@ use crate::utils::variable_data::GOAT_VARIABLE_DATA;
 use anyhow::{bail, ensure, Result};
 use regex::{CaptureMatches, Captures, Regex};
 use std::fmt;
-use tabled::{Footer, Header, MaxWidth, Modify, Table, Tabled, object::Rows};
+use tabled::{object::Rows, Footer, Header, MaxWidth, Modify, Table, Tabled};
 
 /// Serialize GoaT variables into their types.
 ///
@@ -30,6 +30,8 @@ pub enum TypeOf<'a> {
     HalfFloat,
     /// A variable which itself is an enumeration.
     Keyword(Vec<&'a str>),
+    /// None to catch parsing errors
+    None,
 }
 
 impl<'a> TypeOf<'a> {
@@ -73,6 +75,8 @@ impl<'a> TypeOf<'a> {
             },
             // keywords handled elsewhere
             TypeOf::Keyword(_) => (),
+            // None to catch errors.
+            TypeOf::None => (),
         };
         Ok(())
     }
@@ -81,6 +85,8 @@ impl<'a> TypeOf<'a> {
 impl<'a> fmt::Display for TypeOf<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match &*self {
+            // do nothing with None at the moment.
+            TypeOf::None => Ok(()),
             TypeOf::Long => write!(f, "!=, <, <=, =, ==, >, >="),
             TypeOf::Short => write!(f, "!=, <, <=, =, ==, >, >="),
             TypeOf::OneDP => write!(f, "!=, <, <=, =, ==, >, >="),

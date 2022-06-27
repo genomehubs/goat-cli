@@ -5,7 +5,7 @@ rm vars.json
 
 # https://goat.genomehubs.org/api-docs/#/GoaT%20API/getResultFields
 curl -X 'GET' \
-'https://goat.genomehubs.org/api/v0.0.1/resultFields?result=taxon&taxonomy=ncbi' \
+'https://goat.genomehubs.org/api/v2/resultFields?result=taxon&taxonomy=ncbi' \
 -H 'accept: application/json' > vars.json 2> /dev/null
 
 # parse this data to Rust
