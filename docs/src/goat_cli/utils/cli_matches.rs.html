@@ -217,8 +217,6 @@
 <span id="212">212</span>
 <span id="213">213</span>
 <span id="214">214</span>
-<span id="215">215</span>
-<span id="216">216</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils</span>::{<span class="ident">tax_ranks</span>, <span class="ident">url</span>, <span class="ident">utils</span>};
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">GOAT_URL</span>, <span class="ident">TAXONOMY</span>, <span class="ident">UPPER_CLI_FILE_LIMIT</span>, <span class="ident">UPPER_CLI_SIZE_LIMIT</span>};
 
@@ -252,7 +250,6 @@
     <span class="kw">let</span> <span class="ident">cvalues</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;c-values&quot;</span>);
     <span class="kw">let</span> <span class="ident">karyotype</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;karyotype&quot;</span>);
     <span class="kw">let</span> <span class="ident">gs</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;genome-size&quot;</span>);
-    <span class="kw">let</span> <span class="ident">all</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;all&quot;</span>);
     <span class="kw">let</span> <span class="ident">print_url</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;url&quot;</span>);
     <span class="comment">// This may be over-engineering.</span>
     <span class="comment">// The CLI will error if descendents and lineage are both given.</span>
@@ -315,7 +312,6 @@
 
     <span class="comment">// merge the field flags</span>
     <span class="kw">let</span> <span class="ident">fields</span> <span class="op">=</span> <span class="ident">url::FieldBuilder</span> {
-        <span class="ident">all</span>,
         <span class="ident">assembly</span>,
         <span class="ident">bioproject</span>,
         <span class="ident">busco</span>,

@@ -280,116 +280,6 @@
 <span id="275">275</span>
 <span id="276">276</span>
 <span id="277">277</span>
-<span id="278">278</span>
-<span id="279">279</span>
-<span id="280">280</span>
-<span id="281">281</span>
-<span id="282">282</span>
-<span id="283">283</span>
-<span id="284">284</span>
-<span id="285">285</span>
-<span id="286">286</span>
-<span id="287">287</span>
-<span id="288">288</span>
-<span id="289">289</span>
-<span id="290">290</span>
-<span id="291">291</span>
-<span id="292">292</span>
-<span id="293">293</span>
-<span id="294">294</span>
-<span id="295">295</span>
-<span id="296">296</span>
-<span id="297">297</span>
-<span id="298">298</span>
-<span id="299">299</span>
-<span id="300">300</span>
-<span id="301">301</span>
-<span id="302">302</span>
-<span id="303">303</span>
-<span id="304">304</span>
-<span id="305">305</span>
-<span id="306">306</span>
-<span id="307">307</span>
-<span id="308">308</span>
-<span id="309">309</span>
-<span id="310">310</span>
-<span id="311">311</span>
-<span id="312">312</span>
-<span id="313">313</span>
-<span id="314">314</span>
-<span id="315">315</span>
-<span id="316">316</span>
-<span id="317">317</span>
-<span id="318">318</span>
-<span id="319">319</span>
-<span id="320">320</span>
-<span id="321">321</span>
-<span id="322">322</span>
-<span id="323">323</span>
-<span id="324">324</span>
-<span id="325">325</span>
-<span id="326">326</span>
-<span id="327">327</span>
-<span id="328">328</span>
-<span id="329">329</span>
-<span id="330">330</span>
-<span id="331">331</span>
-<span id="332">332</span>
-<span id="333">333</span>
-<span id="334">334</span>
-<span id="335">335</span>
-<span id="336">336</span>
-<span id="337">337</span>
-<span id="338">338</span>
-<span id="339">339</span>
-<span id="340">340</span>
-<span id="341">341</span>
-<span id="342">342</span>
-<span id="343">343</span>
-<span id="344">344</span>
-<span id="345">345</span>
-<span id="346">346</span>
-<span id="347">347</span>
-<span id="348">348</span>
-<span id="349">349</span>
-<span id="350">350</span>
-<span id="351">351</span>
-<span id="352">352</span>
-<span id="353">353</span>
-<span id="354">354</span>
-<span id="355">355</span>
-<span id="356">356</span>
-<span id="357">357</span>
-<span id="358">358</span>
-<span id="359">359</span>
-<span id="360">360</span>
-<span id="361">361</span>
-<span id="362">362</span>
-<span id="363">363</span>
-<span id="364">364</span>
-<span id="365">365</span>
-<span id="366">366</span>
-<span id="367">367</span>
-<span id="368">368</span>
-<span id="369">369</span>
-<span id="370">370</span>
-<span id="371">371</span>
-<span id="372">372</span>
-<span id="373">373</span>
-<span id="374">374</span>
-<span id="375">375</span>
-<span id="376">376</span>
-<span id="377">377</span>
-<span id="378">378</span>
-<span id="379">379</span>
-<span id="380">380</span>
-<span id="381">381</span>
-<span id="382">382</span>
-<span id="383">383</span>
-<span id="384">384</span>
-<span id="385">385</span>
-<span id="386">386</span>
-<span id="387">387</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils::expression::CLIexpression</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils::variables::Variables</span>;
 
@@ -445,8 +335,6 @@
 <span class="doccomment">/// passed from the user.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FieldBuilder</span> {
-    <span class="doccomment">/// Add all of the current GoaT fields.</span>
-    <span class="kw">pub</span> <span class="ident">all</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Add only assembly level/span GoaT fields.</span>
     <span class="kw">pub</span> <span class="ident">assembly</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Add bioproject GoaT field.</span>
@@ -478,6 +366,8 @@
     <span class="doccomment">/// Add contig and scaffold n50 GoaT fields.</span>
     <span class="kw">pub</span> <span class="ident">n50</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Add synonym, tolID, and common name GoaT fields.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// Not implemented in [`FieldBuilder`] below.</span>
     <span class="kw">pub</span> <span class="ident">names</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Add plastid assembly span and gc percent GoaT</span>
     <span class="doccomment">/// fields.</span>
@@ -492,229 +382,119 @@
     <span class="doccomment">/// GoaT fields.</span>
     <span class="kw">pub</span> <span class="ident">target_lists</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Render output in tidy format?</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// Not implemented in [`FieldBuilder`] below.</span>
     <span class="kw">pub</span> <span class="ident">tidy</span>: <span class="ident">bool</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">FieldBuilder</span> {
-    <span class="comment">// Used for checking absence of any fields.</span>
-    <span class="kw">fn</span> <span class="ident">as_array</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; [<span class="ident">bool</span>; <span class="number">21</span>] {
-        [
-            <span class="self">self</span>.<span class="ident">all</span>,
-            <span class="self">self</span>.<span class="ident">assembly</span>,
-            <span class="self">self</span>.<span class="ident">bioproject</span>,
-            <span class="self">self</span>.<span class="ident">busco</span>,
-            <span class="self">self</span>.<span class="ident">country_list</span>,
-            <span class="self">self</span>.<span class="ident">cvalues</span>,
-            <span class="self">self</span>.<span class="ident">date</span>,
-            <span class="self">self</span>.<span class="ident">gc_percent</span>,
-            <span class="self">self</span>.<span class="ident">gene_count</span>,
-            <span class="self">self</span>.<span class="ident">gs</span>,
-            <span class="self">self</span>.<span class="ident">karyotype</span>,
-            <span class="self">self</span>.<span class="ident">legislation</span>,
-            <span class="self">self</span>.<span class="ident">mitochondrion</span>,
-            <span class="self">self</span>.<span class="ident">names</span>,
-            <span class="self">self</span>.<span class="ident">n50</span>,
-            <span class="self">self</span>.<span class="ident">plastid</span>,
-            <span class="self">self</span>.<span class="ident">ploidy</span>,
-            <span class="self">self</span>.<span class="ident">sex_determination</span>,
-            <span class="self">self</span>.<span class="ident">status</span>,
-            <span class="self">self</span>.<span class="ident">target_lists</span>,
-            <span class="self">self</span>.<span class="ident">tidy</span>,
+    <span class="doccomment">/// A function to turn all of the fields into a small data structure.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// This is hardcoded, but could be modified to be read in from</span>
+    <span class="doccomment">/// the goat standard variables JSON in the future.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// It&#39;s a [`Vec`] of a tuple of:</span>
+    <span class="doccomment">/// - [`bool`] which shows whether the user chose this flag or not</span>
+    <span class="doccomment">/// - [`Vec&lt;&amp;str&gt;`] which enumerates the variable strings (as GoaT</span>
+    <span class="doccomment">/// would recognise) that correspond to this field.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// It&#39;s a bit of a judgement call on my part but happy to change if</span>
+    <span class="doccomment">/// there is a compelling argument.</span>
+    <span class="kw">fn</span> <span class="ident">to_vec_tuples</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">bool</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span><span class="op">&gt;</span>)<span class="op">&gt;</span> {
+        <span class="macro">vec!</span>[
+            (<span class="self">self</span>.<span class="ident">assembly</span>, <span class="macro">vec!</span>[<span class="string">&quot;assembly_level&quot;</span>, <span class="string">&quot;assembly_span&quot;</span>]),
+            (<span class="self">self</span>.<span class="ident">bioproject</span>, <span class="macro">vec!</span>[<span class="string">&quot;bioproject&quot;</span>, <span class="string">&quot;biosample&quot;</span>]),
+            <span class="comment">// testing all these busco fields.</span>
+            (
+                <span class="self">self</span>.<span class="ident">busco</span>,
+                <span class="macro">vec!</span>[
+                    <span class="string">&quot;busco_completeness&quot;</span>,
+                    <span class="string">&quot;odb10_lineage&quot;</span>,
+                    <span class="string">&quot;busco_lineage&quot;</span>,
+                    <span class="string">&quot;busco_string&quot;</span>,
+                ],
+            ),
+            (<span class="self">self</span>.<span class="ident">country_list</span>, <span class="macro">vec!</span>[<span class="string">&quot;country_list&quot;</span>]),
+            (<span class="self">self</span>.<span class="ident">cvalues</span>, <span class="macro">vec!</span>[<span class="string">&quot;c_value&quot;</span>]),
+            (<span class="self">self</span>.<span class="ident">date</span>, <span class="macro">vec!</span>[<span class="string">&quot;assembly_date&quot;</span>, <span class="string">&quot;ebp_metric_date&quot;</span>]),
+            (<span class="self">self</span>.<span class="ident">gc_percent</span>, <span class="macro">vec!</span>[<span class="string">&quot;gc_percent&quot;</span>]),
+            (<span class="self">self</span>.<span class="ident">gene_count</span>, <span class="macro">vec!</span>[<span class="string">&quot;gene_count&quot;</span>]),
+            (
+                <span class="self">self</span>.<span class="ident">gs</span>,
+                <span class="macro">vec!</span>[<span class="string">&quot;genome_size&quot;</span>, <span class="string">&quot;genome_size_kmer&quot;</span>, <span class="string">&quot;genome_size_draft&quot;</span>],
+            ),
+            (<span class="self">self</span>.<span class="ident">karyotype</span>, <span class="macro">vec!</span>[<span class="string">&quot;chromosome_number&quot;</span>, <span class="string">&quot;haploid_number&quot;</span>]),
+            (
+                <span class="self">self</span>.<span class="ident">legislation</span>,
+                <span class="macro">vec!</span>[
+                    <span class="string">&quot;isb_wildlife_act_1976&quot;</span>,
+                    <span class="string">&quot;HabReg_2017&quot;</span>,
+                    <span class="string">&quot;MarHabReg-2017&quot;</span>,
+                    <span class="string">&quot;waca_1981&quot;</span>,
+                    <span class="string">&quot;Protection_of_Badgers_Act_1992&quot;</span>,
+                    <span class="string">&quot;ECHabs92&quot;</span>,
+                ],
+            ),
+            (
+                <span class="self">self</span>.<span class="ident">mitochondrion</span>,
+                <span class="macro">vec!</span>[<span class="string">&quot;mitochondrion_assembly_span&quot;</span>, <span class="string">&quot;mitochondrion_gc_percent&quot;</span>],
+            ),
+            (<span class="self">self</span>.<span class="ident">n50</span>, <span class="macro">vec!</span>[<span class="string">&quot;scaffold_n50&quot;</span>, <span class="string">&quot;contig_n50&quot;</span>]),
+            (
+                <span class="self">self</span>.<span class="ident">plastid</span>,
+                <span class="macro">vec!</span>[<span class="string">&quot;plastid_assembly_span&quot;</span>, <span class="string">&quot;plastid_gc_percent&quot;</span>],
+            ),
+            (<span class="self">self</span>.<span class="ident">ploidy</span>, <span class="macro">vec!</span>[<span class="string">&quot;ploidy&quot;</span>]),
+            (<span class="self">self</span>.<span class="ident">sex_determination</span>, <span class="macro">vec!</span>[<span class="string">&quot;sex_determination&quot;</span>]),
+            <span class="comment">// there&#39;s now a bunch of sequencing status_asg/b10k/cbp... etc</span>
+            <span class="comment">// don&#39;t know if these should go here.</span>
+            (
+                <span class="self">self</span>.<span class="ident">status</span>,
+                <span class="macro">vec!</span>[
+                    <span class="string">&quot;sequencing_status&quot;</span>,
+                    <span class="string">&quot;sample_collected&quot;</span>,
+                    <span class="string">&quot;sample_acquired&quot;</span>,
+                    <span class="string">&quot;in_progress&quot;</span>,
+                    <span class="string">&quot;insdc_submitted&quot;</span>,
+                    <span class="string">&quot;insdc_open&quot;</span>,
+                    <span class="string">&quot;published&quot;</span>,
+                    <span class="string">&quot;sample_collected_by&quot;</span>,
+                ],
+            ),
+            (
+                <span class="self">self</span>.<span class="ident">target_lists</span>,
+                <span class="macro">vec!</span>[<span class="string">&quot;long_list&quot;</span>, <span class="string">&quot;other_priority&quot;</span>, <span class="string">&quot;family_representative&quot;</span>],
+            ),
         ]
     }
 
     <span class="doccomment">/// A function which formats all of the GoaT fields</span>
     <span class="doccomment">/// together into a URL segment.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">build_fields_string</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">String</span> {
-        <span class="kw">let</span> <span class="ident">base</span> <span class="op">=</span> <span class="string">&quot;&amp;fields=&quot;</span>;
-        <span class="kw">let</span> <span class="ident">delimiter</span> <span class="op">=</span> <span class="string">&quot;%2C&quot;</span>;
-        <span class="comment">// these are display level 1</span>
-        <span class="kw">let</span> <span class="ident">assembly_level_field</span> <span class="op">=</span> <span class="string">&quot;assembly_level&quot;</span>;
-        <span class="kw">let</span> <span class="ident">assembly_span_field</span> <span class="op">=</span> <span class="string">&quot;assembly_span&quot;</span>;
-        <span class="kw">let</span> <span class="ident">busco_completeness_field</span> <span class="op">=</span> <span class="string">&quot;busco_completeness&quot;</span>;
-        <span class="kw">let</span> <span class="ident">chromosome_number_field</span> <span class="op">=</span> <span class="string">&quot;chromosome_number&quot;</span>;
-        <span class="kw">let</span> <span class="ident">haploid_number_field</span> <span class="op">=</span> <span class="string">&quot;haploid_number&quot;</span>;
-        <span class="kw">let</span> <span class="ident">gc_percent_field</span> <span class="op">=</span> <span class="string">&quot;gc_percent&quot;</span>;
-        <span class="comment">// we also have genome size kmer &amp; draft</span>
-        <span class="kw">let</span> <span class="ident">genome_size_field</span> <span class="op">=</span> <span class="string">&quot;genome_size&quot;</span>;
-        <span class="comment">// c value method &amp; cell type</span>
-        <span class="kw">let</span> <span class="ident">c_value_field</span> <span class="op">=</span> <span class="string">&quot;c_value&quot;</span>;
-        <span class="comment">// these are display level 2</span>
-        <span class="kw">let</span> <span class="ident">mitochondrial_assembly_span_field</span> <span class="op">=</span> <span class="string">&quot;mitochondrion_assembly_span&quot;</span>;
-        <span class="kw">let</span> <span class="ident">mitochondrial_gc_percent_field</span> <span class="op">=</span> <span class="string">&quot;mitochondrion_gc_percent&quot;</span>;
-        <span class="kw">let</span> <span class="ident">plastid_assembly_span_field</span> <span class="op">=</span> <span class="string">&quot;plastid_assembly_span&quot;</span>;
-        <span class="kw">let</span> <span class="ident">plastid_gc_percent_field</span> <span class="op">=</span> <span class="string">&quot;plastid_gc_percent&quot;</span>;
-        <span class="kw">let</span> <span class="ident">ploidy</span> <span class="op">=</span> <span class="string">&quot;ploidy&quot;</span>;
-        <span class="kw">let</span> <span class="ident">sex_determination</span> <span class="op">=</span> <span class="string">&quot;sex_determination&quot;</span>;
-        <span class="comment">// all legislation data</span>
-        <span class="kw">let</span> <span class="ident">isb_wildlife_act_1976</span> <span class="op">=</span> <span class="string">&quot;isb_wildlife_act_1976&quot;</span>;
-        <span class="kw">let</span> <span class="ident">hab_reg_2017</span> <span class="op">=</span> <span class="string">&quot;HabReg_2017&quot;</span>;
-        <span class="kw">let</span> <span class="ident">mar_hab_reg_2017</span> <span class="op">=</span> <span class="string">&quot;MarHabReg-2017&quot;</span>;
-        <span class="kw">let</span> <span class="ident">waca_1981</span> <span class="op">=</span> <span class="string">&quot;waca_1981&quot;</span>;
-        <span class="kw">let</span> <span class="ident">protection_of_badgers_act_1992</span> <span class="op">=</span> <span class="string">&quot;Protection_of_Badgers_Act_1992&quot;</span>;
-        <span class="kw">let</span> <span class="ident">e_c_habs92</span> <span class="op">=</span> <span class="string">&quot;ECHabs92&quot;</span>;
-        <span class="comment">// all target lists</span>
-        <span class="kw">let</span> <span class="ident">long_list</span> <span class="op">=</span> <span class="string">&quot;long_list&quot;</span>;
-        <span class="kw">let</span> <span class="ident">other_priority</span> <span class="op">=</span> <span class="string">&quot;other_priority&quot;</span>;
-        <span class="kw">let</span> <span class="ident">family_representative</span> <span class="op">=</span> <span class="string">&quot;family_representative&quot;</span>;
-        <span class="comment">// add n50</span>
-        <span class="kw">let</span> <span class="ident">contig_n50</span> <span class="op">=</span> <span class="string">&quot;contig_n50&quot;</span>;
-        <span class="kw">let</span> <span class="ident">scaffold_n50</span> <span class="op">=</span> <span class="string">&quot;scaffold_n50&quot;</span>;
-        <span class="comment">// add bioproject &amp; biosample</span>
-        <span class="kw">let</span> <span class="ident">bioproject</span> <span class="op">=</span> <span class="string">&quot;bioproject&quot;</span>;
-        <span class="kw">let</span> <span class="ident">biosample</span> <span class="op">=</span> <span class="string">&quot;biosample&quot;</span>;
-        <span class="comment">// gene count</span>
-        <span class="kw">let</span> <span class="ident">gene_count</span> <span class="op">=</span> <span class="string">&quot;gene_count&quot;</span>;
-        <span class="comment">// dates</span>
-        <span class="kw">let</span> <span class="ident">assembly_date</span> <span class="op">=</span> <span class="string">&quot;assembly_date&quot;</span>;
-        <span class="kw">let</span> <span class="ident">ebp_metric_date</span> <span class="op">=</span> <span class="string">&quot;ebp_metric_date&quot;</span>;
-        <span class="comment">// country list</span>
-        <span class="kw">let</span> <span class="ident">country_list</span> <span class="op">=</span> <span class="string">&quot;country_list&quot;</span>;
-        <span class="comment">// sequencing status of the taxon</span>
-        <span class="comment">// lump all these together at the moment.</span>
-        <span class="kw">let</span> <span class="ident">sequencing_status</span> <span class="op">=</span> <span class="string">&quot;sequencing_status&quot;</span>;
-        <span class="kw">let</span> <span class="ident">sample_collected</span> <span class="op">=</span> <span class="string">&quot;sample_collected&quot;</span>;
-        <span class="kw">let</span> <span class="ident">sample_acquired</span> <span class="op">=</span> <span class="string">&quot;sample_acquired&quot;</span>;
-        <span class="kw">let</span> <span class="ident">in_progress</span> <span class="op">=</span> <span class="string">&quot;in_progress&quot;</span>;
-        <span class="kw">let</span> <span class="ident">insdc_submitted</span> <span class="op">=</span> <span class="string">&quot;insdc_submitted&quot;</span>;
-        <span class="kw">let</span> <span class="ident">insdc_open</span> <span class="op">=</span> <span class="string">&quot;insdc_open&quot;</span>;
-        <span class="kw">let</span> <span class="ident">published</span> <span class="op">=</span> <span class="string">&quot;published&quot;</span>;
-        <span class="kw">let</span> <span class="ident">sample_collected_by</span> <span class="op">=</span> <span class="string">&quot;sample_collected_by&quot;</span>;
+        <span class="kw">const</span> <span class="ident">BASE</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;&amp;fields=&quot;</span>;
+        <span class="kw">const</span> <span class="ident">DELIMITER</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;%2C&quot;</span>;
 
-        <span class="kw">let</span> <span class="ident">field_array</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">as_array</span>();
+        <span class="comment">// build the little data base</span>
+        <span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">to_vec_tuples</span>();
+
+        <span class="comment">// and now build the string</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">field_string</span> <span class="op">=</span> <span class="ident">String::new</span>();
-
-        <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">base</span>;
-        <span class="comment">// default assembly stats</span>
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">assembly</span> <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">all</span> {
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">assembly_level_field</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">assembly_span_field</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-        }
-        <span class="comment">// busco stats</span>
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">busco</span> <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">all</span> {
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">busco_completeness_field</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-        }
-        <span class="comment">// gc_percent</span>
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">gc_percent</span> <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">all</span> {
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">gc_percent_field</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-        }
-        <span class="comment">// default karyotype stats</span>
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">karyotype</span> <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">all</span> {
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">chromosome_number_field</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">haploid_number_field</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-        }
-        <span class="comment">// additional karyotype</span>
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">ploidy</span> <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">all</span> {
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">ploidy</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-        }
-        <span class="comment">// additional karyotype</span>
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">sex_determination</span> <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">all</span> {
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">sex_determination</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-        }
-        <span class="comment">// genome size and c-value split here</span>
-        <span class="comment">// even though they are both default in GoaT.</span>
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">gs</span> <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">all</span> {
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">genome_size_field</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-        }
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">cvalues</span> <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">all</span> {
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">c_value_field</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-        }
-        <span class="comment">// add mito data</span>
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">mitochondrion</span> <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">all</span> {
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">mitochondrial_assembly_span_field</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">mitochondrial_gc_percent_field</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-        }
-        <span class="comment">// add plastid data</span>
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">plastid</span> <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">all</span> {
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">plastid_assembly_span_field</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">plastid_gc_percent_field</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-        }
-        <span class="comment">// add all legislation data</span>
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">legislation</span> <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">all</span> {
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">isb_wildlife_act_1976</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">hab_reg_2017</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">mar_hab_reg_2017</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">waca_1981</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">protection_of_badgers_act_1992</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">e_c_habs92</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-        }
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">target_lists</span> <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">all</span> {
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">long_list</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">other_priority</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">family_representative</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-        }
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">n50</span> <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">all</span> {
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">contig_n50</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">scaffold_n50</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-        }
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">bioproject</span> <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">all</span> {
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">bioproject</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">biosample</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-        }
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">gene_count</span> <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">all</span> {
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">gene_count</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-        }
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">date</span> <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">all</span> {
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">assembly_date</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">ebp_metric_date</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-        }
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">country_list</span> <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">all</span> {
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">country_list</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-        }
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">status</span> <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">all</span> {
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">sequencing_status</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">sample_collected</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">sample_acquired</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">in_progress</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">insdc_submitted</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">insdc_open</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">published</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">sample_collected_by</span>;
-            <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">delimiter</span>;
+        <span class="comment">// add the base</span>
+        <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">BASE</span>;
+        <span class="kw">for</span> (<span class="ident">field_present</span>, <span class="ident">field_vec</span>) <span class="kw">in</span> <span class="ident">data</span>.<span class="ident">iter</span>() {
+            <span class="kw">match</span> <span class="ident">field_present</span> {
+                <span class="bool-val">true</span> =&gt; {
+                    <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">field_vec</span>.<span class="ident">join</span>(<span class="ident">DELIMITER</span>);
+                    <span class="ident">field_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">DELIMITER</span>;
+                }
+                <span class="bool-val">false</span> =&gt; <span class="kw">continue</span>,
+            }
         }
 
         <span class="comment">// remove the last three chars == &#39;&amp;2C&#39;</span>
         <span class="ident">field_string</span>.<span class="ident">drain</span>(<span class="ident">field_string</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="number">3</span>..);
         <span class="comment">// check for blanks</span>
-        <span class="kw">let</span> <span class="ident">any_true</span> <span class="op">=</span> <span class="ident">field_array</span>.<span class="ident">iter</span>().<span class="ident">any</span>(<span class="op">|</span><span class="kw-2">&amp;</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span> <span class="op">==</span> <span class="bool-val">true</span>);
+        <span class="kw">let</span> <span class="ident">any_true</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="number">0</span>).<span class="ident">any</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span> <span class="op">==</span> <span class="bool-val">true</span>);
         <span class="kw">if</span> <span class="op">!</span><span class="ident">any_true</span> {
             <span class="comment">// remove everything</span>
             <span class="ident">field_string</span>.<span class="ident">drain</span>(..);

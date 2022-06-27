@@ -17,6 +17,9 @@ use goat_cli::{
     UPPER_CLI_FILE_LIMIT, UPPER_CLI_SIZE_LIMIT,
 };
 
+// TODO:
+// remove all from search and count
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let matches = Command::new("goat")
@@ -204,12 +207,6 @@ async fn main() -> Result<()> {
                         .short('n')
                         .long("names")
                         .help("Print all associated name data (synonyms, Tree of Life ID, and common names)."),
-                )
-                .arg(
-                    Arg::new("all")
-                        .short('A')
-                        .long("all")
-                        .help("Print all currently implemented GoaT-CLI variables."),
                 )
                 .arg(
                     Arg::new("raw")
@@ -430,12 +427,6 @@ async fn main() -> Result<()> {
                         .short('n')
                         .long("names")
                         .help("Print all associated name data (synonyms, Tree of Life ID, and common names)."),
-                )
-                .arg(
-                    Arg::new("all")
-                        .short('A')
-                        .long("all")
-                        .help("Print all currently implemented GoaT-CLI variables."),
                 )
                 .arg(
                     Arg::new("raw")

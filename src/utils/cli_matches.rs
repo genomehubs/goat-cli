@@ -31,7 +31,6 @@ pub fn process_cli_args(
     let cvalues = matches.is_present("c-values");
     let karyotype = matches.is_present("karyotype");
     let gs = matches.is_present("genome-size");
-    let all = matches.is_present("all");
     let print_url = matches.is_present("url");
     // This may be over-engineering.
     // The CLI will error if descendents and lineage are both given.
@@ -94,7 +93,6 @@ pub fn process_cli_args(
 
     // merge the field flags
     let fields = url::FieldBuilder {
-        all,
         assembly,
         bioproject,
         busco,
