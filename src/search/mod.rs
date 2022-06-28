@@ -7,17 +7,21 @@ use futures::StreamExt;
 use reqwest;
 use reqwest::header::ACCEPT;
 
-use crate::count;
 use crate::utils::{cli_matches, utils};
+use crate::{count, IndexType};
 
 /// Execute the `search` subcommand from `goat-cli`. Print a TSV.
-pub async fn search(matches: &clap::ArgMatches, unique_ids: Vec<String>) -> Result<()> {
+pub async fn search(
+    matches: &clap::ArgMatches,
+    unique_ids: Vec<String>,
+    index_type: IndexType,
+) -> Result<()> {
     let (_size_int, _url_vector, url_vector_api) =
-        cli_matches::process_cli_args(matches, "search", unique_ids.clone())?;
+        cli_matches::process_cli_args(matches, "search", unique_ids.clone(), index_type.clone())?;
     let concurrent_requests = url_vector_api.len();
 
     // print count warnings.
-    count::count(matches, false, true, unique_ids).await?;
+    count::count(matches, false, true, unique_ids, index_type).await?;
 
     let fetches = futures::stream::iter(url_vector_api.into_iter().map(|path| async move {
         // possibly make a again::RetryPolicy

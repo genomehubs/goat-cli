@@ -5,6 +5,7 @@
 //! I'm documenting the code here for others, and for future me.
 
 use lazy_static::lazy_static;
+use std::fmt;
 
 /// Query the GoaT count API.
 pub mod count;
@@ -42,4 +43,29 @@ lazy_static! {
     pub static ref UPPER_CLI_SIZE_LIMIT: usize = 50000;
     /// Upper limit for the number of entries in the file for CLI arg `-f`.
     pub static ref UPPER_CLI_FILE_LIMIT: usize = 500;
+}
+
+/// The indexes we make searches over in GoaT.
+///
+/// Currently implemented (to some extent) is taxon
+/// and assembly. Others exist, e.g. feature/sample.
+
+#[derive(Clone, Copy)]
+pub enum IndexType {
+    /// Taxon search index. The historical main
+    /// functionality of goat-cli went through taxon.
+    Taxon,
+    /// Assembly search index.
+    Assembly,
+}
+
+impl fmt::Display for IndexType {
+    /// Implement [`Display`] for [`IndexType`] so we can
+    /// use `.to_string()` method.
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            IndexType::Taxon => write!(f, "taxon"),
+            IndexType::Assembly => write!(f, "assembly"),
+        }
+    }
 }

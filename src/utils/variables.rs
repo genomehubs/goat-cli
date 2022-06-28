@@ -1,5 +1,5 @@
 use crate::utils::utils::{did_you_mean, parse_comma_separated};
-use crate::utils::variable_data::GOAT_VARIABLE_DATA;
+use crate::utils::variable_data::GOAT_TAXON_VARIABLE_DATA;
 use anyhow::{bail, Result};
 
 /// A struct to store the variables
@@ -27,7 +27,7 @@ impl<'a> Variables<'a> {
 
         let split_vec = parse_comma_separated(&self.variables);
         // check that all the strings in split_vec are real
-        let var_vec_check = &*GOAT_VARIABLE_DATA
+        let var_vec_check = &*GOAT_TAXON_VARIABLE_DATA
             .iter()
             .map(|(e, _)| e.to_string())
             .collect::<Vec<String>>();

@@ -9,3 +9,4 @@ test.tsv
 /get_random_genus_for_release.nu
 /number_of_lines.nu
 /goat-cli-tutorial
+/assembly_goat.json

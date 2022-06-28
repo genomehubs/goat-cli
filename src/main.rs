@@ -14,6 +14,7 @@ use goat_cli::{
     report::newick,
     search,
     utils::utils::generate_unique_strings,
+    IndexType
 };
 
 // TODO:
@@ -353,18 +354,18 @@ async fn main() -> Result<()> {
                 match progress_bar {
                     true => {
                         try_join!(
-                            search::search(&matches, unique_ids.clone()),
-                            progress::progress_bar(&matches, "search", unique_ids)
+                            search::search(&matches, unique_ids.clone(), IndexType::Taxon),
+                            progress::progress_bar(&matches, "search", unique_ids, IndexType::Taxon)
                         )?;
                     }
                     false => {
-                        let _ = search::search(&matches, unique_ids).await?;
+                        let _ = search::search(&matches, unique_ids, IndexType::Taxon).await?;
                     }
                 }
             }
             Some(("count", matches)) => {
                 let unique_ids = generate_unique_strings(matches)?;
-                count::count(&matches, true, false, unique_ids).await?;
+                count::count(&matches, true, false, unique_ids, IndexType::Taxon).await?;
             }
             Some(("lookup", matches)) => {
                 lookup::lookup(&matches, true).await?;
@@ -377,7 +378,7 @@ async fn main() -> Result<()> {
                     true => {
                         try_join!(
                             newick::get_newick(matches, unique_ids.clone()),
-                            progress::progress_bar(&matches, "newick", unique_ids)
+                            progress::progress_bar(&matches, "newick", unique_ids, IndexType::Taxon)
                         )?;
                     }
                     false => newick::get_newick(matches, unique_ids).await?,
@@ -387,6 +388,7 @@ async fn main() -> Result<()> {
                 unreachable!()
             }
         },
+        // and now assembly
         Some(("assembly", matches)) => match matches.subcommand() {
             Some(("search", _matches)) => {
                 unimplemented!()

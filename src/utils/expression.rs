@@ -1,7 +1,7 @@
 use crate::error::ExpressionParseError;
 use crate::utils::tax_ranks::TaxRanks;
 use crate::utils::utils::{did_you_mean, switch_string_to_url_encoding};
-use crate::utils::variable_data::GOAT_VARIABLE_DATA;
+use crate::utils::variable_data::GOAT_TAXON_VARIABLE_DATA;
 
 use anyhow::{bail, ensure, Result};
 use regex::{CaptureMatches, Captures, Regex};
@@ -140,7 +140,7 @@ pub fn print_variable_data() {
     println!("");
     // map the header to a tuple combination
     // see https://github.com/zhiburt/tabled/blob/master/README.md
-    let table_data = &*GOAT_VARIABLE_DATA
+    let table_data = &*GOAT_TAXON_VARIABLE_DATA
         .iter()
         .map(|(e, f)| (ColHeader(e), f))
         .collect::<Vec<(ColHeader, &Variable)>>();
@@ -239,7 +239,7 @@ impl<'a> CLIexpression<'a> {
         // must always start with a space and AND
         expression += "%20AND";
         // vector of variables to check against
-        let var_vec_check = &*GOAT_VARIABLE_DATA
+        let var_vec_check = &*GOAT_TAXON_VARIABLE_DATA
             .iter()
             .map(|(e, _)| *e)
             .collect::<Vec<&str>>();
@@ -248,7 +248,7 @@ impl<'a> CLIexpression<'a> {
         // TODO: this seems like a crazy way of doing this - any better ideas?
         let var_vec_min_max_check = {
             let mut collector = Vec::new();
-            for (goat_var, el) in &*GOAT_VARIABLE_DATA {
+            for (goat_var, el) in &*GOAT_TAXON_VARIABLE_DATA {
                 match &el.functions {
                     Function::None => (),
                     Function::Some(f) => {
@@ -348,9 +348,9 @@ impl<'a> CLIexpression<'a> {
                             // the second unwrap is always guaranteed too?
                             let extract_var =
                                 re.captures(variable).unwrap().get(1).unwrap().as_str();
-                            &GOAT_VARIABLE_DATA.get(extract_var).unwrap().type_of
+                            &GOAT_TAXON_VARIABLE_DATA.get(extract_var).unwrap().type_of
                         }
-                        false => &GOAT_VARIABLE_DATA.get(variable).unwrap().type_of,
+                        false => &GOAT_TAXON_VARIABLE_DATA.get(variable).unwrap().type_of,
                     };
 
                     // if there are parentheses - i.e. in min()/max() functions
