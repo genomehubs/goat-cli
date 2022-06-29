@@ -49,6 +49,9 @@ lazy_static! {
 ///
 /// Currently implemented (to some extent) is taxon
 /// and assembly. Others exist, e.g. feature/sample.
+///
+/// Each tuple variant can store their respective
+/// [`BTreeMap`] databases.
 
 #[derive(Clone, Copy)]
 pub enum IndexType {

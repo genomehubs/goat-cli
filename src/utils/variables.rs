@@ -1,6 +1,9 @@
-use crate::utils::utils::{did_you_mean, parse_comma_separated};
-use crate::utils::variable_data::GOAT_TAXON_VARIABLE_DATA;
+use crate::utils::{
+    expression::Variable,
+    utils::{did_you_mean, parse_comma_separated},
+};
 use anyhow::{bail, Result};
+use std::collections::BTreeMap;
 
 /// A struct to store the variables
 /// passed in the `-v` flag on the
@@ -19,7 +22,10 @@ impl<'a> Variables<'a> {
     /// Simple parsing of a comma separated string,
     /// which will error if the variable is not found
     /// with a suggestion as to which one you meant.
-    pub fn parse(&self) -> Result<String> {
+    pub fn parse(
+        &self,
+        reference_data: &BTreeMap<&'static str, Variable<'static>>,
+    ) -> Result<String> {
         let base = "&fields=";
         let delimiter = "%2C";
 
@@ -27,7 +33,7 @@ impl<'a> Variables<'a> {
 
         let split_vec = parse_comma_separated(&self.variables);
         // check that all the strings in split_vec are real
-        let var_vec_check = &*GOAT_TAXON_VARIABLE_DATA
+        let var_vec_check = reference_data
             .iter()
             .map(|(e, _)| e.to_string())
             .collect::<Vec<String>>();

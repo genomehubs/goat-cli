@@ -1,11 +1,10 @@
 use crate::error::ExpressionParseError;
 use crate::utils::tax_ranks::TaxRanks;
 use crate::utils::utils::{did_you_mean, switch_string_to_url_encoding};
-use crate::utils::variable_data::GOAT_TAXON_VARIABLE_DATA;
 
 use anyhow::{bail, ensure, Result};
 use regex::{CaptureMatches, Captures, Regex};
-use std::fmt;
+use std::{collections::BTreeMap, fmt};
 use tabled::{object::Rows, Footer, Header, MaxWidth, Modify, Table, Tabled};
 
 /// Serialize GoaT variables into their types.
@@ -135,19 +134,19 @@ pub struct Variable<'a> {
 struct ColHeader(#[tabled(rename = "Expression Name")] &'static str);
 
 /// Print the table of GoaT variable data.
-pub fn print_variable_data() {
+pub fn print_variable_data(data: &BTreeMap<&'static str, Variable<'static>>) {
     // for some space
     println!("");
     // map the header to a tuple combination
     // see https://github.com/zhiburt/tabled/blob/master/README.md
-    let table_data = &*GOAT_TAXON_VARIABLE_DATA
+    let table_data = data
         .iter()
         .map(|(e, f)| (ColHeader(e), f))
         .collect::<Vec<(ColHeader, &Variable)>>();
     // add taxon ranks at end...
     let footer_data = TaxRanks::init();
 
-    let table_string = Table::new(table_data)
+    let table_string = Table::new(&table_data)
         .with(Header(
             "Variable names in GoaT, with functional operator annotation.",
         ))
@@ -206,7 +205,10 @@ impl<'a> CLIexpression<'a> {
 
     /// The main function which parses a [`CLIexpression`]. A bit of a
     /// monster of a function. Might need cleaning up at some point.
-    pub fn parse(&mut self) -> Result<String> {
+    pub fn parse(
+        &mut self,
+        reference_data: &BTreeMap<&'static str, Variable<'static>>,
+    ) -> Result<String> {
         if self.length > 100 {
             bail!(ExpressionParseError::QueryTooLong)
         }
@@ -239,7 +241,7 @@ impl<'a> CLIexpression<'a> {
         // must always start with a space and AND
         expression += "%20AND";
         // vector of variables to check against
-        let var_vec_check = &*GOAT_TAXON_VARIABLE_DATA
+        let var_vec_check = &reference_data
             .iter()
             .map(|(e, _)| *e)
             .collect::<Vec<&str>>();
@@ -248,7 +250,7 @@ impl<'a> CLIexpression<'a> {
         // TODO: this seems like a crazy way of doing this - any better ideas?
         let var_vec_min_max_check = {
             let mut collector = Vec::new();
-            for (goat_var, el) in &*GOAT_TAXON_VARIABLE_DATA {
+            for (goat_var, el) in reference_data {
                 match &el.functions {
                     Function::None => (),
                     Function::Some(f) => {
@@ -348,9 +350,9 @@ impl<'a> CLIexpression<'a> {
                             // the second unwrap is always guaranteed too?
                             let extract_var =
                                 re.captures(variable).unwrap().get(1).unwrap().as_str();
-                            &GOAT_TAXON_VARIABLE_DATA.get(extract_var).unwrap().type_of
+                            &reference_data.get(extract_var).unwrap().type_of
                         }
-                        false => &GOAT_TAXON_VARIABLE_DATA.get(variable).unwrap().type_of,
+                        false => &reference_data.get(variable).unwrap().type_of,
                     };
 
                     // if there are parentheses - i.e. in min()/max() functions

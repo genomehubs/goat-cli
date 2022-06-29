@@ -1,4 +1,7 @@
-use crate::utils::{tax_ranks, url, utils};
+use crate::utils::{
+    expression, tax_ranks, url, utils,
+    variable_data::{GOAT_ASSEMBLY_VARIABLE_DATA, GOAT_TAXON_VARIABLE_DATA},
+};
 use crate::{IndexType, GOAT_URL, TAXONOMY, UPPER_CLI_FILE_LIMIT, UPPER_CLI_SIZE_LIMIT};
 
 use anyhow::{bail, Result};
@@ -43,7 +46,7 @@ pub fn process_cli_args(
     };
     let include_estimates = matches.is_present("include-estimates");
     let expression = match matches.value_of("expression") {
-        Some(s) => url::format_expression(s)?,
+        Some(s) => url::format_expression(s, index_type)?,
         None => "".to_string(),
     };
     let variable_string = matches.value_of("variables");
@@ -123,7 +126,10 @@ pub fn process_cli_args(
     let assembly_btk = matches.is_present("assembly-btk");
 
     if print_expression {
-        crate::utils::expression::print_variable_data();
+        match index_type {
+            IndexType::Taxon => expression::print_variable_data(&*GOAT_TAXON_VARIABLE_DATA),
+            IndexType::Assembly => expression::print_variable_data(&*GOAT_ASSEMBLY_VARIABLE_DATA),
+        }
         std::process::exit(0);
     }
 
@@ -224,6 +230,7 @@ pub fn process_cli_args(
         &expression,
         &tax_rank,
         unique_ids,
+        index_type,
     )?;
 
     if print_url {

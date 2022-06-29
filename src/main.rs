@@ -490,7 +490,7 @@ async fn main() -> Result<()> {
             // inner are all the taxon matches here.
             Some(("search", matches)) => {
                 let progress_bar = matches.is_present("progress-bar");
-                let unique_ids = generate_unique_strings(matches)?;
+                let unique_ids = generate_unique_strings(matches, IndexType::Taxon)?;
 
                 match progress_bar {
                     true => {
@@ -505,7 +505,7 @@ async fn main() -> Result<()> {
                 }
             }
             Some(("count", matches)) => {
-                let unique_ids = generate_unique_strings(matches)?;
+                let unique_ids = generate_unique_strings(matches, IndexType::Taxon)?;
                 count::count(&matches, true, false, unique_ids, IndexType::Taxon).await?;
             }
             Some(("lookup", matches)) => {
@@ -513,7 +513,7 @@ async fn main() -> Result<()> {
             }
             Some(("newick", matches)) => {
                 let progress_bar = matches.is_present("progress-bar");
-                let unique_ids = generate_unique_strings(matches)?;
+                let unique_ids = generate_unique_strings(matches, IndexType::Taxon)?;
 
                 match progress_bar {
                     true => {
@@ -534,7 +534,7 @@ async fn main() -> Result<()> {
             // and the three implemented subcommands currently.
             Some(("search", matches)) => {
                 let progress_bar = matches.is_present("progress-bar");
-                let unique_ids = generate_unique_strings(matches)?;
+                let unique_ids = generate_unique_strings(matches, IndexType::Assembly)?;
 
                 match progress_bar {
                     true => {
@@ -549,7 +549,7 @@ async fn main() -> Result<()> {
                 }
             }
             Some(("count", matches)) => {
-                let unique_ids = generate_unique_strings(matches)?;
+                let unique_ids = generate_unique_strings(matches, IndexType::Assembly)?;
                 count::count(&matches, true, false, unique_ids, IndexType::Assembly).await?;
             }
             Some(("lookup", _matches)) => {

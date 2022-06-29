@@ -1,0 +1,6 @@
+# No toggling
+https://goat.genomehubs.org/search?query=tax_tree%28eukaryota%29%20&result=taxon&includeEstimates=true&summaryValues=count&taxonomy=ncbi&offset=0&fields=assembly_span%2Cc_value&names=&ranks=#tax_tree(eukaryota)%20
+
+# Toggle off values inferred from ancestral taxa
+https://goat.genomehubs.org/search?query=tax_tree%28eukaryota%29%20&result=taxon&fields=assembly_span%2Cc_value&includeEstimates=false&summaryValues=count&taxonomy=ncbi&size=100&excludeAncestral%5B0%5D=c_value#tax_tree(eukaryota)%20
+https://goat.genomehubs.org/search?query=tax_tree%28eukaryota%29%20&result=taxon&fields=assembly_span%2Cc_value&includeEstimates=false&summaryValues=count&taxonomy=ncbi&size=100&excludeAncestral%5B0%5D=c_value&excludeAncestral%5B1%5D=assembly_span#tax_tree(eukaryota)%20

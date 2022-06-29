@@ -1,5 +1,11 @@
-use crate::utils::expression::CLIexpression;
-use crate::utils::variables::Variables;
+use crate::{
+    utils::{
+        expression::CLIexpression,
+        variable_data::{GOAT_ASSEMBLY_VARIABLE_DATA, GOAT_TAXON_VARIABLE_DATA},
+        variables::Variables,
+    },
+    IndexType,
+};
 
 use anyhow::Result;
 
@@ -43,9 +49,12 @@ fn format_names(flag: bool) -> String {
 }
 
 /// Format an expression put into the `-e` flag on the CLI.
-pub fn format_expression(exp: &str) -> Result<String> {
+pub fn format_expression(exp: &str, index_type: IndexType) -> Result<String> {
     let mut new_exp = CLIexpression::new(exp);
-    let parsed_string = new_exp.parse()?;
+    let parsed_string = match index_type {
+        IndexType::Taxon => new_exp.parse(&*GOAT_TAXON_VARIABLE_DATA)?,
+        IndexType::Assembly => new_exp.parse(&*GOAT_ASSEMBLY_VARIABLE_DATA)?,
+    };
     Ok(parsed_string)
 }
 
@@ -342,6 +351,7 @@ pub fn make_goat_urls(
     expression: &str,
     tax_rank: &str,
     unique_ids: Vec<String>,
+    index_type: IndexType,
 ) -> Result<Vec<String>> {
     let mut res = Vec::new();
 
@@ -351,7 +361,10 @@ pub fn make_goat_urls(
     // either from hand coded variables by the user
     // or from flag switches
     let fields_string = match variables {
-        Some(v) => Variables::new(v).parse()?,
+        Some(v) => match index_type {
+            IndexType::Taxon => Variables::new(v).parse(&*GOAT_TAXON_VARIABLE_DATA)?,
+            IndexType::Assembly => Variables::new(v).parse(&*GOAT_ASSEMBLY_VARIABLE_DATA)?,
+        },
         None => fields.build_fields_string(),
     };
     let names = format_names(fields.taxon_names);
