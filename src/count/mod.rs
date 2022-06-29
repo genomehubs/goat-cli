@@ -76,7 +76,7 @@ pub async fn count(
                 };
                 if print_warning {
                     if size_int < *count {
-                        eprintln!("[-]\tFor search query {}, size specified ({}) was less than the number of results returned, ({}).", el2, size_int, count)
+                        eprintln!("For search query {}, size specified ({}) was less than the number of results returned, ({}).", el2, size_int, count)
                     }
                 }
                 outer_count += *count;

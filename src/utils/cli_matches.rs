@@ -70,41 +70,57 @@ pub fn process_cli_args(
     let summarise_values_by = "count";
 
     // command line args unique to taxon
-    // command line args unique to assembly
 
-    let include_raw_values = matches.is_present("raw");
-    let tidy = match include_raw_values {
+    let taxon_include_raw_values = matches.is_present("taxon-raw");
+    let taxon_tidy = match taxon_include_raw_values {
         true => true,
-        false => matches.is_present("tidy"),
+        false => matches.is_present("taxon-tidy"),
     };
-    let assembly = matches.is_present("assembly");
-    let cvalues = matches.is_present("c-values");
-    let karyotype = matches.is_present("karyotype");
-    let gs = matches.is_present("genome-size");
+    let taxon_assembly = matches.is_present("taxon-assembly");
+    let taxon_cvalues = matches.is_present("taxon-c-values");
+    let taxon_karyotype = matches.is_present("taxon-karyotype");
+    let taxon_gs = matches.is_present("taxon-genome-size");
 
-    let busco = matches.is_present("busco");
-    let gc_percent = matches.is_present("gc-percent");
+    let taxon_busco = matches.is_present("taxon-busco");
+    let taxon_gc_percent = matches.is_present("taxon-gc-percent");
     // non-default fields.
-    let mitochondrion = matches.is_present("mitochondria");
-    let plastid = matches.is_present("plastid");
-    let ploidy = matches.is_present("ploidy");
-    let sex_determination = matches.is_present("sex-determination");
+    let taxon_mitochondrion = matches.is_present("taxon-mitochondria");
+    let taxon_plastid = matches.is_present("taxon-plastid");
+    let taxon_ploidy = matches.is_present("taxon-ploidy");
+    let taxon_sex_determination = matches.is_present("taxon-sex-determination");
     // all legislation
-    let legislation = matches.is_present("legislation");
+    let taxon_legislation = matches.is_present("taxon-legislation");
     // all names
-    let names = matches.is_present("names");
+    let taxon_names = matches.is_present("taxon-names");
     // all target lists data
-    let target_lists = matches.is_present("target-lists");
+    let taxon_target_lists = matches.is_present("taxon-target-lists");
     // scaffold + contig n50
-    let n50 = matches.is_present("n50");
+    let taxon_n50 = matches.is_present("taxon-n50");
     // bioproject & sample ID
-    let bioproject = matches.is_present("bioproject");
+    let taxon_bioproject = matches.is_present("taxon-bioproject");
 
-    let gene_count = matches.is_present("gene-count");
-    let date = matches.is_present("date");
-    let country_list = matches.is_present("country-list");
+    let taxon_gene_count = matches.is_present("taxon-gene-count");
+    let taxon_date = matches.is_present("taxon-date");
+    let taxon_country_list = matches.is_present("taxon-country-list");
     // status
-    let status = matches.is_present("status");
+    let taxon_status = matches.is_present("taxon-status");
+
+    // command line args unique to assembly
+    // assembly span/level
+    let assembly_assembly = matches.is_present("assembly-assembly");
+    let assembly_karyotype = matches.is_present("assembly-karyotype");
+    // contig_count, contig_l/n50
+    let assembly_contig = matches.is_present("assembly-contig");
+    // scaffold_count, scaffold_l/n50
+    let assembly_scaffold = matches.is_present("assembly-scaffold");
+    // gc
+    let assembly_gc = matches.is_present("assembly-gc");
+    // gene count/ non-coding gene count?
+    let assembly_gene = matches.is_present("assembly-gene-count");
+    // busco completeness/lineage/string
+    let assembly_busco = matches.is_present("assembly-busco");
+    // btk
+    let assembly_btk = matches.is_present("assembly-btk");
 
     if print_expression {
         crate::utils::expression::print_variable_data();
@@ -113,26 +129,34 @@ pub fn process_cli_args(
 
     // merge the field flags
     let fields = url::FieldBuilder {
-        assembly,
-        bioproject,
-        busco,
-        country_list,
-        cvalues,
-        date,
-        gc_percent,
-        gene_count,
-        gs,
-        karyotype,
-        legislation,
-        mitochondrion,
-        names,
-        n50,
-        plastid,
-        ploidy,
-        sex_determination,
-        status,
-        target_lists,
-        tidy,
+        taxon_assembly,
+        taxon_bioproject,
+        taxon_busco,
+        taxon_country_list,
+        taxon_cvalues,
+        taxon_date,
+        taxon_gc_percent,
+        taxon_gene_count,
+        taxon_gs,
+        taxon_karyotype,
+        taxon_legislation,
+        taxon_mitochondrion,
+        taxon_names,
+        taxon_n50,
+        taxon_plastid,
+        taxon_ploidy,
+        taxon_sex_determination,
+        taxon_status,
+        taxon_target_lists,
+        taxon_tidy,
+        assembly_assembly,
+        assembly_karyotype,
+        assembly_contig,
+        assembly_scaffold,
+        assembly_gc,
+        assembly_gene,
+        assembly_busco,
+        assembly_btk,
     };
 
     let size_int: u64;
@@ -164,7 +188,7 @@ pub fn process_cli_args(
         Some(s) => {
             // catch empty string hanging here.
             if s == "" {
-                bail!("[-]\tEmpty string found, please specify a taxon.")
+                bail!("Empty string found, please specify a taxon.")
             }
             url_vector = utils::parse_comma_separated(s)
         }
@@ -174,13 +198,10 @@ pub fn process_cli_args(
                 // check length of vector and bail if > 1000
                 if url_vector.len() > *UPPER_CLI_FILE_LIMIT {
                     let limit_string = utils::pretty_print_usize(*UPPER_CLI_FILE_LIMIT);
-                    bail!(
-                        "[-]\tNumber of taxa specified cannot exceed {}.",
-                        limit_string
-                    )
+                    bail!("Number of taxa specified cannot exceed {}.", limit_string)
                 }
             }
-            None => bail!("[-]\tOne of -f (--file) or -t (--tax-id) should be specified."),
+            None => bail!("One of -f (--file) or -t (--taxon) should be specified."),
         },
     }
 
@@ -190,7 +211,9 @@ pub fn process_cli_args(
         &*GOAT_URL,
         tax_tree,
         include_estimates,
-        include_raw_values,
+        // check again whether to include
+        // raw values in `assembly` index.
+        taxon_include_raw_values,
         summarise_values_by,
         &result,
         &*TAXONOMY,

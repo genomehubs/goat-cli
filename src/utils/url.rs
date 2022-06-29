@@ -50,59 +50,132 @@ pub fn format_expression(exp: &str) -> Result<String> {
 }
 
 /// Boolean struct containing all of the CLI flag information
-/// passed from the user.
+/// passed from the user. This struct has been expanded to include
+/// both `taxon` and `assembly` indexes.
 #[derive(Copy, Clone)]
 pub struct FieldBuilder {
     /// Add only assembly level/span GoaT fields.
-    pub assembly: bool,
+    ///
+    /// A taxon index flag.
+    pub taxon_assembly: bool,
     /// Add bioproject GoaT field.
-    pub bioproject: bool,
+    ///
+    /// A taxon index flag.
+    pub taxon_bioproject: bool,
     /// Add BUSCO completeness.
-    pub busco: bool,
+    ///
+    /// A taxon index flag.
+    pub taxon_busco: bool,
     /// Add country list GoaT field.
-    pub country_list: bool,
+    ///
+    /// A taxon index flag.
+    pub taxon_country_list: bool,
     /// Add C-value information GoaT field.
-    pub cvalues: bool,
+    ///
+    /// A taxon index flag.
+    pub taxon_cvalues: bool,
     /// Add assembly & EBP metric date GoaT fields.
-    pub date: bool,
+    ///
+    /// A taxon index flag.
+    pub taxon_date: bool,
     /// Add GC percent GoaT field.
-    pub gc_percent: bool,
+    ///
+    /// A taxon index flag.
+    pub taxon_gc_percent: bool,
     /// Add gene count GoaT field.
-    pub gene_count: bool,
+    ///
+    /// A taxon index flag.
+    pub taxon_gene_count: bool,
     /// Add genome size GoaT fields.
-    pub gs: bool,
+    ///
+    /// A taxon index flag.
+    pub taxon_gs: bool,
     /// Add karyotype GoaT fields; chromosome number and
     /// haploid number.
-    pub karyotype: bool,
+    ///
+    /// A taxon index flag.
+    pub taxon_karyotype: bool,
     /// Add return information for `isb_wildlife_act_1976`,
     /// `habreg_2017`, `marhabreg-2017`, `waca_1981`,
     /// `protection_of_badgers_act_1992`, `echabs92`
-    pub legislation: bool,
+    ///
+    /// A taxon index flag.
+    pub taxon_legislation: bool,
     /// Add mitochondrial assembly span and gc percent
     /// GoaT fields.
-    pub mitochondrion: bool,
+    ///
+    /// A taxon index flag.
+    pub taxon_mitochondrion: bool,
     /// Add contig and scaffold n50 GoaT fields.
-    pub n50: bool,
+    ///
+    /// A taxon index flag.
+    pub taxon_n50: bool,
     /// Add synonym, tolID, and common name GoaT fields.
     ///
     /// Not implemented in [`FieldBuilder`] below.
-    pub names: bool,
+    ///
+    /// A taxon index flag.
+    pub taxon_names: bool,
     /// Add plastid assembly span and gc percent GoaT
     /// fields.
-    pub plastid: bool,
+    ///
+    /// A taxon index flag.
+    pub taxon_plastid: bool,
     /// Add ploidy GoaT field.
-    pub ploidy: bool,
+    ///
+    /// A taxon index flag.
+    pub taxon_ploidy: bool,
     /// Add sex determination GoaT field.
-    pub sex_determination: bool,
+    ///
+    /// A taxon index flag.
+    pub taxon_sex_determination: bool,
     /// Add sample tracking information GoaT field.
-    pub status: bool,
+    ///
+    /// A taxon index flag.
+    pub taxon_status: bool,
     /// Add `long_list`, `other_priority`, and `family_representative`
     /// GoaT fields.
-    pub target_lists: bool,
+    ///
+    /// A taxon index flag.
+    pub taxon_target_lists: bool,
     /// Render output in tidy format?
     ///
     /// Not implemented in [`FieldBuilder`] below.
-    pub tidy: bool,
+    ///
+    /// A taxon index flag.
+    pub taxon_tidy: bool,
+    /// Assembly span and level.
+    ///
+    /// An assembly index flag.
+    pub assembly_assembly: bool,
+    /// Only chromosome count.
+    ///
+    /// An assembly index flag.
+    pub assembly_karyotype: bool,
+    /// All the contig information.
+    ///
+    /// An assembly index flag.
+    pub assembly_contig: bool,
+    /// All scaffold information.
+    ///
+    /// An assembly index flag.
+    pub assembly_scaffold: bool,
+    /// GC content.
+    ///
+    /// An assembly index flag.
+    pub assembly_gc: bool,
+    /// Gene and non-coding gene count.
+    ///
+    /// An assembly index flag.
+    pub assembly_gene: bool,
+    /// BUSCO completeness, lineage and string.
+    ///
+    /// An assembly index flag.
+    pub assembly_busco: bool,
+    /// BlobToolKit stats(?). No hit/target.
+    ///
+    /// An assembly index flag.
+    pub assembly_btk: bool,
 }
 
 impl FieldBuilder {
@@ -120,11 +193,12 @@ impl FieldBuilder {
     /// there is a compelling argument.
     fn to_vec_tuples(&self) -> Vec<(bool, Vec<&str>)> {
         vec![
-            (self.assembly, vec!["assembly_level", "assembly_span"]),
-            (self.bioproject, vec!["bioproject", "biosample"]),
+            // Add all of the taxon_* fields
+            (self.taxon_assembly, vec!["assembly_level", "assembly_span"]),
+            (self.taxon_bioproject, vec!["bioproject", "biosample"]),
             // testing all these busco fields.
             (
-                self.busco,
+                self.taxon_busco,
                 vec![
                     "busco_completeness",
                     "odb10_lineage",
@@ -132,18 +206,21 @@ impl FieldBuilder {
                     "busco_string",
                 ],
             ),
-            (self.country_list, vec!["country_list"]),
-            (self.cvalues, vec!["c_value"]),
-            (self.date, vec!["assembly_date", "ebp_metric_date"]),
-            (self.gc_percent, vec!["gc_percent"]),
-            (self.gene_count, vec!["gene_count"]),
+            (self.taxon_country_list, vec!["country_list"]),
+            (self.taxon_cvalues, vec!["c_value"]),
+            (self.taxon_date, vec!["assembly_date", "ebp_metric_date"]),
+            (self.taxon_gc_percent, vec!["gc_percent"]),
+            (self.taxon_gene_count, vec!["gene_count"]),
             (
-                self.gs,
+                self.taxon_gs,
                 vec!["genome_size", "genome_size_kmer", "genome_size_draft"],
             ),
-            (self.karyotype, vec!["chromosome_number", "haploid_number"]),
             (
-                self.legislation,
+                self.taxon_karyotype,
+                vec!["chromosome_number", "haploid_number"],
+            ),
+            (
+                self.taxon_legislation,
                 vec![
                     "isb_wildlife_act_1976",
                     "HabReg_2017",
@@ -154,20 +231,20 @@ impl FieldBuilder {
                 ],
             ),
             (
-                self.mitochondrion,
+                self.taxon_mitochondrion,
                 vec!["mitochondrion_assembly_span", "mitochondrion_gc_percent"],
             ),
-            (self.n50, vec!["scaffold_n50", "contig_n50"]),
+            (self.taxon_n50, vec!["scaffold_n50", "contig_n50"]),
             (
-                self.plastid,
+                self.taxon_plastid,
                 vec!["plastid_assembly_span", "plastid_gc_percent"],
             ),
-            (self.ploidy, vec!["ploidy"]),
-            (self.sex_determination, vec!["sex_determination"]),
+            (self.taxon_ploidy, vec!["ploidy"]),
+            (self.taxon_sex_determination, vec!["sex_determination"]),
             // there's now a bunch of sequencing status_asg/b10k/cbp... etc
             // don't know if these should go here.
             (
-                self.status,
+                self.taxon_status,
                 vec![
                     "sequencing_status",
                     "sample_collected",
@@ -180,8 +257,32 @@ impl FieldBuilder {
                 ],
             ),
             (
-                self.target_lists,
+                self.taxon_target_lists,
                 vec!["long_list", "other_priority", "family_representative"],
+            ),
+            // Add all of the assembly_* fields
+            (
+                self.assembly_assembly,
+                vec!["assembly_level", "assembly_span"],
+            ),
+            (self.assembly_btk, vec!["nohit", "target"]),
+            (
+                self.assembly_busco,
+                vec!["busco_completeness", "busco_lineage", "busco_string"],
+            ),
+            (
+                self.assembly_contig,
+                vec!["contig_count", "contig_l50", "contig_n50"],
+            ),
+            (self.assembly_gc, vec!["gc_percent"]),
+            (
+                self.assembly_gene,
+                vec!["gene_count", "noncoding_gene_count"],
+            ),
+            (self.assembly_karyotype, vec!["chromosome_count"]),
+            (
+                self.assembly_scaffold,
+                vec!["scaffold_count", "scaffold_l50", "scaffold_n50"],
             ),
         ]
     }
@@ -253,11 +354,11 @@ pub fn make_goat_urls(
         Some(v) => Variables::new(v).parse()?,
         None => fields.build_fields_string(),
     };
-    let names = format_names(fields.names);
+    let names = format_names(fields.taxon_names);
 
     let tidy_data: &str;
 
-    match fields.tidy {
+    match fields.taxon_tidy {
         true => tidy_data = "&tidyData=true",
         false => tidy_data = "",
     }

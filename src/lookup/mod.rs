@@ -46,7 +46,7 @@ pub async fn lookup(matches: &clap::ArgMatches, cli: bool) -> Result<Option<Vec<
                         Some(s) => {
                             if size.parse::<u64>()? < *s {
                                 eprintln!(
-                                "[-]\tFor seach query {}, size specified ({}) was less than the number of results returned, ({}).",
+                                "For seach query {}, size specified ({}) was less than the number of results returned, ({}).",
                                 search_query, size, s
                             )
                         }

@@ -31,7 +31,7 @@ pub fn generate_unique_strings(matches: &clap::ArgMatches) -> Result<Vec<String>
         Some(s) => {
             // catch empty string hanging here.
             if s == "" {
-                bail!("[-]\tEmpty string found, please specify a taxon.");
+                bail!("Empty string found, please specify a taxon.");
             }
             url_vector = parse_comma_separated(s);
         }
@@ -41,13 +41,10 @@ pub fn generate_unique_strings(matches: &clap::ArgMatches) -> Result<Vec<String>
                 // check length of vector and bail if > 1000
                 if url_vector.len() > *UPPER_CLI_FILE_LIMIT {
                     let limit_string = pretty_print_usize(*UPPER_CLI_FILE_LIMIT);
-                    bail!(
-                        "[-]\tNumber of taxa specified cannot exceed {}.",
-                        limit_string
-                    )
+                    bail!("Number of taxa specified cannot exceed {}.", limit_string)
                 }
             }
-            None => bail!("[-]\tOne of -f (--file) or -t (--tax-id) should be specified."),
+            None => bail!("One of -f (--file) or -t (--taxon) should be specified."),
         },
     }
 

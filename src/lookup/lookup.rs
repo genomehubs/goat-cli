@@ -64,12 +64,12 @@ impl Lookups {
                     // check length of vector and bail if > 1000
                     if tax_name_vector.len() > *UPPER_CLI_FILE_LIMIT {
                         bail!(
-                            "[-]\tNumber of taxa specified cannot exceed {}.",
+                            "Number of taxa specified cannot exceed {}.",
                             *UPPER_CLI_FILE_LIMIT
                         )
                     }
                 }
-                None => bail!("[-]\tOne of -f (--file) or -t (--tax-id) should be specified."),
+                None => bail!("One of -f (--file) or -t (--taxon) should be specified."),
             },
         }
 
@@ -145,9 +145,9 @@ impl Collector {
                         // remove last comma
                         if suggestion_str.len() > 2 {
                             suggestion_str.drain(suggestion_str.len() - 2..);
-                            Ok(eprintln!("[-]\tDid you mean: {}?", suggestion_str))
+                            Ok(eprintln!("Did you mean: {}?", suggestion_str))
                         } else {
-                            Ok(eprintln!("[-]\tThere are no results."))
+                            Ok(eprintln!("There are no results."))
                         }
                     }
                     // no suggestion, so we got a hit
@@ -247,14 +247,11 @@ impl Collector {
                         // remove last comma
                         if suggestion_str.len() > 2 {
                             suggestion_str.drain(suggestion_str.len() - 2..);
-                            eprintln!(
-                                "[-]\tYou searched {}. Did you mean: {}?",
-                                search, suggestion_str
-                            );
+                            eprintln!("You searched {}. Did you mean: {}?", search, suggestion_str);
                             // no taxid here
                             Ok(None)
                         } else {
-                            eprintln!("[-]\tThere are no results for the search: {}", search);
+                            eprintln!("There are no results for the search: {}", search);
                             Ok(None)
                         }
                     }
