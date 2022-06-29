@@ -88,6 +88,8 @@
 <span id="83">83</span>
 <span id="84">84</span>
 <span id="85">85</span>
+<span id="86">86</span>
+<span id="87">87</span>
 </pre><pre class="rust"><code><span class="doccomment">//!</span>
 <span class="doccomment">//! Invoked by calling:</span>
 <span class="doccomment">//! `goat-cli count &lt;args&gt;`</span>
@@ -99,6 +101,7 @@
 <span class="kw">use</span> <span class="ident">serde_json::Value</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils::cli_matches</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::IndexType</span>;
 
 <span class="doccomment">/// `goat-cli count` presents an identical CLI to `goat-cli search` but prints</span>
 <span class="doccomment">/// to the console in the CLI call here, and to the stderr in the `goat-cli search` call.</span>
@@ -107,9 +110,10 @@
     <span class="ident">cli</span>: <span class="ident">bool</span>,
     <span class="ident">print_warning</span>: <span class="ident">bool</span>,
     <span class="ident">unique_ids</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+    <span class="ident">index_type</span>: <span class="ident">IndexType</span>,
 ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="op">&gt;</span> {
     <span class="kw">let</span> (<span class="ident">size_int</span>, <span class="ident">url_vector</span>, <span class="ident">url_vector_api</span>) <span class="op">=</span>
-        <span class="ident">cli_matches::process_cli_args</span>(<span class="ident">matches</span>, <span class="string">&quot;count&quot;</span>, <span class="ident">unique_ids</span>)<span class="question-mark">?</span>;
+        <span class="ident">cli_matches::process_cli_args</span>(<span class="ident">matches</span>, <span class="string">&quot;count&quot;</span>, <span class="ident">unique_ids</span>, <span class="ident">index_type</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">concurrent_requests</span> <span class="op">=</span> <span class="ident">url_vector_api</span>.<span class="ident">len</span>();
 
     <span class="kw">let</span> <span class="ident">fetches</span> <span class="op">=</span> <span class="ident">futures::stream::iter</span>(<span class="ident">url_vector_api</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">path</span><span class="op">|</span> <span class="kw">async</span> <span class="kw">move</span> {
@@ -164,7 +168,7 @@
                 };
                 <span class="kw">if</span> <span class="ident">print_warning</span> {
                     <span class="kw">if</span> <span class="ident">size_int</span> <span class="op">&lt;</span> <span class="kw-2">*</span><span class="ident">count</span> {
-                        <span class="macro">eprintln!</span>(<span class="string">&quot;[-]\tFor search query {}, size specified ({}) was less than the number of results returned, ({}).&quot;</span>, <span class="ident">el2</span>, <span class="ident">size_int</span>, <span class="ident">count</span>)
+                        <span class="macro">eprintln!</span>(<span class="string">&quot;For search query {}, size specified ({}) was less than the number of results returned, ({}).&quot;</span>, <span class="ident">el2</span>, <span class="ident">size_int</span>, <span class="ident">count</span>)
                     }
                 }
                 <span class="ident">outer_count</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">*</span><span class="ident">count</span>;

@@ -217,12 +217,49 @@
 <span id="212">212</span>
 <span id="213">213</span>
 <span id="214">214</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils</span>::{<span class="ident">tax_ranks</span>, <span class="ident">url</span>, <span class="ident">utils</span>};
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">GOAT_URL</span>, <span class="ident">TAXONOMY</span>, <span class="ident">UPPER_CLI_FILE_LIMIT</span>, <span class="ident">UPPER_CLI_SIZE_LIMIT</span>};
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
+<span id="236">236</span>
+<span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils</span>::{
+    <span class="ident">expression</span>, <span class="ident">tax_ranks</span>, <span class="ident">url</span>, <span class="ident">utils</span>,
+    <span class="ident">variable_data</span>::{<span class="ident">GOAT_ASSEMBLY_VARIABLE_DATA</span>, <span class="ident">GOAT_TAXON_VARIABLE_DATA</span>},
+};
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">IndexType</span>, <span class="ident">GOAT_URL</span>, <span class="ident">TAXONOMY</span>, <span class="ident">UPPER_CLI_FILE_LIMIT</span>, <span class="ident">UPPER_CLI_SIZE_LIMIT</span>};
 
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">bail</span>, <span class="prelude-ty">Result</span>};
 
 <span class="doccomment">/// The type of result to return.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// This is true for both `taxon` and</span>
+<span class="doccomment">/// `assembly` indexes?</span>
 <span class="kw">enum</span> <span class="ident">TaxType</span> {
     <span class="doccomment">/// tax_tree() returns a node and all</span>
     <span class="doccomment">/// of its descendants.</span>
@@ -244,100 +281,138 @@
     <span class="ident">matches</span>: <span class="kw-2">&amp;</span><span class="ident">clap::ArgMatches</span>,
     <span class="ident">api</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
     <span class="ident">unique_ids</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+    <span class="ident">index_type</span>: <span class="ident">IndexType</span>,
 ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">u64</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>)<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">include_raw_values</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;raw&quot;</span>);
-    <span class="kw">let</span> <span class="ident">assembly</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;assembly&quot;</span>);
-    <span class="kw">let</span> <span class="ident">cvalues</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;c-values&quot;</span>);
-    <span class="kw">let</span> <span class="ident">karyotype</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;karyotype&quot;</span>);
-    <span class="kw">let</span> <span class="ident">gs</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;genome-size&quot;</span>);
+    <span class="comment">// command line args same between taxon/assembly</span>
     <span class="kw">let</span> <span class="ident">print_url</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;url&quot;</span>);
-    <span class="comment">// This may be over-engineering.</span>
-    <span class="comment">// The CLI will error if descendents and lineage are both given.</span>
     <span class="kw">let</span> <span class="ident">tax_tree_enum</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;descendents&quot;</span>) {
         <span class="bool-val">true</span> =&gt; <span class="ident">TaxType::Tree</span>,
         <span class="bool-val">false</span> =&gt; <span class="ident">TaxType::Name</span>,
     };
+    <span class="comment">// I think lineage is of limited value for assembly? but keep here anyways</span>
     <span class="kw">let</span> <span class="ident">tax_lineage_enum</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;lineage&quot;</span>) {
         <span class="bool-val">true</span> =&gt; <span class="ident">TaxType::Lineage</span>,
         <span class="bool-val">false</span> =&gt; <span class="ident">TaxType::Name</span>,
     };
-    <span class="kw">let</span> <span class="ident">busco</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;busco&quot;</span>);
-    <span class="kw">let</span> <span class="ident">gc_percent</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;gc-percent&quot;</span>);
-    <span class="comment">// non-default fields.</span>
-    <span class="kw">let</span> <span class="ident">mitochondrion</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;mitochondria&quot;</span>);
-    <span class="kw">let</span> <span class="ident">plastid</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;plastid&quot;</span>);
-    <span class="kw">let</span> <span class="ident">ploidy</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;ploidy&quot;</span>);
-    <span class="kw">let</span> <span class="ident">sex_determination</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;sex-determination&quot;</span>);
-    <span class="comment">// all legislation</span>
-    <span class="kw">let</span> <span class="ident">legislation</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;legislation&quot;</span>);
-    <span class="comment">// all names</span>
-    <span class="kw">let</span> <span class="ident">names</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;names&quot;</span>);
-    <span class="comment">// all target lists data</span>
-    <span class="kw">let</span> <span class="ident">target_lists</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;target-lists&quot;</span>);
-    <span class="comment">// scaffold + contig n50</span>
-    <span class="kw">let</span> <span class="ident">n50</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;n50&quot;</span>);
-    <span class="comment">// bioproject &amp; sample ID</span>
-    <span class="kw">let</span> <span class="ident">bioproject</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;bioproject&quot;</span>);
-    <span class="comment">// tidy data.</span>
-    <span class="comment">// must be true if raw values included</span>
-    <span class="kw">let</span> <span class="ident">tidy</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">include_raw_values</span> {
-        <span class="bool-val">true</span> =&gt; <span class="bool-val">true</span>,
-        <span class="bool-val">false</span> =&gt; <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;tidy&quot;</span>),
-    };
-    <span class="kw">let</span> <span class="ident">gene_count</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;gene-count&quot;</span>);
-    <span class="kw">let</span> <span class="ident">date</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;date&quot;</span>);
-    <span class="kw">let</span> <span class="ident">country_list</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;country-list&quot;</span>);
-    <span class="comment">// including estimates</span>
     <span class="kw">let</span> <span class="ident">include_estimates</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;include-estimates&quot;</span>);
-    <span class="comment">// status</span>
-    <span class="kw">let</span> <span class="ident">status</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;status&quot;</span>);
-    <span class="comment">// expression</span>
     <span class="kw">let</span> <span class="ident">expression</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;expression&quot;</span>) {
-        <span class="prelude-val">Some</span>(<span class="ident">s</span>) =&gt; <span class="ident">url::format_expression</span>(<span class="ident">s</span>)<span class="question-mark">?</span>,
+        <span class="prelude-val">Some</span>(<span class="ident">s</span>) =&gt; <span class="ident">url::format_expression</span>(<span class="ident">s</span>, <span class="ident">index_type</span>)<span class="question-mark">?</span>,
         <span class="prelude-val">None</span> =&gt; <span class="string">&quot;&quot;</span>.<span class="ident">to_string</span>(),
     };
-    <span class="comment">// print expression table</span>
-    <span class="kw">let</span> <span class="ident">print_expression</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;print-expression&quot;</span>);
     <span class="kw">let</span> <span class="ident">variable_string</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;variables&quot;</span>);
+    <span class="comment">// this output will differ depending on taxon/assembly</span>
+    <span class="comment">// but keep cli arg the same</span>
+    <span class="kw">let</span> <span class="ident">print_expression</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;print-expression&quot;</span>);
 
-    <span class="kw">if</span> <span class="ident">print_expression</span> {
-        <span class="ident"><span class="kw">crate</span>::utils::expression::print_variable_data</span>();
-        <span class="ident">std::process::exit</span>(<span class="number">0</span>);
-    }
-    <span class="comment">// tax rank to return</span>
     <span class="kw">let</span> <span class="ident">tax_rank</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;tax-rank&quot;</span>) {
         <span class="prelude-val">Some</span>(<span class="ident">t</span>) =&gt; <span class="ident">tax_ranks::TaxRanks::init</span>().<span class="ident">parse</span>(<span class="ident">t</span>)<span class="question-mark">?</span>,
         <span class="prelude-val">None</span> =&gt; <span class="string">&quot;&quot;</span>.<span class="ident">to_string</span>(),
     };
-
-    <span class="comment">// merge the field flags</span>
-    <span class="kw">let</span> <span class="ident">fields</span> <span class="op">=</span> <span class="ident">url::FieldBuilder</span> {
-        <span class="ident">assembly</span>,
-        <span class="ident">bioproject</span>,
-        <span class="ident">busco</span>,
-        <span class="ident">country_list</span>,
-        <span class="ident">cvalues</span>,
-        <span class="ident">date</span>,
-        <span class="ident">gc_percent</span>,
-        <span class="ident">gene_count</span>,
-        <span class="ident">gs</span>,
-        <span class="ident">karyotype</span>,
-        <span class="ident">legislation</span>,
-        <span class="ident">mitochondrion</span>,
-        <span class="ident">names</span>,
-        <span class="ident">n50</span>,
-        <span class="ident">plastid</span>,
-        <span class="ident">ploidy</span>,
-        <span class="ident">sex_determination</span>,
-        <span class="ident">status</span>,
-        <span class="ident">target_lists</span>,
-        <span class="ident">tidy</span>,
-    };
-
-    <span class="comment">// do some size checking</span>
     <span class="kw">let</span> <span class="ident">size</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;size&quot;</span>) {
         <span class="prelude-val">Some</span>(<span class="ident">s</span>) =&gt; <span class="ident">s</span>,
         <span class="prelude-val">None</span> =&gt; <span class="string">&quot;0&quot;</span>,
+    };
+    <span class="kw">let</span> <span class="ident">ranks</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;ranks&quot;</span>) {
+        <span class="prelude-val">Some</span>(<span class="ident">r</span>) =&gt; <span class="ident">r</span>,
+        <span class="comment">// only to stop progress panicking on newick.</span>
+        <span class="prelude-val">None</span> =&gt; <span class="string">&quot;&quot;</span>,
+    };
+    <span class="kw">let</span> <span class="ident">tax_name_op</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;taxon&quot;</span>);
+    <span class="kw">let</span> <span class="ident">filename_op</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;file&quot;</span>);
+    <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">index_type</span>.<span class="ident">to_string</span>();
+    <span class="kw">let</span> <span class="ident">summarise_values_by</span> <span class="op">=</span> <span class="string">&quot;count&quot;</span>;
+
+    <span class="comment">// command line args unique to taxon</span>
+
+    <span class="kw">let</span> <span class="ident">taxon_include_raw_values</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-raw&quot;</span>);
+    <span class="kw">let</span> <span class="ident">taxon_tidy</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">taxon_include_raw_values</span> {
+        <span class="bool-val">true</span> =&gt; <span class="bool-val">true</span>,
+        <span class="bool-val">false</span> =&gt; <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-tidy&quot;</span>),
+    };
+    <span class="kw">let</span> <span class="ident">taxon_assembly</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-assembly&quot;</span>);
+    <span class="kw">let</span> <span class="ident">taxon_cvalues</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-c-values&quot;</span>);
+    <span class="kw">let</span> <span class="ident">taxon_karyotype</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-karyotype&quot;</span>);
+    <span class="kw">let</span> <span class="ident">taxon_gs</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-genome-size&quot;</span>);
+
+    <span class="kw">let</span> <span class="ident">taxon_busco</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-busco&quot;</span>);
+    <span class="kw">let</span> <span class="ident">taxon_gc_percent</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-gc-percent&quot;</span>);
+    <span class="comment">// non-default fields.</span>
+    <span class="kw">let</span> <span class="ident">taxon_mitochondrion</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-mitochondria&quot;</span>);
+    <span class="kw">let</span> <span class="ident">taxon_plastid</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-plastid&quot;</span>);
+    <span class="kw">let</span> <span class="ident">taxon_ploidy</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-ploidy&quot;</span>);
+    <span class="kw">let</span> <span class="ident">taxon_sex_determination</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-sex-determination&quot;</span>);
+    <span class="comment">// all legislation</span>
+    <span class="kw">let</span> <span class="ident">taxon_legislation</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-legislation&quot;</span>);
+    <span class="comment">// all names</span>
+    <span class="kw">let</span> <span class="ident">taxon_names</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-names&quot;</span>);
+    <span class="comment">// all target lists data</span>
+    <span class="kw">let</span> <span class="ident">taxon_target_lists</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-target-lists&quot;</span>);
+    <span class="comment">// scaffold + contig n50</span>
+    <span class="kw">let</span> <span class="ident">taxon_n50</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-n50&quot;</span>);
+    <span class="comment">// bioproject &amp; sample ID</span>
+    <span class="kw">let</span> <span class="ident">taxon_bioproject</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-bioproject&quot;</span>);
+
+    <span class="kw">let</span> <span class="ident">taxon_gene_count</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-gene-count&quot;</span>);
+    <span class="kw">let</span> <span class="ident">taxon_date</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-date&quot;</span>);
+    <span class="kw">let</span> <span class="ident">taxon_country_list</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-country-list&quot;</span>);
+    <span class="comment">// status</span>
+    <span class="kw">let</span> <span class="ident">taxon_status</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-status&quot;</span>);
+
+    <span class="comment">// command line args unique to assembly</span>
+    <span class="comment">// assembly span/level</span>
+    <span class="kw">let</span> <span class="ident">assembly_assembly</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;assembly-assembly&quot;</span>);
+    <span class="kw">let</span> <span class="ident">assembly_karyotype</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;assembly-karyotype&quot;</span>);
+    <span class="comment">// contig_count, contig_l/n50</span>
+    <span class="kw">let</span> <span class="ident">assembly_contig</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;assembly-contig&quot;</span>);
+    <span class="comment">// scaffold_count, scaffold_l/n50</span>
+    <span class="kw">let</span> <span class="ident">assembly_scaffold</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;assembly-scaffold&quot;</span>);
+    <span class="comment">// gc</span>
+    <span class="kw">let</span> <span class="ident">assembly_gc</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;assembly-gc&quot;</span>);
+    <span class="comment">// gene count/ non-coding gene count?</span>
+    <span class="kw">let</span> <span class="ident">assembly_gene</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;assembly-gene-count&quot;</span>);
+    <span class="comment">// busco completeness/lineage/string</span>
+    <span class="kw">let</span> <span class="ident">assembly_busco</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;assembly-busco&quot;</span>);
+    <span class="comment">// btk</span>
+    <span class="kw">let</span> <span class="ident">assembly_btk</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;assembly-btk&quot;</span>);
+
+    <span class="kw">if</span> <span class="ident">print_expression</span> {
+        <span class="kw">match</span> <span class="ident">index_type</span> {
+            <span class="ident">IndexType::Taxon</span> =&gt; <span class="ident">expression::print_variable_data</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">GOAT_TAXON_VARIABLE_DATA</span>),
+            <span class="ident">IndexType::Assembly</span> =&gt; <span class="ident">expression::print_variable_data</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">GOAT_ASSEMBLY_VARIABLE_DATA</span>),
+        }
+        <span class="ident">std::process::exit</span>(<span class="number">0</span>);
+    }
+
+    <span class="comment">// merge the field flags</span>
+    <span class="kw">let</span> <span class="ident">fields</span> <span class="op">=</span> <span class="ident">url::FieldBuilder</span> {
+        <span class="ident">taxon_assembly</span>,
+        <span class="ident">taxon_bioproject</span>,
+        <span class="ident">taxon_busco</span>,
+        <span class="ident">taxon_country_list</span>,
+        <span class="ident">taxon_cvalues</span>,
+        <span class="ident">taxon_date</span>,
+        <span class="ident">taxon_gc_percent</span>,
+        <span class="ident">taxon_gene_count</span>,
+        <span class="ident">taxon_gs</span>,
+        <span class="ident">taxon_karyotype</span>,
+        <span class="ident">taxon_legislation</span>,
+        <span class="ident">taxon_mitochondrion</span>,
+        <span class="ident">taxon_names</span>,
+        <span class="ident">taxon_n50</span>,
+        <span class="ident">taxon_plastid</span>,
+        <span class="ident">taxon_ploidy</span>,
+        <span class="ident">taxon_sex_determination</span>,
+        <span class="ident">taxon_status</span>,
+        <span class="ident">taxon_target_lists</span>,
+        <span class="ident">taxon_tidy</span>,
+        <span class="ident">assembly_assembly</span>,
+        <span class="ident">assembly_karyotype</span>,
+        <span class="ident">assembly_contig</span>,
+        <span class="ident">assembly_scaffold</span>,
+        <span class="ident">assembly_gc</span>,
+        <span class="ident">assembly_gene</span>,
+        <span class="ident">assembly_busco</span>,
+        <span class="ident">assembly_btk</span>,
     };
 
     <span class="kw">let</span> <span class="ident">size_int</span>: <span class="ident">u64</span>;
@@ -354,11 +429,6 @@
         }
         <span class="prelude-val">Err</span>(<span class="ident">e</span>) =&gt; <span class="macro">bail!</span>(<span class="string">&quot;Did you pass an integer to `--size`? Info: {}&quot;</span>, <span class="ident">e</span>),
     }
-    <span class="kw">let</span> <span class="ident">ranks</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;ranks&quot;</span>) {
-        <span class="prelude-val">Some</span>(<span class="ident">r</span>) =&gt; <span class="ident">r</span>,
-        <span class="comment">// only to stop progress panicking on newick.</span>
-        <span class="prelude-val">None</span> =&gt; <span class="string">&quot;&quot;</span>,
-    };
 
     <span class="comment">// tree includes all descendents of a node</span>
     <span class="kw">let</span> <span class="ident">tax_tree</span> <span class="op">=</span> <span class="kw">match</span> (<span class="ident">tax_tree_enum</span>, <span class="ident">tax_lineage_enum</span>) {
@@ -368,21 +438,13 @@
         (<span class="kw">_</span>, <span class="kw">_</span>) =&gt; <span class="macro">bail!</span>(<span class="string">&quot;If we get here, I&#39;ve done something wrong in the `TaxType` enum logic. Please file an issue.&quot;</span>),
     };
 
-    <span class="comment">// some GoaT defaults. https://goat.genomehubs.org/search?query=tax_name%28Drosophila%29&amp;result=taxon&amp;fields=all&amp;includeEstimates=true&amp;summaryValues=count&amp;taxonomy=ncbi#tax_name(Drosophila)</span>
-    <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="string">&quot;taxon&quot;</span>;
-    <span class="kw">let</span> <span class="ident">summarise_values_by</span> <span class="op">=</span> <span class="string">&quot;count&quot;</span>;
-
-    <span class="comment">// re-implement this</span>
-    <span class="kw">let</span> <span class="ident">tax_name_op</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;taxon&quot;</span>);
-    <span class="kw">let</span> <span class="ident">filename_op</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;file&quot;</span>);
-
     <span class="kw">let</span> <span class="ident">url_vector</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>;
     <span class="comment">// if -t use this</span>
     <span class="kw">match</span> <span class="ident">tax_name_op</span> {
         <span class="prelude-val">Some</span>(<span class="ident">s</span>) =&gt; {
             <span class="comment">// catch empty string hanging here.</span>
             <span class="kw">if</span> <span class="ident">s</span> <span class="op">==</span> <span class="string">&quot;&quot;</span> {
-                <span class="macro">bail!</span>(<span class="string">&quot;[-]\tEmpty string found, please specify a taxon.&quot;</span>)
+                <span class="macro">bail!</span>(<span class="string">&quot;Empty string found, please specify a taxon.&quot;</span>)
             }
             <span class="ident">url_vector</span> <span class="op">=</span> <span class="ident">utils::parse_comma_separated</span>(<span class="ident">s</span>)
         }
@@ -392,13 +454,10 @@
                 <span class="comment">// check length of vector and bail if &gt; 1000</span>
                 <span class="kw">if</span> <span class="ident">url_vector</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="kw-2">*</span><span class="ident">UPPER_CLI_FILE_LIMIT</span> {
                     <span class="kw">let</span> <span class="ident">limit_string</span> <span class="op">=</span> <span class="ident">utils::pretty_print_usize</span>(<span class="kw-2">*</span><span class="ident">UPPER_CLI_FILE_LIMIT</span>);
-                    <span class="macro">bail!</span>(
-                        <span class="string">&quot;[-]\tNumber of taxa specified cannot exceed {}.&quot;</span>,
-                        <span class="ident">limit_string</span>
-                    )
+                    <span class="macro">bail!</span>(<span class="string">&quot;Number of taxa specified cannot exceed {}.&quot;</span>, <span class="ident">limit_string</span>)
                 }
             }
-            <span class="prelude-val">None</span> =&gt; <span class="macro">bail!</span>(<span class="string">&quot;[-]\tOne of -f (--file) or -t (--tax-id) should be specified.&quot;</span>),
+            <span class="prelude-val">None</span> =&gt; <span class="macro">bail!</span>(<span class="string">&quot;One of -f (--file) or -t (--taxon) should be specified.&quot;</span>),
         },
     }
 
@@ -408,9 +467,11 @@
         <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">GOAT_URL</span>,
         <span class="ident">tax_tree</span>,
         <span class="ident">include_estimates</span>,
-        <span class="ident">include_raw_values</span>,
+        <span class="comment">// check again whether to include</span>
+        <span class="comment">// raw values in `assembly` index.</span>
+        <span class="ident">taxon_include_raw_values</span>,
         <span class="ident">summarise_values_by</span>,
-        <span class="ident">result</span>,
+        <span class="kw-2">&amp;</span><span class="ident">result</span>,
         <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">TAXONOMY</span>,
         <span class="ident">size</span>,
         <span class="ident">ranks</span>,
@@ -419,6 +480,7 @@
         <span class="kw-2">&amp;</span><span class="ident">expression</span>,
         <span class="kw-2">&amp;</span><span class="ident">tax_rank</span>,
         <span class="ident">unique_ids</span>,
+        <span class="ident">index_type</span>,
     )<span class="question-mark">?</span>;
 
     <span class="kw">if</span> <span class="ident">print_url</span> {
