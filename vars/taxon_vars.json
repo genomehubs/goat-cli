@@ -3,110 +3,6 @@
         "success": true
     },
     "fields": {
-        "c_value": {
-            "group": "taxon",
-            "name": "c_value",
-            "bins": {
-                "min": -2.5,
-                "max": 2.5,
-                "count": 10,
-                "scale": "log10"
-            },
-            "constraint": {
-                "max": 200,
-                "min": 0.001
-            },
-            "description": "1C value",
-            "display_level": 1,
-            "display_name": "C value",
-            "display_group": "genome_size",
-            "summary": [
-                "primary",
-                "median",
-                "min",
-                "max"
-            ],
-            "traverse": "mean",
-            "traverse_direction": "both",
-            "type": "half_float",
-            "units": "pgDNA",
-            "sequence": 25
-        },
-        "c_value_method": {
-            "group": "taxon",
-            "name": "c_value_method",
-            "constraint": {
-                "enum": [
-                    "biochemical analysis",
-                    "bulk fluorometric assay",
-                    "complete genome sequencing",
-                    "feulgen densitometry",
-                    "feulgen image analysis densitometry",
-                    "flow cytometry",
-                    "flow karyotyping",
-                    "fluorescence fading analysis",
-                    "gallocyanin chrom alum densitometry",
-                    "methyl green densitometry",
-                    "not specified",
-                    "static cell fluorometry",
-                    "ultraviolet microscopy",
-                    "unknown",
-                    "biochemical analysis",
-                    "feulgen image analysis densitometry",
-                    "flow cytometry",
-                    "feulgen densitometry",
-                    "feulgen densitometry & flow cytometry",
-                    "microdensitometry",
-                    "pulse field gel electrophoresis",
-                    "reassociation kinetics",
-                    "whole genome sequencing"
-                ]
-            },
-            "description": "C value estimation method",
-            "display_level": 2,
-            "display_name": "C value method",
-            "display_group": "genome_size",
-            "summary": "list",
-            "translate": {
-                "bca": "Biochemical Analysis",
-                "bfa": "Bulk Fluorometric Assay",
-                "cs": "Complete Genome Sequencing",
-                "fd": "Feulgen Densitometry",
-                "fia": "Feulgen Image Analysis Densitometry",
-                "fcm": "Flow Cytometry",
-                "fk": "Flow karyotyping",
-                "ffa": "Fluorescence Fading Analysis",
-                "gcd": "Gallocyanin Chrom Alum Densitometry",
-                "mgd": "Methyl Green Densitometry",
-                "ns": "Not Specified",
-                "scf": "Static Cell Fluorometry",
-                "uvm": "Ultraviolet Microscopy",
-                "un": "Unknown",
-                "ch": "Biochemical Analysis",
-                "cia": "Feulgen Image Analysis Densitometry",
-                "fc:?": "Flow Cytometry",
-                "fc:dapi": "Flow Cytometry",
-                "fc:eb": "Flow Cytometry",
-                "fc:eb & o": "Flow Cytometry",
-                "fc:hoechst": "Flow Cytometry",
-                "fc:mi": "Flow Cytometry",
-                "fc:pi": "Flow Cytometry",
-                "fc:pi & eb": "Flow Cytometry",
-                "fc:sybr": "Flow Cytometry",
-                "fe": "Feulgen Densitometry",
-                "fe & fc:eb": "Feulgen Densitometry & Flow Cytometry",
-                "fe & fc:pi": "Feulgen Densitometry & Flow Cytometry",
-                "m:dapi": "Microdensitometry",
-                "m:h": "Microdensitometry",
-                "m:pi": "Microdensitometry",
-                "pfge": "Pulse field gel electrophoresis",
-                "rk": "Reassociation kinetics",
-                "wgs": "Whole genome sequencing"
-            },
-            "traverse": false,
-            "type": "keyword",
-            "sequence": 26
-        },
         "assembly_level": {
             "group": "taxon",
             "name": "assembly_level",
@@ -709,6 +605,110 @@
             "traverse_direction": "up",
             "type": "keyword",
             "sequence": 35
+        },
+        "c_value": {
+            "group": "taxon",
+            "name": "c_value",
+            "bins": {
+                "min": -2.5,
+                "max": 2.5,
+                "count": 10,
+                "scale": "log10"
+            },
+            "constraint": {
+                "max": 200,
+                "min": 0.001
+            },
+            "description": "1C value",
+            "display_level": 1,
+            "display_name": "C value",
+            "display_group": "genome_size",
+            "summary": [
+                "primary",
+                "median",
+                "min",
+                "max"
+            ],
+            "traverse": "mean",
+            "traverse_direction": "both",
+            "type": "half_float",
+            "units": "pgDNA",
+            "sequence": 25
+        },
+        "c_value_method": {
+            "group": "taxon",
+            "name": "c_value_method",
+            "constraint": {
+                "enum": [
+                    "biochemical analysis",
+                    "bulk fluorometric assay",
+                    "complete genome sequencing",
+                    "feulgen densitometry",
+                    "feulgen image analysis densitometry",
+                    "flow cytometry",
+                    "flow karyotyping",
+                    "fluorescence fading analysis",
+                    "gallocyanin chrom alum densitometry",
+                    "methyl green densitometry",
+                    "not specified",
+                    "static cell fluorometry",
+                    "ultraviolet microscopy",
+                    "unknown",
+                    "biochemical analysis",
+                    "feulgen image analysis densitometry",
+                    "flow cytometry",
+                    "feulgen densitometry",
+                    "feulgen densitometry & flow cytometry",
+                    "microdensitometry",
+                    "pulse field gel electrophoresis",
+                    "reassociation kinetics",
+                    "whole genome sequencing"
+                ]
+            },
+            "description": "C value estimation method",
+            "display_level": 2,
+            "display_name": "C value method",
+            "display_group": "genome_size",
+            "summary": "list",
+            "translate": {
+                "bca": "Biochemical Analysis",
+                "bfa": "Bulk Fluorometric Assay",
+                "cs": "Complete Genome Sequencing",
+                "fd": "Feulgen Densitometry",
+                "fia": "Feulgen Image Analysis Densitometry",
+                "fcm": "Flow Cytometry",
+                "fk": "Flow karyotyping",
+                "ffa": "Fluorescence Fading Analysis",
+                "gcd": "Gallocyanin Chrom Alum Densitometry",
+                "mgd": "Methyl Green Densitometry",
+                "ns": "Not Specified",
+                "scf": "Static Cell Fluorometry",
+                "uvm": "Ultraviolet Microscopy",
+                "un": "Unknown",
+                "ch": "Biochemical Analysis",
+                "cia": "Feulgen Image Analysis Densitometry",
+                "fc:?": "Flow Cytometry",
+                "fc:dapi": "Flow Cytometry",
+                "fc:eb": "Flow Cytometry",
+                "fc:eb & o": "Flow Cytometry",
+                "fc:hoechst": "Flow Cytometry",
+                "fc:mi": "Flow Cytometry",
+                "fc:pi": "Flow Cytometry",
+                "fc:pi & eb": "Flow Cytometry",
+                "fc:sybr": "Flow Cytometry",
+                "fe": "Feulgen Densitometry",
+                "fe & fc:eb": "Feulgen Densitometry & Flow Cytometry",
+                "fe & fc:pi": "Feulgen Densitometry & Flow Cytometry",
+                "m:dapi": "Microdensitometry",
+                "m:h": "Microdensitometry",
+                "m:pi": "Microdensitometry",
+                "pfge": "Pulse field gel electrophoresis",
+                "rk": "Reassociation kinetics",
+                "wgs": "Whole genome sequencing"
+            },
+            "traverse": false,
+            "type": "keyword",
+            "sequence": 26
         },
         "c_value_cell_type": {
             "group": "taxon",
@@ -1518,6 +1518,166 @@
             "type": "keyword",
             "sequence": 63
         },
+        "sequencing_status_berri": {
+            "group": "taxon",
+            "name": "sequencing_status_berri",
+            "display_group": "sequencing_status",
+            "display_level": 2,
+            "constraint": {
+                "enum": [
+                    "published",
+                    "insdc_open",
+                    "in_progress",
+                    "sample_acquired",
+                    "sample_collected"
+                ]
+            },
+            "summary": "enum",
+            "traverse": "enum",
+            "traverse_direction": "up",
+            "type": "keyword",
+            "sequence": 64
+        },
+        "sequencing_status_blax": {
+            "group": "taxon",
+            "name": "sequencing_status_blax",
+            "display_group": "sequencing_status",
+            "display_level": 2,
+            "constraint": {
+                "enum": [
+                    "published",
+                    "insdc_open",
+                    "in_progress",
+                    "sample_acquired",
+                    "sample_collected"
+                ]
+            },
+            "summary": "enum",
+            "traverse": "enum",
+            "traverse_direction": "up",
+            "type": "keyword",
+            "sequence": 65
+        },
+        "sequencing_status_durb": {
+            "group": "taxon",
+            "name": "sequencing_status_durb",
+            "display_group": "sequencing_status",
+            "display_level": 2,
+            "constraint": {
+                "enum": [
+                    "published",
+                    "insdc_open",
+                    "in_progress",
+                    "sample_acquired",
+                    "sample_collected"
+                ]
+            },
+            "summary": "enum",
+            "traverse": "enum",
+            "traverse_direction": "up",
+            "type": "keyword",
+            "sequence": 66
+        },
+        "sequencing_status_ergapi": {
+            "group": "taxon",
+            "name": "sequencing_status_ergapi",
+            "display_group": "sequencing_status",
+            "display_level": 2,
+            "constraint": {
+                "enum": [
+                    "published",
+                    "insdc_open",
+                    "in_progress",
+                    "sample_acquired",
+                    "sample_collected"
+                ]
+            },
+            "summary": "enum",
+            "traverse": "enum",
+            "traverse_direction": "up",
+            "type": "keyword",
+            "sequence": 67
+        },
+        "sequencing_status_lawn": {
+            "group": "taxon",
+            "name": "sequencing_status_lawn",
+            "display_group": "sequencing_status",
+            "display_level": 2,
+            "constraint": {
+                "enum": [
+                    "published",
+                    "insdc_open",
+                    "in_progress",
+                    "sample_acquired",
+                    "sample_collected"
+                ]
+            },
+            "summary": "enum",
+            "traverse": "enum",
+            "traverse_direction": "up",
+            "type": "keyword",
+            "sequence": 68
+        },
+        "sequencing_status_meier": {
+            "group": "taxon",
+            "name": "sequencing_status_meier",
+            "display_group": "sequencing_status",
+            "display_level": 2,
+            "constraint": {
+                "enum": [
+                    "published",
+                    "insdc_open",
+                    "in_progress",
+                    "sample_acquired",
+                    "sample_collected"
+                ]
+            },
+            "summary": "enum",
+            "traverse": "enum",
+            "traverse_direction": "up",
+            "type": "keyword",
+            "sequence": 69
+        },
+        "sequencing_status_misk": {
+            "group": "taxon",
+            "name": "sequencing_status_misk",
+            "display_group": "sequencing_status",
+            "display_level": 2,
+            "constraint": {
+                "enum": [
+                    "published",
+                    "insdc_open",
+                    "in_progress",
+                    "sample_acquired",
+                    "sample_collected"
+                ]
+            },
+            "summary": "enum",
+            "traverse": "enum",
+            "traverse_direction": "up",
+            "type": "keyword",
+            "sequence": 70
+        },
+        "sequencing_status_rnd": {
+            "group": "taxon",
+            "name": "sequencing_status_rnd",
+            "display_group": "sequencing_status",
+            "display_level": 2,
+            "constraint": {
+                "enum": [
+                    "published",
+                    "insdc_open",
+                    "in_progress",
+                    "sample_acquired",
+                    "sample_collected"
+                ]
+            },
+            "summary": "enum",
+            "traverse": "enum",
+            "traverse_direction": "up",
+            "type": "keyword",
+            "sequence": 71
+        },
         "long_list": {
             "group": "taxon",
             "name": "long_list",
@@ -1552,7 +1712,7 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 64
+            "sequence": 72
         },
         "other_priority": {
             "group": "taxon",
@@ -1588,7 +1748,7 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 65
+            "sequence": 73
         },
         "family_representative": {
             "group": "taxon",
@@ -1624,7 +1784,7 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 66
+            "sequence": 74
         }
     },
     "identifiers": {
@@ -1650,6 +1810,6 @@
         }
     },
     "hub": "goat",
-    "release": "2022.06.25",
+    "release": "2022.06.28",
     "source": "https://github.com/genomehubs/goat-data"
 }

@@ -1,0 +1,500 @@
+{
+    "status": {
+        "success": true
+    },
+    "fields": {
+        "assembly_level": {
+            "group": "assembly",
+            "name": "assembly_level",
+            "display_group": "misc",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "constraint": {
+                "enum": [
+                    "complete genome",
+                    "chromosome",
+                    "scaffold",
+                    "contig"
+                ]
+            },
+            "display_level": 1,
+            "display_name": "Assembly level",
+            "organelle": "nucleus",
+            "type": "keyword",
+            "sequence": 0
+        },
+        "assembly_span": {
+            "group": "assembly",
+            "name": "assembly_span",
+            "display_group": "metrics",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "bins": {
+                "count": 10,
+                "max": 11,
+                "min": 6,
+                "scale": "log10"
+            },
+            "constraint": {
+                "min": 1
+            },
+            "display_level": 1,
+            "display_name": "Assembly span",
+            "organelle": "nucleus",
+            "type": "long",
+            "units": "bases",
+            "sequence": 1
+        },
+        "assembly_type": {
+            "group": "assembly",
+            "name": "assembly_type",
+            "display_group": "misc",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "display_level": 2,
+            "display_name": "Assembly type",
+            "organelle": "nucleus",
+            "type": "keyword",
+            "sequence": 2
+        },
+        "bioproject": {
+            "group": "assembly",
+            "name": "bioproject",
+            "display_group": "misc",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "constraint": {
+                "len": 32
+            },
+            "organelle": "nucleus",
+            "separator": [
+                ";"
+            ],
+            "synonyms": [
+                "bioproject_accession"
+            ],
+            "type": "keyword",
+            "sequence": 3
+        },
+        "biosample": {
+            "group": "assembly",
+            "name": "biosample",
+            "display_group": "misc",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "constraint": {
+                "len": 32
+            },
+            "organelle": "nucleus",
+            "separator": [
+                ";"
+            ],
+            "synonyms": [
+                "biosample_accession"
+            ],
+            "type": "keyword",
+            "sequence": 4
+        },
+        "chromosome_count": {
+            "group": "assembly",
+            "name": "chromosome_count",
+            "display_group": "metrics",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "constraint": {
+                "min": 1
+            },
+            "display_level": 1,
+            "display_name": "Chromosome count",
+            "organelle": "nucleus",
+            "type": "long",
+            "units": "bases",
+            "sequence": 5
+        },
+        "contig_count": {
+            "group": "assembly",
+            "name": "contig_count",
+            "display_group": "metrics",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "constraint": {
+                "min": 1
+            },
+            "display_level": 1,
+            "display_name": "Contig count",
+            "organelle": "nucleus",
+            "type": "long",
+            "units": "bases",
+            "sequence": 6
+        },
+        "contig_l50": {
+            "group": "assembly",
+            "name": "contig_l50",
+            "display_group": "metrics",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "constraint": {
+                "min": 1
+            },
+            "display_level": 2,
+            "display_name": "Contig L50",
+            "organelle": "nucleus",
+            "type": "long",
+            "units": "bases",
+            "sequence": 7
+        },
+        "contig_n50": {
+            "group": "assembly",
+            "name": "contig_n50",
+            "display_group": "metrics",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "bins": {
+                "count": 10,
+                "max": 9,
+                "min": 4,
+                "scale": "log10"
+            },
+            "constraint": {
+                "min": 1
+            },
+            "display_level": 1,
+            "display_name": "Contig N50",
+            "organelle": "nucleus",
+            "type": "long",
+            "units": "bases",
+            "sequence": 8
+        },
+        "ebp_metric_date": {
+            "group": "assembly",
+            "name": "ebp_metric_date",
+            "display_group": "misc",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "display_level": 2,
+            "display_name": "EBP metric date",
+            "organelle": "nucleus",
+            "type": "date",
+            "sequence": 9
+        },
+        "gene_count": {
+            "group": "assembly",
+            "name": "gene_count",
+            "display_group": "annotation",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "bins": {
+                "count": 10,
+                "max": 5,
+                "min": 0,
+                "scale": "log10"
+            },
+            "constraint": {
+                "min": 1
+            },
+            "display_level": 1,
+            "display_name": "Gene count",
+            "organelle": "nucleus",
+            "type": "integer",
+            "sequence": 10
+        },
+        "isolate": {
+            "group": "assembly",
+            "name": "isolate",
+            "display_group": "misc",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "display_level": 2,
+            "display_name": "Isolate",
+            "organelle": "nucleus",
+            "type": "keyword",
+            "sequence": 11
+        },
+        "last_updated": {
+            "group": "assembly",
+            "name": "last_updated",
+            "display_group": "misc",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "display_level": 2,
+            "display_name": "Last updated",
+            "organelle": "nucleus",
+            "type": "date",
+            "sequence": 12
+        },
+        "noncoding_gene_count": {
+            "group": "assembly",
+            "name": "noncoding_gene_count",
+            "display_group": "annotation",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "constraint": {
+                "min": 1
+            },
+            "display_level": 2,
+            "display_name": "Non-coding gene count",
+            "organelle": "nucleus",
+            "type": "integer",
+            "sequence": 13
+        },
+        "protein_count": {
+            "group": "assembly",
+            "name": "protein_count",
+            "display_group": "annotation",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "constraint": {
+                "min": 1
+            },
+            "display_level": 2,
+            "display_name": "Protein count",
+            "organelle": "nucleus",
+            "type": "integer",
+            "sequence": 14
+        },
+        "pseudogene_count": {
+            "group": "assembly",
+            "name": "pseudogene_count",
+            "display_group": "annotation",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "constraint": {
+                "min": 1
+            },
+            "display_level": 2,
+            "display_name": "Pseudogene count",
+            "organelle": "nucleus",
+            "type": "integer",
+            "sequence": 15
+        },
+        "refseq_category": {
+            "group": "assembly",
+            "name": "refseq_category",
+            "display_group": "misc",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "display_level": 2,
+            "display_name": "RefSeq category",
+            "organelle": "nucleus",
+            "type": "keyword",
+            "sequence": 16
+        },
+        "sample_sex": {
+            "group": "assembly",
+            "name": "sample_sex",
+            "display_group": "misc",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "display_level": 2,
+            "display_name": "Sample sex",
+            "organelle": "nucleus",
+            "type": "keyword",
+            "sequence": 17
+        },
+        "scaffold_count": {
+            "group": "assembly",
+            "name": "scaffold_count",
+            "display_group": "metrics",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "constraint": {
+                "min": 1
+            },
+            "display_level": 1,
+            "display_name": "Scaffold count",
+            "organelle": "nucleus",
+            "type": "long",
+            "units": "bases",
+            "sequence": 18
+        },
+        "scaffold_l50": {
+            "group": "assembly",
+            "name": "scaffold_l50",
+            "display_group": "metrics",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "constraint": {
+                "min": 1
+            },
+            "display_level": 2,
+            "display_name": "Scaffold L50",
+            "organelle": "nucleus",
+            "type": "long",
+            "units": "bases",
+            "sequence": 19
+        },
+        "scaffold_n50": {
+            "group": "assembly",
+            "name": "scaffold_n50",
+            "display_group": "metrics",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "bins": {
+                "count": 10,
+                "max": 9,
+                "min": 4,
+                "scale": "log10"
+            },
+            "constraint": {
+                "min": 1
+            },
+            "display_level": 1,
+            "display_name": "Scaffold N50",
+            "organelle": "nucleus",
+            "type": "long",
+            "units": "bases",
+            "sequence": 20
+        },
+        "sequence_count": {
+            "group": "assembly",
+            "name": "sequence_count",
+            "display_group": "metrics",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "constraint": {
+                "min": 1
+            },
+            "display_level": 2,
+            "display_name": "Sequence count",
+            "organelle": "nucleus",
+            "type": "long",
+            "units": "bases",
+            "sequence": 21
+        },
+        "submitter": {
+            "group": "assembly",
+            "name": "submitter",
+            "display_group": "misc",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "display_level": 2,
+            "display_name": "Submitter",
+            "organelle": "nucleus",
+            "type": "keyword",
+            "sequence": 22
+        },
+        "ungapped_span": {
+            "group": "assembly",
+            "name": "ungapped_span",
+            "display_group": "metrics",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "constraint": {
+                "min": 1
+            },
+            "display_level": 2,
+            "display_name": "Ungapped span",
+            "organelle": "nucleus",
+            "type": "long",
+            "units": "bases",
+            "sequence": 23
+        },
+        "busco_completeness": {
+            "group": "assembly",
+            "name": "busco_completeness",
+            "display_group": "busco",
+            "source": "BlobToolKit",
+            "source_url_stub": "https://blobtoolkit.genomehubs.org/view/dataset/",
+            "description": "Busco completeness",
+            "display_level": 1,
+            "display_name": "BUSCO completeness",
+            "type": "1dp",
+            "units": "%",
+            "sequence": 27
+        },
+        "busco_lineage": {
+            "group": "assembly",
+            "name": "busco_lineage",
+            "display_group": "busco",
+            "source": "BlobToolKit",
+            "source_url_stub": "https://blobtoolkit.genomehubs.org/view/dataset/",
+            "description": "Busco lineage",
+            "display_level": 2,
+            "display_name": "BUSCO lineage",
+            "type": "keyword",
+            "sequence": 28
+        },
+        "busco_string": {
+            "group": "assembly",
+            "name": "busco_string",
+            "display_group": "busco",
+            "source": "BlobToolKit",
+            "source_url_stub": "https://blobtoolkit.genomehubs.org/view/dataset/",
+            "description": "Busco string",
+            "display_level": 2,
+            "display_name": "BUSCO string",
+            "type": "keyword",
+            "sequence": 29
+        },
+        "nohit": {
+            "group": "assembly",
+            "name": "nohit",
+            "display_group": "btk",
+            "source": "BlobToolKit",
+            "source_url_stub": "https://blobtoolkit.genomehubs.org/view/dataset/",
+            "description": "Sequences with no hits in the reference database",
+            "display_level": 2,
+            "display_name": "No hit",
+            "type": "1dp",
+            "units": "%",
+            "sequence": 30
+        },
+        "target": {
+            "group": "assembly",
+            "name": "target",
+            "display_group": "btk",
+            "source": "BlobToolKit",
+            "source_url_stub": "https://blobtoolkit.genomehubs.org/view/dataset/",
+            "description": "Hits matching target",
+            "display_level": 2,
+            "display_name": "Target",
+            "type": "1dp",
+            "units": "%",
+            "sequence": 31
+        },
+        "gc_percent": {
+            "group": "assembly",
+            "name": "gc_percent",
+            "display_group": "metrics",
+            "source": "NCBI",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/nuccore/",
+            "constraint": {
+                "max": 100,
+                "min": 0
+            },
+            "display_level": 1,
+            "type": "2dp",
+            "units": "%",
+            "sequence": 24
+        },
+        "n_percent": {
+            "group": "assembly",
+            "name": "n_percent",
+            "display_group": "metrics",
+            "source": "NCBI",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/nuccore/",
+            "constraint": {
+                "max": 100,
+                "min": 0
+            },
+            "display_level": 1,
+            "type": "2dp",
+            "units": "%",
+            "sequence": 25
+        },
+        "sample_location": {
+            "group": "assembly",
+            "name": "sample_location",
+            "display_group": "misc",
+            "source": "NCBI",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/nuccore/",
+            "display_level": 2,
+            "type": "geo_point",
+            "sequence": 26
+        }
+    },
+    "identifiers": {},
+    "hub": "goat",
+    "release": "2022.06.28",
+    "source": "https://github.com/genomehubs/goat-data"
+}

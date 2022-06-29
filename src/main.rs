@@ -17,6 +17,7 @@ use goat_cli::{
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    // global helps for both assembly/taxon subcommands.
     let upper_file_limit = pretty_print_usize(*UPPER_CLI_FILE_LIMIT);
     let upper_cli_limit = pretty_print_usize(*UPPER_CLI_SIZE_LIMIT);
     let taxon_file_or_lookup_help = &format!("A file of NCBI taxonomy ID's (tips) and/or binomial names.\nEach line should contain a single entry.\nFile size is limited to {} entries.", upper_file_limit)[..];
@@ -83,7 +84,7 @@ async fn main() -> Result<()> {
                 Arg::new("taxon-assembly")
                     .short('a')
                     .long("assembly")
-                    .help("Print assembly data (span & level)"),
+                    .help("Print assembly data (assembly span, assembly level)"),
             )
             .arg(
                 Arg::new("taxon-busco")
