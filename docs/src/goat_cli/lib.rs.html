@@ -74,9 +74,6 @@
 <span id="69">69</span>
 <span id="70">70</span>
 <span id="71">71</span>
-<span id="72">72</span>
-<span id="73">73</span>
-<span id="74">74</span>
 </pre><pre class="rust"><code><span class="doccomment">//! `goat-cli` is a command line interface to query the</span>
 <span class="doccomment">//! [Genomes on a Tree Open API](https://goat.genomehubs.org/api-docs/) using</span>
 <span class="doccomment">//! an asynchronous [`tokio`](&lt;https://docs.rs/tokio/latest/tokio/&gt;) runtime.</span>
@@ -88,9 +85,6 @@
 
 <span class="doccomment">/// Query the GoaT count API.</span>
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">count</span>;
-<span class="doccomment">/// Collection of errors used throughout</span>
-<span class="doccomment">/// the CLI.</span>
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">error</span>;
 <span class="doccomment">/// Query the GoaT lookup API.</span>
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">lookup</span>;
 <span class="doccomment">/// A module to produce a progress</span>
@@ -113,7 +107,7 @@
     <span class="doccomment">/// The current GoaT URL.</span>
     <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">GOAT_URL</span>: <span class="ident">String</span> <span class="op">=</span> <span class="macro">format!</span>(<span class="string">&quot;{}{}&quot;</span>, <span class="ident">GOAT_URL_BASE</span>, <span class="ident">GOAT_API_VERSION</span>);
     <span class="doccomment">/// The taxonomy that `goat-cli` uses.</span>
-    <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">TAXONOMY</span>: <span class="ident">String</span> <span class="op">=</span> <span class="string">&quot;ncbi&quot;</span>.<span class="ident">to_string</span>();
+    <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">TAXONOMY</span>: <span class="ident">String</span> <span class="op">=</span> <span class="string">&quot;ncbi&quot;</span>.<span class="ident">into</span>();
 }
 
 <span class="comment">// global size limits on pinging the API</span>

@@ -231,29 +231,11 @@
 <span id="226">226</span>
 <span id="227">227</span>
 <span id="228">228</span>
-<span id="229">229</span>
-<span id="230">230</span>
-<span id="231">231</span>
-<span id="232">232</span>
-<span id="233">233</span>
-<span id="234">234</span>
-<span id="235">235</span>
-<span id="236">236</span>
-<span id="237">237</span>
-<span id="238">238</span>
-<span id="239">239</span>
-<span id="240">240</span>
-<span id="241">241</span>
-<span id="242">242</span>
-<span id="243">243</span>
-<span id="244">244</span>
-<span id="245">245</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils</span>::{
     <span class="ident">expression</span>, <span class="ident">tax_ranks</span>, <span class="ident">url</span>, <span class="ident">utils</span>,
     <span class="ident">variable_data</span>::{<span class="ident">GOAT_ASSEMBLY_VARIABLE_DATA</span>, <span class="ident">GOAT_TAXON_VARIABLE_DATA</span>},
 };
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">IndexType</span>, <span class="ident">GOAT_URL</span>, <span class="ident">TAXONOMY</span>, <span class="ident">UPPER_CLI_FILE_LIMIT</span>, <span class="ident">UPPER_CLI_SIZE_LIMIT</span>};
-
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">bail</span>, <span class="prelude-ty">Result</span>};
 
 <span class="doccomment">/// The type of result to return.</span>
@@ -333,46 +315,30 @@
     <span class="kw">let</span> <span class="ident">taxon_cvalues</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-c-values&quot;</span>);
     <span class="kw">let</span> <span class="ident">taxon_karyotype</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-karyotype&quot;</span>);
     <span class="kw">let</span> <span class="ident">taxon_gs</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-genome-size&quot;</span>);
-
     <span class="kw">let</span> <span class="ident">taxon_busco</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-busco&quot;</span>);
     <span class="kw">let</span> <span class="ident">taxon_gc_percent</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-gc-percent&quot;</span>);
-    <span class="comment">// non-default fields.</span>
     <span class="kw">let</span> <span class="ident">taxon_mitochondrion</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-mitochondria&quot;</span>);
     <span class="kw">let</span> <span class="ident">taxon_plastid</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-plastid&quot;</span>);
     <span class="kw">let</span> <span class="ident">taxon_ploidy</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-ploidy&quot;</span>);
     <span class="kw">let</span> <span class="ident">taxon_sex_determination</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-sex-determination&quot;</span>);
-    <span class="comment">// all legislation</span>
     <span class="kw">let</span> <span class="ident">taxon_legislation</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-legislation&quot;</span>);
-    <span class="comment">// all names</span>
     <span class="kw">let</span> <span class="ident">taxon_names</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-names&quot;</span>);
-    <span class="comment">// all target lists data</span>
     <span class="kw">let</span> <span class="ident">taxon_target_lists</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-target-lists&quot;</span>);
-    <span class="comment">// scaffold + contig n50</span>
     <span class="kw">let</span> <span class="ident">taxon_n50</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-n50&quot;</span>);
-    <span class="comment">// bioproject &amp; sample ID</span>
     <span class="kw">let</span> <span class="ident">taxon_bioproject</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-bioproject&quot;</span>);
-
     <span class="kw">let</span> <span class="ident">taxon_gene_count</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-gene-count&quot;</span>);
     <span class="kw">let</span> <span class="ident">taxon_date</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-date&quot;</span>);
     <span class="kw">let</span> <span class="ident">taxon_country_list</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-country-list&quot;</span>);
-    <span class="comment">// status</span>
     <span class="kw">let</span> <span class="ident">taxon_status</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;taxon-status&quot;</span>);
 
     <span class="comment">// command line args unique to assembly</span>
-    <span class="comment">// assembly span/level</span>
     <span class="kw">let</span> <span class="ident">assembly_assembly</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;assembly-assembly&quot;</span>);
     <span class="kw">let</span> <span class="ident">assembly_karyotype</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;assembly-karyotype&quot;</span>);
-    <span class="comment">// contig_count, contig_l/n50</span>
     <span class="kw">let</span> <span class="ident">assembly_contig</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;assembly-contig&quot;</span>);
-    <span class="comment">// scaffold_count, scaffold_l/n50</span>
     <span class="kw">let</span> <span class="ident">assembly_scaffold</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;assembly-scaffold&quot;</span>);
-    <span class="comment">// gc</span>
     <span class="kw">let</span> <span class="ident">assembly_gc</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;assembly-gc&quot;</span>);
-    <span class="comment">// gene count/ non-coding gene count?</span>
     <span class="kw">let</span> <span class="ident">assembly_gene</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;assembly-gene-count&quot;</span>);
-    <span class="comment">// busco completeness/lineage/string</span>
     <span class="kw">let</span> <span class="ident">assembly_busco</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;assembly-busco&quot;</span>);
-    <span class="comment">// btk</span>
     <span class="kw">let</span> <span class="ident">assembly_btk</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;assembly-btk&quot;</span>);
 
     <span class="kw">if</span> <span class="ident">print_expression</span> {

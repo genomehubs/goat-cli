@@ -14,9 +14,6 @@ pub struct Lookup {
     pub size: u64,
 }
 
-// an example
-// https://goat.genomehubs.org/api/v0.0.1/lookup?searchTerm=english%20oak&result=taxon&taxonomy=ncbi
-
 impl Lookup {
     /// From our lookup struct we can make an individual URL.
     pub fn make_url(&self) -> String {

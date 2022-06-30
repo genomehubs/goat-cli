@@ -1,7 +1,7 @@
 // Max Brown
 // Wellcome Sanger Institute: 2022
 
-use anyhow::Result;
+use anyhow::{Result, bail};
 use clap::{crate_version, AppSettings, Arg, Command};
 use futures::try_join;
 use tokio;
@@ -478,7 +478,36 @@ async fn main() -> Result<()> {
                     )
                     .subcommand(
                         Command::new("lookup")
-                                .about("Not yet implemented.")
+                            .about("Return information relating to a taxon name, e.g. synonyms, authorities.")
+                                .arg(
+                                    Arg::new("taxon")
+                                        .short('t')
+                                        .long("taxon")
+                                        .takes_value(true)
+                                        .required_unless_present("file")
+                                        .help("The taxon to search. An NCBI taxon ID, or the name of a taxon at any rank."),
+                                )
+                                .arg(
+                                    Arg::new("file")
+                                        .short('f')
+                                        .long("file")
+                                        .takes_value(true)
+                                        .required_unless_present_any(["taxon"])
+                                        .help(taxon_file_or_lookup_help),
+                                )
+                                .arg(
+                                    Arg::new("url")
+                                        .short('u')
+                                        .long("url")
+                                        .help("Print lookup URL.")
+                                )
+                                .arg(
+                                    Arg::new("size")
+                                        .short('s')
+                                        .long("size")
+                                        .default_value("10")
+                                        .help("The number of results to return."),
+                                )
                     )
             )
         .get_matches();
@@ -552,8 +581,10 @@ async fn main() -> Result<()> {
                 let unique_ids = generate_unique_strings(matches, IndexType::Assembly)?;
                 count::count(&matches, true, false, unique_ids, IndexType::Assembly).await?;
             }
-            Some(("lookup", _matches)) => {
-                unimplemented!()
+            Some(("lookup", matches)) => {
+                // will probably need to input IndexType::Assembly below.
+                // lookup::lookup(&matches, true).await?;
+                // bail!("goat-cli assembly lookup is not yet implemented.")
             }
             _ => unreachable!(),
         },

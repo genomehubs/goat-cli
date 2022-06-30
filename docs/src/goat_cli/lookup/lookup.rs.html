@@ -274,9 +274,6 @@
 <span id="269">269</span>
 <span id="270">270</span>
 <span id="271">271</span>
-<span id="272">272</span>
-<span id="273">273</span>
-<span id="274">274</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils::utils</span>::{
     <span class="ident">lines_from_file</span>, <span class="ident">parse_comma_separated</span>, <span class="ident">some_kind_of_uppercase_first_letter</span>,
 };
@@ -292,9 +289,6 @@
     <span class="doccomment">/// The size for each search (default = 10)</span>
     <span class="kw">pub</span> <span class="ident">size</span>: <span class="ident">u64</span>,
 }
-
-<span class="comment">// an example</span>
-<span class="comment">// https://goat.genomehubs.org/api/v0.0.1/lookup?searchTerm=english%20oak&amp;result=taxon&amp;taxonomy=ncbi</span>
 
 <span class="kw">impl</span> <span class="ident">Lookup</span> {
     <span class="doccomment">/// From our lookup struct we can make an individual URL.</span>
