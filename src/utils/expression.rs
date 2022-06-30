@@ -1,4 +1,3 @@
-use crate::error::ExpressionParseError;
 use crate::utils::tax_ranks::TaxRanks;
 use crate::utils::utils::{did_you_mean, switch_string_to_url_encoding};
 
@@ -209,20 +208,27 @@ impl<'a> CLIexpression<'a> {
         &mut self,
         reference_data: &BTreeMap<&'static str, Variable<'static>>,
     ) -> Result<String> {
-        if self.length > 100 {
-            bail!(ExpressionParseError::QueryTooLong)
+        let expression_length_limit = 100;
+        if self.length > expression_length_limit {
+            bail!(
+                "The expression query provided is greater than {} chars.",
+                expression_length_limit
+            )
         }
         if self.inner.contains("&&") {
-            bail!(ExpressionParseError::KeywordAndError)
+            bail!("Use AND keyword, not && for expression queries.")
         }
         if self.inner.contains(" contains") {
-            bail!(ExpressionParseError::KeywordContainsError)
+            bail!("Using the \"contains\" keyword is not yet supported.")
         }
         if self.inner.contains("||") || self.inner.contains("OR") {
-            bail!(ExpressionParseError::KeywordOrError)
+            bail!("OR (or ||) keyword is not supported.")
         }
-        if self.inner.contains("tax_name") || self.inner.contains("tax_tree") {
-            bail!(ExpressionParseError::KeywordTaxError)
+        if self.inner.contains("tax_name")
+            || self.inner.contains("tax_tree")
+            || self.inner.contains("tax_lineage")
+        {
+            bail!("Set tax_name through -t <taxon_name>, tax_tree by -d flag, and tax_lineage by -l flag.")
         }
         let split_vec = &self.split();
         let exp_vec = &split_vec.expression;
@@ -235,7 +241,7 @@ impl<'a> CLIexpression<'a> {
         // precedence here matters
         let re = Regex::new(r"!=|<=|<|==|=|>=|>").unwrap();
         if !re.is_match(self.inner) {
-            bail!(ExpressionParseError::NoOperatorError)
+            bail!("No operators were found in the expression.")
         }
 
         // must always start with a space and AND
@@ -445,7 +451,7 @@ impl<'a> CLIexpression<'a> {
                 Ok(expression)
             }
             false => {
-                bail!(ExpressionParseError::FormatExpressionError)
+                bail!("Error in expression format. Expressions must be in the format:\n\t<variable> <operator> <value> AND ...")
             }
         }
     }

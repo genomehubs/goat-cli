@@ -3,7 +3,6 @@ use crate::utils::{
     variable_data::{GOAT_ASSEMBLY_VARIABLE_DATA, GOAT_TAXON_VARIABLE_DATA},
 };
 use crate::{IndexType, GOAT_URL, TAXONOMY, UPPER_CLI_FILE_LIMIT, UPPER_CLI_SIZE_LIMIT};
-
 use anyhow::{bail, Result};
 
 /// The type of result to return.
@@ -83,46 +82,30 @@ pub fn process_cli_args(
     let taxon_cvalues = matches.is_present("taxon-c-values");
     let taxon_karyotype = matches.is_present("taxon-karyotype");
     let taxon_gs = matches.is_present("taxon-genome-size");
-
     let taxon_busco = matches.is_present("taxon-busco");
     let taxon_gc_percent = matches.is_present("taxon-gc-percent");
-    // non-default fields.
     let taxon_mitochondrion = matches.is_present("taxon-mitochondria");
     let taxon_plastid = matches.is_present("taxon-plastid");
     let taxon_ploidy = matches.is_present("taxon-ploidy");
     let taxon_sex_determination = matches.is_present("taxon-sex-determination");
-    // all legislation
     let taxon_legislation = matches.is_present("taxon-legislation");
-    // all names
     let taxon_names = matches.is_present("taxon-names");
-    // all target lists data
     let taxon_target_lists = matches.is_present("taxon-target-lists");
-    // scaffold + contig n50
     let taxon_n50 = matches.is_present("taxon-n50");
-    // bioproject & sample ID
     let taxon_bioproject = matches.is_present("taxon-bioproject");
-
     let taxon_gene_count = matches.is_present("taxon-gene-count");
     let taxon_date = matches.is_present("taxon-date");
     let taxon_country_list = matches.is_present("taxon-country-list");
-    // status
     let taxon_status = matches.is_present("taxon-status");
 
     // command line args unique to assembly
-    // assembly span/level
     let assembly_assembly = matches.is_present("assembly-assembly");
     let assembly_karyotype = matches.is_present("assembly-karyotype");
-    // contig_count, contig_l/n50
     let assembly_contig = matches.is_present("assembly-contig");
-    // scaffold_count, scaffold_l/n50
     let assembly_scaffold = matches.is_present("assembly-scaffold");
-    // gc
     let assembly_gc = matches.is_present("assembly-gc");
-    // gene count/ non-coding gene count?
     let assembly_gene = matches.is_present("assembly-gene-count");
-    // busco completeness/lineage/string
     let assembly_busco = matches.is_present("assembly-busco");
-    // btk
     let assembly_btk = matches.is_present("assembly-btk");
 
     if print_expression {

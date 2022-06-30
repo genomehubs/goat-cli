@@ -9,9 +9,6 @@ use std::fmt;
 
 /// Query the GoaT count API.
 pub mod count;
-/// Collection of errors used throughout
-/// the CLI.
-pub mod error;
 /// Query the GoaT lookup API.
 pub mod lookup;
 /// A module to produce a progress
@@ -34,7 +31,7 @@ lazy_static! {
     /// The current GoaT URL.
     pub static ref GOAT_URL: String = format!("{}{}", GOAT_URL_BASE, GOAT_API_VERSION);
     /// The taxonomy that `goat-cli` uses.
-    pub static ref TAXONOMY: String = "ncbi".to_string();
+    pub static ref TAXONOMY: String = "ncbi".into();
 }
 
 // global size limits on pinging the API
