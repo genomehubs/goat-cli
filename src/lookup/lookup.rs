@@ -1,7 +1,7 @@
 use crate::utils::utils::{
     lines_from_file, parse_comma_separated, some_kind_of_uppercase_first_letter,
 };
-use crate::{GOAT_URL, TAXONOMY, UPPER_CLI_FILE_LIMIT};
+use crate::{IndexType, GOAT_URL, TAXONOMY, UPPER_CLI_FILE_LIMIT};
 
 use anyhow::{bail, Result};
 
@@ -12,6 +12,9 @@ pub struct Lookup {
     pub search: String,
     /// The size for each search (default = 10)
     pub size: u64,
+    /// The index type, currently taxon or
+    /// assembly
+    pub index_type: IndexType,
 }
 
 impl Lookup {
@@ -29,7 +32,7 @@ impl Lookup {
         let size = format!("&size={}", self.size);
         url += &size;
         // hardcode the rest for now
-        url += &format!("&result=taxon&taxonomy={}", &*TAXONOMY);
+        url += &format!("&result={}&taxonomy={}", self.index_type, &*TAXONOMY);
         url
     }
 }
@@ -45,7 +48,7 @@ pub struct Lookups {
 impl Lookups {
     /// Constructor which takes the CLI args and returns
     /// `Self`.
-    pub fn new(matches: &clap::ArgMatches) -> Result<Self> {
+    pub fn new(matches: &clap::ArgMatches, index_type: IndexType) -> Result<Self> {
         let tax_name_op = matches.value_of("taxon");
         let filename_op = matches.value_of("file");
         // safe to unwrap, as default is defined.
@@ -76,6 +79,7 @@ impl Lookups {
             res.push(Lookup {
                 search: el,
                 size: no_hits,
+                index_type,
             })
         }
 
@@ -96,10 +100,31 @@ impl Lookups {
     }
 }
 
-/// Collect the results from concurrent `goat-cli lookup`
+/// Took this out of `print_result` as
+fn format_suggestion_string(suggestions: &Vec<Option<String>>) -> Result<()> {
+    let mut suggestion_str = String::new();
+    for el in suggestions {
+        match el {
+            Some(s) => {
+                suggestion_str += &some_kind_of_uppercase_first_letter(&s[..]);
+                suggestion_str += ", ";
+            }
+            None => {}
+        }
+    }
+    // remove last comma
+    if suggestion_str.len() > 2 {
+        suggestion_str.drain(suggestion_str.len() - 2..);
+        Ok(eprintln!("Did you mean: {}?", suggestion_str))
+    } else {
+        Ok(eprintln!("There are no results."))
+    }
+}
+
+/// Collect the results from concurrent `goat-cli taxon lookup`
 /// queries.
 #[derive(Clone)]
-pub struct Collector {
+pub struct TaxonCollector {
     /// User search value.
     pub search: Option<String>,
     /// The taxon id that we fetch.
@@ -118,7 +143,7 @@ pub struct Collector {
     pub suggestions: Option<Vec<Option<String>>>,
 }
 
-impl Collector {
+impl TaxonCollector {
     /// Print the result from a collector struct.
     /// add an index, so we don't repeat headers
     pub fn print_result(&self, index: usize) -> Result<()> {
@@ -128,25 +153,7 @@ impl Collector {
                 // if we got a suggestion
                 match &self.suggestions {
                     // we end up here even if there are no *actual* suggestions.
-                    Some(suggestions) => {
-                        let mut suggestion_str = String::new();
-                        for el in suggestions {
-                            match el {
-                                Some(s) => {
-                                    suggestion_str += &some_kind_of_uppercase_first_letter(&s[..]);
-                                    suggestion_str += ", ";
-                                }
-                                None => {}
-                            }
-                        }
-                        // remove last comma
-                        if suggestion_str.len() > 2 {
-                            suggestion_str.drain(suggestion_str.len() - 2..);
-                            Ok(eprintln!("Did you mean: {}?", suggestion_str))
-                        } else {
-                            Ok(eprintln!("There are no results."))
-                        }
-                    }
+                    Some(suggestions) => format_suggestion_string(suggestions),
                     // no suggestion, so we got a hit
                     None => {
                         // Vec<Option<String>> -> Option<Vec<String>>
@@ -210,62 +217,98 @@ impl Collector {
             None => Ok(eprintln!("No results.")),
         }
     }
-    // take matches from search cli
-    // generate ncbi taxid
-    // give user warning for spelling mistakes.
-    // ncbi taxid can then be passed
-    // the output type must be Option<String> (= taxid in `search` & `count`)
+}
 
-    // currently deprecated - don't use this in `search` or `count`
-    // there is the possibility of URL's being too long...
-    // might be useful for `record` API at some point?
+/// Collect the results from concurrent `goat-cli taxon lookup`
+/// queries.
+#[derive(Clone)]
+pub struct AssemblyCollector {
+    /// User search value.
+    pub search: Option<String>,
+    /// The taxon id that we fetch.
+    /// Can return multiple taxon id's.
+    pub taxon_id: Vec<Option<String>>,
+    /// The identifiers, which is an enumeration of all
+    /// of the identifier:class pairs. This could be a Map.
+    pub identifiers: Vec<Option<Vec<(String, String)>>>,
+    /// The suggestions vector.
+    pub suggestions: Option<Vec<Option<String>>>,
+}
 
-    #[deprecated(
-        note = "Currently deprecated. Might be used in future to suggest spelling corrections in search."
-    )]
-    pub fn return_taxid_vec(&self) -> Result<Option<String>> {
+impl AssemblyCollector {
+    /// Print the result from a collector struct.
+    /// add an index, so we don't repeat headers
+    pub fn print_result(&self, index: usize) -> Result<()> {
         // if we got a hit
         match &self.search {
             Some(search) => {
                 // if we got a suggestion
                 match &self.suggestions {
                     // we end up here even if there are no *actual* suggestions.
-                    Some(suggestions) => {
-                        let mut suggestion_str = String::new();
-                        for el in suggestions {
-                            match el {
-                                Some(s) => {
-                                    suggestion_str += &some_kind_of_uppercase_first_letter(&s[..]);
-                                    suggestion_str += ", ";
-                                }
-                                None => {}
-                            }
-                        }
-                        // remove last comma
-                        if suggestion_str.len() > 2 {
-                            suggestion_str.drain(suggestion_str.len() - 2..);
-                            eprintln!("You searched {}. Did you mean: {}?", search, suggestion_str);
-                            // no taxid here
-                            Ok(None)
-                        } else {
-                            eprintln!("There are no results for the search: {}", search);
-                            Ok(None)
-                        }
-                    }
+                    Some(suggestions) => format_suggestion_string(suggestions),
                     // no suggestion, so we got a hit
                     None => {
+                        // Vec<Option<String>> -> Option<Vec<String>>
+                        // these vecs should all be the same length?
                         let taxon_id = self.taxon_id.clone();
-                        let taxon_ids_op: Option<Vec<String>> = taxon_id.into_iter().collect();
+                        let assembly_identifiers = self.identifiers.clone();
 
-                        let taxon_id = match taxon_ids_op {
-                            Some(t) => t.join("%2C"),
-                            None => "No taxon ID".to_string(),
-                        };
-                        Ok(Some(taxon_id))
+                        let taxon_ids_op: Option<Vec<String>> = taxon_id.into_iter().collect();
+                        // same but for nested vec.
+                        let assembly_identifiers_op: Option<Vec<Vec<(String, String)>>> =
+                            assembly_identifiers.into_iter().collect();
+
+                        // print headers for first result only.
+                        if index == 0 {
+                            println!("taxon\tsearch_query\tidentifier\ttype");
+                        }
+                        match assembly_identifiers_op {
+                            Some(n) => {
+                                // get taxon_ids and taxon_ranks
+                                let taxon_ids = match taxon_ids_op {
+                                    Some(t) => t,
+                                    // empty vec
+                                    None => vec![],
+                                };
+                                // zip these vectors together
+                                let mut zipped_taxon_vectors = taxon_ids.iter().zip(n.iter());
+
+                                // this may not be the best way to print
+                                // as everything has to be loaded into mem
+                                // however, each result string should be small.
+                                let mut whole_res_string = String::new();
+
+                                while let Some((taxon_id, taxon_ranks)) =
+                                    zipped_taxon_vectors.next()
+                                {
+                                    for el in taxon_ranks {
+                                        let row = format!(
+                                            "{}\t{}\t{}\t{}\n",
+                                            taxon_id, search, el.0, el.1
+                                        );
+                                        whole_res_string += &row;
+                                    }
+                                }
+                                // remove trailing newline
+                                whole_res_string.pop();
+                                Ok(println!("{}", whole_res_string))
+                            }
+                            None => Ok(eprintln!("There were no taxon names.")),
+                        }
                     }
                 }
             }
-            None => bail!("No results."),
+            None => Ok(eprintln!("No results.")),
         }
     }
+}
+
+/// A wrapper so we can return the same from our request.
+/// Otherwise I am going to have to do extensive changes above
+/// which I decided against.
+pub enum Collector {
+    /// The taxon results.
+    Taxon(Result<TaxonCollector>),
+    /// The assembly results.
+    Assembly(Result<AssemblyCollector>),
 }

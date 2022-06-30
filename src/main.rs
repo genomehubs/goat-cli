@@ -1,7 +1,7 @@
 // Max Brown
 // Wellcome Sanger Institute: 2022
 
-use anyhow::{Result, bail};
+use anyhow::{Result};
 use clap::{crate_version, AppSettings, Arg, Command};
 use futures::try_join;
 use tokio;
@@ -538,7 +538,7 @@ async fn main() -> Result<()> {
                 count::count(&matches, true, false, unique_ids, IndexType::Taxon).await?;
             }
             Some(("lookup", matches)) => {
-                lookup::lookup(&matches, true).await?;
+                lookup::lookup(&matches, true, IndexType::Taxon).await?;
             }
             Some(("newick", matches)) => {
                 let progress_bar = matches.is_present("progress-bar");
@@ -582,9 +582,7 @@ async fn main() -> Result<()> {
                 count::count(&matches, true, false, unique_ids, IndexType::Assembly).await?;
             }
             Some(("lookup", matches)) => {
-                // will probably need to input IndexType::Assembly below.
-                // lookup::lookup(&matches, true).await?;
-                // bail!("goat-cli assembly lookup is not yet implemented.")
+                lookup::lookup(&matches, true, IndexType::Assembly).await?;
             }
             _ => unreachable!(),
         },

@@ -50,7 +50,7 @@ lazy_static! {
 /// Each tuple variant can store their respective
 /// [`BTreeMap`] databases.
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum IndexType {
     /// Taxon search index. The historical main
     /// functionality of goat-cli went through taxon.

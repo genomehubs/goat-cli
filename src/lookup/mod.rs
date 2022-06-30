@@ -1,7 +1,13 @@
 //!
 //! Invoked by calling:
-//! `goat-cli lookup <args>`
+//! `goat-cli taxon/assembly lookup <args>`
+//!
+//! The state of the code here is not great, it's
+//! quite fragmented. Functional, but lacks coherence.
+//!
+//! Probably should be refactored at some point.
 
+use crate::IndexType;
 use anyhow::{bail, Result};
 use futures::StreamExt;
 use reqwest;
@@ -10,11 +16,11 @@ use serde_json::Value;
 
 /// The inner structs used in lookup.
 pub mod lookup;
-use lookup::{Collector, Lookups};
+use lookup::{AssemblyCollector, Collector, Lookups, TaxonCollector};
 
 /// Main entry point for `goat-cli lookup`.
-pub async fn lookup(matches: &clap::ArgMatches, cli: bool) -> Result<Option<Vec<String>>> {
-    let lookups = Lookups::new(matches)?;
+pub async fn lookup(matches: &clap::ArgMatches, cli: bool, index_type: IndexType) -> Result<()> {
+    let lookups = Lookups::new(matches, index_type)?;
     let url_vector_api = lookups.make_urls();
     let print_url = matches.is_present("url");
     let size = matches.value_of("size").unwrap();
@@ -69,63 +75,15 @@ pub async fn lookup(matches: &clap::ArgMatches, cli: bool) -> Result<Option<Vec<
                         }
                         None => None,
                     };
-                    // and the taxon ID
-                    // we need to iterate over the array of results.
-                    // potentially look at the scores, and keep those over a certain amount
-                    // or keep everything. Currently I'm missing synonymous genera.
-
-                    let mut taxon_id_vec = Vec::new();
-                    let mut taxon_rank_vec = Vec::new();
-                    let mut taxon_names_array_vec = Vec::new();
-
-                    let results_array = v["results"].as_array();
-                    // unwrap safely here
-                    match results_array {
-                        Some(arr) => {
-                            for el in arr {
-                                let taxon_id = el["result"]["taxon_id"].as_str();
-                                let taxon_rank = el["result"]["taxon_rank"].as_str();
-                                let taxon_names_array_op = el["result"]["taxon_names"].as_array();
-
-                                let taxon_names_array = match taxon_names_array_op {
-                                    Some(vec) => {
-                                        let mut collect_names = Vec::new();
-                                        for el in vec.into_iter() {
-                                            let key = el["name"].as_str().unwrap_or("-");
-                                            let value = el["class"].as_str().unwrap_or("-");
-                                            // let source = el["source"].as_str().unwrap_or("-");
-                                            collect_names
-                                                .push((key.to_string(), value.to_string()));
-                                        }
-                                        Some(collect_names)
-                                    }
-                                    None => None,
-                                };
-
-                                // gather results into the vecs
-                                taxon_id_vec.push(taxon_id);
-                                taxon_rank_vec.push(taxon_rank);
-                                taxon_names_array_vec.push(taxon_names_array);
-                            }
-                        }
-                        None => {}
+                    // we have all the information to process the results
+                    match index_type {
+                        IndexType::Taxon => Ok(Collector::Taxon(process_taxon_results(v, search_query, suggestions_text))),
+                        IndexType::Assembly => Ok(Collector::Assembly(process_assembly_results(v, search_query, suggestions_text))),
                     }
-
-                    // Vec<Option<&str>> -> Vec<Option<String>>
-                    let taxon_id = taxon_id_vec.iter().map(|e| e.map(String::from)).collect();
-                    let taxon_rank = taxon_rank_vec.iter().map(|e| e.map(String::from)).collect();
-
-                    Ok(Collector {
-                        search: Some(search_query.to_string()),
-                        suggestions: suggestions_text,
-                        taxon_id,
-                        taxon_names: taxon_names_array_vec,
-                        taxon_rank,
-                    })
                 }
-                Err(_) => bail!("ERROR reading {}", path),
+                Err(e) => bail!("Error reading {}: {}", path, e),
             },
-            Err(_) => bail!("ERROR downloading {}", path),
+            Err(e) => bail!("Error downloading {}: {}", path, e),
         }
     }))
     .buffer_unordered(concurrent_requests)
@@ -133,27 +91,139 @@ pub async fn lookup(matches: &clap::ArgMatches, cli: bool) -> Result<Option<Vec<
 
     let awaited_fetches = fetches.await;
 
-    let mut return_taxid_vec: Vec<String> = Vec::new();
-
-    for (index, el) in awaited_fetches.iter().enumerate() {
+    for (index, el) in awaited_fetches.into_iter().enumerate() {
         match el {
             Ok(e) => {
                 if cli {
-                    e.print_result(index)?;
-                } else {
-                    // dead code currently
-                    let taxid_op = e.return_taxid_vec()?;
-                    match taxid_op {
-                        Some(s) => return_taxid_vec.push(s),
-                        // the None variant can't push a "",
-                        // otherwise the URL hangs.
-                        None => return_taxid_vec.push("-".to_string()),
+                    match e {
+                        Collector::Taxon(e) => e?.print_result(index)?,
+                        Collector::Assembly(e) => e?.print_result(index)?,
                     }
+                } else {
+                    // this avenue is for internal use
+                    // where the user could get info about
+                    // bad spelling etc...
+                    bail!("This is not yet implemented.")
                 }
             }
             Err(_) => bail!("No results found."),
         }
     }
 
-    Ok(Some(return_taxid_vec))
+    Ok(())
+}
+
+/// As the taxon and assembly return JSON's are in
+/// different structures, they have to be parsed differently.
+///
+/// Each must return [`Result<Collector, anyhow::Error>`].
+fn process_taxon_results(
+    v: Value,
+    search_query: String,
+    suggestions_text: Option<Vec<Option<String>>>,
+) -> Result<TaxonCollector> {
+    // and the taxon ID
+    // we need to iterate over the array of results.
+    // potentially look at the scores, and keep those over a certain amount
+    // or keep everything. Currently I'm missing synonymous genera.
+
+    let mut taxon_id_vec = Vec::new();
+    let mut taxon_rank_vec = Vec::new();
+    let mut taxon_names_array_vec = Vec::new();
+
+    let results_array = v["results"].as_array();
+    // unwrap safely here
+    match results_array {
+        Some(arr) => {
+            for el in arr {
+                let taxon_id = el["result"]["taxon_id"].as_str();
+                let taxon_rank = el["result"]["taxon_rank"].as_str();
+                let taxon_names_array_op = el["result"]["taxon_names"].as_array();
+
+                let taxon_names_array = match taxon_names_array_op {
+                    Some(vec) => {
+                        let mut collect_names = Vec::new();
+                        for el in vec.into_iter() {
+                            let key = el["name"].as_str().unwrap_or("-");
+                            let value = el["class"].as_str().unwrap_or("-");
+                            // let source = el["source"].as_str().unwrap_or("-");
+                            collect_names.push((key.to_string(), value.to_string()));
+                        }
+                        Some(collect_names)
+                    }
+                    None => None,
+                };
+
+                // gather results into the vecs
+                taxon_id_vec.push(taxon_id);
+                taxon_rank_vec.push(taxon_rank);
+                taxon_names_array_vec.push(taxon_names_array);
+            }
+        }
+        None => {}
+    }
+
+    // Vec<Option<&str>> -> Vec<Option<String>>
+    let taxon_id = taxon_id_vec.iter().map(|e| e.map(String::from)).collect();
+    let taxon_rank = taxon_rank_vec.iter().map(|e| e.map(String::from)).collect();
+
+    Ok(TaxonCollector {
+        search: Some(search_query.to_string()),
+        suggestions: suggestions_text,
+        taxon_id,
+        taxon_names: taxon_names_array_vec,
+        taxon_rank,
+    })
+}
+
+/// The assembly counterpart to the above function.
+fn process_assembly_results(
+    v: Value,
+    search_query: String,
+    suggestions_text: Option<Vec<Option<String>>>,
+) -> Result<AssemblyCollector> {
+    // taxon ID stays the same
+    let mut taxon_id_vec = Vec::new();
+    // there is no taxon rank
+    let mut identifiers_array_vec = Vec::new();
+
+    let results_array = v["results"].as_array();
+    // unwrap safely here
+    match results_array {
+        Some(arr) => {
+            for el in arr {
+                let taxon_id = el["result"]["taxon_id"].as_str();
+                let identifiers_array_op = el["result"]["identifiers"].as_array();
+
+                let identifiers_array = match identifiers_array_op {
+                    Some(vec) => {
+                        let mut collect_names = Vec::new();
+                        for el in vec.into_iter() {
+                            let key = el["identifier"].as_str().unwrap_or("-");
+                            let value = el["class"].as_str().unwrap_or("-");
+                            // let source = el["source"].as_str().unwrap_or("-");
+                            collect_names.push((key.to_string(), value.to_string()));
+                        }
+                        Some(collect_names)
+                    }
+                    None => None,
+                };
+
+                // gather results into the vecs
+                taxon_id_vec.push(taxon_id);
+                identifiers_array_vec.push(identifiers_array);
+            }
+        }
+        None => {}
+    }
+
+    // Vec<Option<&str>> -> Vec<Option<String>>
+    let taxon_id = taxon_id_vec.iter().map(|e| e.map(String::from)).collect();
+
+    Ok(AssemblyCollector {
+        search: Some(search_query.to_string()),
+        suggestions: suggestions_text,
+        taxon_id,
+        identifiers: identifiers_array_vec,
+    })
 }
