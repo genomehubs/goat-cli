@@ -274,12 +274,6 @@
 <span id="269">269</span>
 <span id="270">270</span>
 <span id="271">271</span>
-<span id="272">272</span>
-<span id="273">273</span>
-<span id="274">274</span>
-<span id="275">275</span>
-<span id="276">276</span>
-<span id="277">277</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils::utils</span>::{
     <span class="ident">lines_from_file</span>, <span class="ident">parse_comma_separated</span>, <span class="ident">some_kind_of_uppercase_first_letter</span>,
 };
@@ -295,9 +289,6 @@
     <span class="doccomment">/// The size for each search (default = 10)</span>
     <span class="kw">pub</span> <span class="ident">size</span>: <span class="ident">u64</span>,
 }
-
-<span class="comment">// an example</span>
-<span class="comment">// https://goat.genomehubs.org/api/v0.0.1/lookup?searchTerm=english%20oak&amp;result=taxon&amp;taxonomy=ncbi</span>
 
 <span class="kw">impl</span> <span class="ident">Lookup</span> {
     <span class="doccomment">/// From our lookup struct we can make an individual URL.</span>
@@ -346,12 +337,12 @@
                     <span class="comment">// check length of vector and bail if &gt; 1000</span>
                     <span class="kw">if</span> <span class="ident">tax_name_vector</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="kw-2">*</span><span class="ident">UPPER_CLI_FILE_LIMIT</span> {
                         <span class="macro">bail!</span>(
-                            <span class="string">&quot;[-]\tNumber of taxa specified cannot exceed {}.&quot;</span>,
+                            <span class="string">&quot;Number of taxa specified cannot exceed {}.&quot;</span>,
                             <span class="kw-2">*</span><span class="ident">UPPER_CLI_FILE_LIMIT</span>
                         )
                     }
                 }
-                <span class="prelude-val">None</span> =&gt; <span class="macro">bail!</span>(<span class="string">&quot;[-]\tOne of -f (--file) or -t (--tax-id) should be specified.&quot;</span>),
+                <span class="prelude-val">None</span> =&gt; <span class="macro">bail!</span>(<span class="string">&quot;One of -f (--file) or -t (--taxon) should be specified.&quot;</span>),
             },
         }
 
@@ -427,9 +418,9 @@
                         <span class="comment">// remove last comma</span>
                         <span class="kw">if</span> <span class="ident">suggestion_str</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="number">2</span> {
                             <span class="ident">suggestion_str</span>.<span class="ident">drain</span>(<span class="ident">suggestion_str</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="number">2</span>..);
-                            <span class="prelude-val">Ok</span>(<span class="macro">eprintln!</span>(<span class="string">&quot;[-]\tDid you mean: {}?&quot;</span>, <span class="ident">suggestion_str</span>))
+                            <span class="prelude-val">Ok</span>(<span class="macro">eprintln!</span>(<span class="string">&quot;Did you mean: {}?&quot;</span>, <span class="ident">suggestion_str</span>))
                         } <span class="kw">else</span> {
-                            <span class="prelude-val">Ok</span>(<span class="macro">eprintln!</span>(<span class="string">&quot;[-]\tThere are no results.&quot;</span>))
+                            <span class="prelude-val">Ok</span>(<span class="macro">eprintln!</span>(<span class="string">&quot;There are no results.&quot;</span>))
                         }
                     }
                     <span class="comment">// no suggestion, so we got a hit</span>
@@ -529,14 +520,11 @@
                         <span class="comment">// remove last comma</span>
                         <span class="kw">if</span> <span class="ident">suggestion_str</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="number">2</span> {
                             <span class="ident">suggestion_str</span>.<span class="ident">drain</span>(<span class="ident">suggestion_str</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="number">2</span>..);
-                            <span class="macro">eprintln!</span>(
-                                <span class="string">&quot;[-]\tYou searched {}. Did you mean: {}?&quot;</span>,
-                                <span class="ident">search</span>, <span class="ident">suggestion_str</span>
-                            );
+                            <span class="macro">eprintln!</span>(<span class="string">&quot;You searched {}. Did you mean: {}?&quot;</span>, <span class="ident">search</span>, <span class="ident">suggestion_str</span>);
                             <span class="comment">// no taxid here</span>
                             <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
                         } <span class="kw">else</span> {
-                            <span class="macro">eprintln!</span>(<span class="string">&quot;[-]\tThere are no results for the search: {}&quot;</span>, <span class="ident">search</span>);
+                            <span class="macro">eprintln!</span>(<span class="string">&quot;There are no results for the search: {}&quot;</span>, <span class="ident">search</span>);
                             <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
                         }
                     }

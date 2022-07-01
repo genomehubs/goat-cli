@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 import json
+import sys
 
 # a heathen script to paste the output into Rust.
+# does min/max work with assembly_vars.json??
+
 
 def type_to_type_of(string):
     if string == "long":
@@ -21,7 +24,10 @@ def type_to_type_of(string):
     elif string == "keyword":
         return "Keyword"
 
-with open("vars.json", "r") as json_file:
+
+cli_json_file = sys.argv[1]
+
+with open(cli_json_file, "r") as json_file:
     data = json.load(json_file)
     for field in data["fields"]:
         name = data["fields"][field]["name"]
@@ -40,19 +46,23 @@ with open("vars.json", "r") as json_file:
         try:
             functions = data["fields"][field]["summary"]
             if type(functions) is list:
-                if all(el in functions for el in ['min', 'max']):
-                    fun = "Function::Some(vec![\"min\", \"max\"])"
+                if all(el in functions for el in ["min", "max"]):
+                    fun = 'Function::Some(vec!["min", "max"])'
         except KeyError:
             fun = "Function::None"
-        
+
         # print format
-        # "mitochondrion_assembly_span" => Variable {display_name: "mitochondrion span", type_of: TypeOf::Long}, 
+        # "mitochondrion_assembly_span" => Variable {display_name: "mitochondrion span", type_of: TypeOf::Long},
         if type_ == "keyword":
             try:
                 enum_list = data["fields"][field]["constraint"]["enum"]
             except KeyError:
                 enum_list = []
-            enum_list_str = "\", \"".join(enum_list)
-            print(f"\"{name}\" => Variable {{ display_name: \"{display_name}\", type_of: TypeOf::{type_of}(vec![\"{enum_list_str}\"]), functions: {fun} }},")
+            enum_list_str = '", "'.join(enum_list)
+            print(
+                f'"{name}" => Variable {{ display_name: "{display_name}", type_of: TypeOf::{type_of}(vec!["{enum_list_str}"]), functions: {fun} }},'
+            )
         else:
-            print(f"\"{name}\" => Variable {{ display_name: \"{display_name}\", type_of: TypeOf::{type_of}, functions: {fun} }},")
+            print(
+                f'"{name}" => Variable {{ display_name: "{display_name}", type_of: TypeOf::{type_of}, functions: {fun} }},'
+            )

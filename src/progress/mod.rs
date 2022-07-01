@@ -13,8 +13,8 @@ use reqwest::header::ACCEPT;
 use serde_json::Value;
 use std::time::Duration;
 
-use crate::count;
 use crate::utils::cli_matches;
+use crate::{count, IndexType};
 use crate::{GOAT_URL, UPPER_CLI_SIZE_LIMIT};
 
 // a function to create and display a progress bar
@@ -25,6 +25,7 @@ pub async fn progress_bar(
     matches: &clap::ArgMatches,
     api: &str,
     unique_ids: Vec<String>,
+    index_type: IndexType,
 ) -> Result<()> {
     // wait briefly before submitting
     // so we are sure the API has recieved and set the queryId
@@ -35,7 +36,7 @@ pub async fn progress_bar(
         // as newick only supports single url calls right now.
         // this is really bad coding...
         "newick" => (0u64, vec!["init".to_string()], vec!["init".to_string()]),
-        other => cli_matches::process_cli_args(matches, other, unique_ids.clone())?,
+        other => cli_matches::process_cli_args(matches, other, unique_ids.clone(), index_type.clone())?,
     };
 
     ensure!(
@@ -46,7 +47,7 @@ pub async fn progress_bar(
     let concurrent_requests = url_vector_api.len();
 
     // should be fine to always unwrap this
-    let no_query_hits = count::count(matches, false, false, unique_ids.clone())
+    let no_query_hits = count::count(matches, false, false, unique_ids.clone(), index_type)
         .await?
         .unwrap();
     // might need tweaking...

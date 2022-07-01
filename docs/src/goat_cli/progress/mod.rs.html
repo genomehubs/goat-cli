@@ -166,6 +166,7 @@
 <span id="161">161</span>
 <span id="162">162</span>
 <span id="163">163</span>
+<span id="164">164</span>
 </pre><pre class="rust"><code><span class="doccomment">//!</span>
 <span class="doccomment">//! Module for progress bar addition to searches.</span>
 <span class="doccomment">//!</span>
@@ -181,8 +182,8 @@
 <span class="kw">use</span> <span class="ident">serde_json::Value</span>;
 <span class="kw">use</span> <span class="ident">std::time::Duration</span>;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::count</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils::cli_matches</span>;
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">count</span>, <span class="ident">IndexType</span>};
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">GOAT_URL</span>, <span class="ident">UPPER_CLI_SIZE_LIMIT</span>};
 
 <span class="comment">// a function to create and display a progress bar</span>
@@ -193,6 +194,7 @@
     <span class="ident">matches</span>: <span class="kw-2">&amp;</span><span class="ident">clap::ArgMatches</span>,
     <span class="ident">api</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
     <span class="ident">unique_ids</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+    <span class="ident">index_type</span>: <span class="ident">IndexType</span>,
 ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="comment">// wait briefly before submitting</span>
     <span class="comment">// so we are sure the API has recieved and set the queryId</span>
@@ -203,7 +205,7 @@
         <span class="comment">// as newick only supports single url calls right now.</span>
         <span class="comment">// this is really bad coding...</span>
         <span class="string">&quot;newick&quot;</span> =&gt; (<span class="number">0u64</span>, <span class="macro">vec!</span>[<span class="string">&quot;init&quot;</span>.<span class="ident">to_string</span>()], <span class="macro">vec!</span>[<span class="string">&quot;init&quot;</span>.<span class="ident">to_string</span>()]),
-        <span class="ident">other</span> =&gt; <span class="ident">cli_matches::process_cli_args</span>(<span class="ident">matches</span>, <span class="ident">other</span>, <span class="ident">unique_ids</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>,
+        <span class="ident">other</span> =&gt; <span class="ident">cli_matches::process_cli_args</span>(<span class="ident">matches</span>, <span class="ident">other</span>, <span class="ident">unique_ids</span>.<span class="ident">clone</span>(), <span class="ident">index_type</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>,
     };
 
     <span class="macro">ensure!</span>(
@@ -214,7 +216,7 @@
     <span class="kw">let</span> <span class="ident">concurrent_requests</span> <span class="op">=</span> <span class="ident">url_vector_api</span>.<span class="ident">len</span>();
 
     <span class="comment">// should be fine to always unwrap this</span>
-    <span class="kw">let</span> <span class="ident">no_query_hits</span> <span class="op">=</span> <span class="ident">count::count</span>(<span class="ident">matches</span>, <span class="bool-val">false</span>, <span class="bool-val">false</span>, <span class="ident">unique_ids</span>.<span class="ident">clone</span>())
+    <span class="kw">let</span> <span class="ident">no_query_hits</span> <span class="op">=</span> <span class="ident">count::count</span>(<span class="ident">matches</span>, <span class="bool-val">false</span>, <span class="bool-val">false</span>, <span class="ident">unique_ids</span>.<span class="ident">clone</span>(), <span class="ident">index_type</span>)
         .<span class="kw">await</span><span class="question-mark">?</span>
         .<span class="ident">unwrap</span>();
     <span class="comment">// might need tweaking...</span>

@@ -4,7 +4,11 @@ use std::{
     path::Path,
 };
 
-use crate::UPPER_CLI_FILE_LIMIT;
+use crate::{
+    utils::expression,
+    utils::variable_data::{GOAT_ASSEMBLY_VARIABLE_DATA, GOAT_TAXON_VARIABLE_DATA},
+    IndexType, UPPER_CLI_FILE_LIMIT,
+};
 use anyhow::{bail, Context, Result};
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
@@ -13,7 +17,10 @@ use rand::{thread_rng, Rng};
 /// are needing to be generated, and return a
 /// vector of random character strings to use as
 /// unique identifiers.
-pub fn generate_unique_strings(matches: &clap::ArgMatches) -> Result<Vec<String>> {
+pub fn generate_unique_strings(
+    matches: &clap::ArgMatches,
+    index_type: IndexType,
+) -> Result<Vec<String>> {
     let tax_name_op = matches.value_of("taxon");
     let filename_op = matches.value_of("file");
     // print expression table
@@ -21,7 +28,10 @@ pub fn generate_unique_strings(matches: &clap::ArgMatches) -> Result<Vec<String>
     let print_expression = matches.is_present("print-expression");
 
     if print_expression {
-        crate::utils::expression::print_variable_data();
+        match index_type {
+            IndexType::Taxon => expression::print_variable_data(&*GOAT_TAXON_VARIABLE_DATA),
+            IndexType::Assembly => expression::print_variable_data(&*GOAT_ASSEMBLY_VARIABLE_DATA),
+        }
         std::process::exit(0);
     }
 
@@ -31,7 +41,7 @@ pub fn generate_unique_strings(matches: &clap::ArgMatches) -> Result<Vec<String>
         Some(s) => {
             // catch empty string hanging here.
             if s == "" {
-                bail!("[-]\tEmpty string found, please specify a taxon.");
+                bail!("Empty string found, please specify a taxon.");
             }
             url_vector = parse_comma_separated(s);
         }
@@ -41,13 +51,10 @@ pub fn generate_unique_strings(matches: &clap::ArgMatches) -> Result<Vec<String>
                 // check length of vector and bail if > 1000
                 if url_vector.len() > *UPPER_CLI_FILE_LIMIT {
                     let limit_string = pretty_print_usize(*UPPER_CLI_FILE_LIMIT);
-                    bail!(
-                        "[-]\tNumber of taxa specified cannot exceed {}.",
-                        limit_string
-                    )
+                    bail!("Number of taxa specified cannot exceed {}.", limit_string)
                 }
             }
-            None => bail!("[-]\tOne of -f (--file) or -t (--tax-id) should be specified."),
+            None => bail!("One of -f (--file) or -t (--taxon) should be specified."),
         },
     }
 

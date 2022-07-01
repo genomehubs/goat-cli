@@ -1,25 +1,3 @@
-use crate::utils::expression::{Function, TypeOf, Variable};
-use lazy_static::lazy_static;
-use std::collections::BTreeMap;
-
-// https://stackoverflow.com/questions/27582739/how-do-i-create-a-hashmap-literal
-
-/// Makes a static [`BTreeMap`] from the input of `GOAT_VARIABLE_DATA`.
-macro_rules! collection {
-    // map-like
-    ($($k:expr => $v:expr),* $(,)?) => {{
-        use std::iter::{Iterator, IntoIterator};
-        Iterator::collect(IntoIterator::into_iter([$(($k, $v),)*]))
-    }};
-}
-
-// this is data for the `taxon` index.
-
-lazy_static! {
-    /// Automatically generated GoaT variable data from a Bash script in the
-    /// `/vars` directory.
-    pub static ref GOAT_TAXON_VARIABLE_DATA: BTreeMap<&'static str, Variable<'static>> = collection!(
-        // automated input start taxon
 		"assembly_level" => Variable { display_name: "Assembly level", type_of: TypeOf::Keyword(vec!["complete genome", "chromosome", "scaffold", "contig"]), functions: Function::None },
 		"assembly_span" => Variable { display_name: "Assembly span", type_of: TypeOf::Long, functions: Function::Some(vec!["min", "max"]) },
 		"bioproject" => Variable { display_name: "bioproject", type_of: TypeOf::Keyword(vec![""]), functions: Function::None },
@@ -92,49 +70,3 @@ lazy_static! {
 		"long_list" => Variable { display_name: "long_list", type_of: TypeOf::Keyword(vec!["asg", "cbp", "ebpn", "ein", "cfgp", "dtol", "ebpn", "endemixit", "erga", "eurofish", "gaga", "squalomix", "metainvert", "vgp", "agi", "arg", "gap", "gbr", "omg", "tsi", "b10k"]), functions: Function::None },
 		"other_priority" => Variable { display_name: "other_priority", type_of: TypeOf::Keyword(vec!["asg", "cbp", "ebpn", "ein", "cfgp", "dtol", "ebpn", "endemixit", "erga", "eurofish", "gaga", "squalomix", "metainvert", "vgp", "agi", "arg", "gap", "gbr", "omg", "tsi", "b10k"]), functions: Function::None },
 		"family_representative" => Variable { display_name: "family_representative", type_of: TypeOf::Keyword(vec!["asg", "cbp", "ebpn", "ein", "cfgp", "dtol", "ebpn", "endemixit", "erga", "eurofish", "gaga", "squalomix", "metainvert", "vgp", "agi", "arg", "gap", "gbr", "omg", "tsi", "b10k"]), functions: Function::None },
-        // automated input end taxon
-    );
-}
-
-// this is the data for `assembly` index.
-
-lazy_static! {
-    /// Automatically generated GoaT variable data from a Bash script in the
-    /// `/vars` directory.
-    pub static ref GOAT_ASSEMBLY_VARIABLE_DATA: BTreeMap<&'static str, Variable<'static>> = collection!(
-        // automated input start assembly
-		"assembly_level" => Variable { display_name: "Assembly level", type_of: TypeOf::Keyword(vec!["complete genome", "chromosome", "scaffold", "contig"]), functions: Function::None },
-		"assembly_span" => Variable { display_name: "Assembly span", type_of: TypeOf::Long, functions: Function::None },
-		"assembly_type" => Variable { display_name: "Assembly type", type_of: TypeOf::Keyword(vec![""]), functions: Function::None },
-		"bioproject" => Variable { display_name: "bioproject", type_of: TypeOf::Keyword(vec![""]), functions: Function::None },
-		"biosample" => Variable { display_name: "biosample", type_of: TypeOf::Keyword(vec![""]), functions: Function::None },
-		"chromosome_count" => Variable { display_name: "Chromosome count", type_of: TypeOf::Long, functions: Function::None },
-		"contig_count" => Variable { display_name: "Contig count", type_of: TypeOf::Long, functions: Function::None },
-		"contig_l50" => Variable { display_name: "Contig L50", type_of: TypeOf::Long, functions: Function::None },
-		"contig_n50" => Variable { display_name: "Contig N50", type_of: TypeOf::Long, functions: Function::None },
-		"ebp_metric_date" => Variable { display_name: "EBP metric date", type_of: TypeOf::Date, functions: Function::None },
-		"gene_count" => Variable { display_name: "Gene count", type_of: TypeOf::Integer, functions: Function::None },
-		"isolate" => Variable { display_name: "Isolate", type_of: TypeOf::Keyword(vec![""]), functions: Function::None },
-		"last_updated" => Variable { display_name: "Last updated", type_of: TypeOf::Date, functions: Function::None },
-		"noncoding_gene_count" => Variable { display_name: "Non-coding gene count", type_of: TypeOf::Integer, functions: Function::None },
-		"protein_count" => Variable { display_name: "Protein count", type_of: TypeOf::Integer, functions: Function::None },
-		"pseudogene_count" => Variable { display_name: "Pseudogene count", type_of: TypeOf::Integer, functions: Function::None },
-		"refseq_category" => Variable { display_name: "RefSeq category", type_of: TypeOf::Keyword(vec![""]), functions: Function::None },
-		"sample_sex" => Variable { display_name: "Sample sex", type_of: TypeOf::Keyword(vec![""]), functions: Function::None },
-		"scaffold_count" => Variable { display_name: "Scaffold count", type_of: TypeOf::Long, functions: Function::None },
-		"scaffold_l50" => Variable { display_name: "Scaffold L50", type_of: TypeOf::Long, functions: Function::None },
-		"scaffold_n50" => Variable { display_name: "Scaffold N50", type_of: TypeOf::Long, functions: Function::None },
-		"sequence_count" => Variable { display_name: "Sequence count", type_of: TypeOf::Long, functions: Function::None },
-		"submitter" => Variable { display_name: "Submitter", type_of: TypeOf::Keyword(vec![""]), functions: Function::None },
-		"ungapped_span" => Variable { display_name: "Ungapped span", type_of: TypeOf::Long, functions: Function::None },
-		"busco_completeness" => Variable { display_name: "BUSCO completeness", type_of: TypeOf::OneDP, functions: Function::None },
-		"busco_lineage" => Variable { display_name: "BUSCO lineage", type_of: TypeOf::Keyword(vec![""]), functions: Function::None },
-		"busco_string" => Variable { display_name: "BUSCO string", type_of: TypeOf::Keyword(vec![""]), functions: Function::None },
-		"nohit" => Variable { display_name: "No hit", type_of: TypeOf::OneDP, functions: Function::None },
-		"target" => Variable { display_name: "Target", type_of: TypeOf::OneDP, functions: Function::None },
-		"gc_percent" => Variable { display_name: "gc_percent", type_of: TypeOf::TwoDP, functions: Function::None },
-		"n_percent" => Variable { display_name: "n_percent", type_of: TypeOf::TwoDP, functions: Function::None },
-		"sample_location" => Variable { display_name: "sample_location", type_of: TypeOf::None, functions: Function::None },
-        // automated input end assembly
-    );
-}

@@ -322,13 +322,24 @@
 <span id="317">317</span>
 <span id="318">318</span>
 <span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">fs::File</span>,
     <span class="ident">io</span>::{<span class="ident">BufRead</span>, <span class="ident">BufReader</span>},
     <span class="ident">path::Path</span>,
 };
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::UPPER_CLI_FILE_LIMIT</span>;
+<span class="kw">use</span> <span class="kw">crate</span>::{
+    <span class="ident">utils::expression</span>,
+    <span class="ident">utils::variable_data</span>::{<span class="ident">GOAT_ASSEMBLY_VARIABLE_DATA</span>, <span class="ident">GOAT_TAXON_VARIABLE_DATA</span>},
+    <span class="ident">IndexType</span>, <span class="ident">UPPER_CLI_FILE_LIMIT</span>,
+};
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">bail</span>, <span class="ident">Context</span>, <span class="prelude-ty">Result</span>};
 <span class="kw">use</span> <span class="ident">rand::distributions::Alphanumeric</span>;
 <span class="kw">use</span> <span class="ident">rand</span>::{<span class="ident">thread_rng</span>, <span class="ident">Rng</span>};
@@ -337,7 +348,10 @@
 <span class="doccomment">/// are needing to be generated, and return a</span>
 <span class="doccomment">/// vector of random character strings to use as</span>
 <span class="doccomment">/// unique identifiers.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">generate_unique_strings</span>(<span class="ident">matches</span>: <span class="kw-2">&amp;</span><span class="ident">clap::ArgMatches</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">generate_unique_strings</span>(
+    <span class="ident">matches</span>: <span class="kw-2">&amp;</span><span class="ident">clap::ArgMatches</span>,
+    <span class="ident">index_type</span>: <span class="ident">IndexType</span>,
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">tax_name_op</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;taxon&quot;</span>);
     <span class="kw">let</span> <span class="ident">filename_op</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;file&quot;</span>);
     <span class="comment">// print expression table</span>
@@ -345,7 +359,10 @@
     <span class="kw">let</span> <span class="ident">print_expression</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;print-expression&quot;</span>);
 
     <span class="kw">if</span> <span class="ident">print_expression</span> {
-        <span class="ident"><span class="kw">crate</span>::utils::expression::print_variable_data</span>();
+        <span class="kw">match</span> <span class="ident">index_type</span> {
+            <span class="ident">IndexType::Taxon</span> =&gt; <span class="ident">expression::print_variable_data</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">GOAT_TAXON_VARIABLE_DATA</span>),
+            <span class="ident">IndexType::Assembly</span> =&gt; <span class="ident">expression::print_variable_data</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">GOAT_ASSEMBLY_VARIABLE_DATA</span>),
+        }
         <span class="ident">std::process::exit</span>(<span class="number">0</span>);
     }
 
@@ -355,7 +372,7 @@
         <span class="prelude-val">Some</span>(<span class="ident">s</span>) =&gt; {
             <span class="comment">// catch empty string hanging here.</span>
             <span class="kw">if</span> <span class="ident">s</span> <span class="op">==</span> <span class="string">&quot;&quot;</span> {
-                <span class="macro">bail!</span>(<span class="string">&quot;[-]\tEmpty string found, please specify a taxon.&quot;</span>);
+                <span class="macro">bail!</span>(<span class="string">&quot;Empty string found, please specify a taxon.&quot;</span>);
             }
             <span class="ident">url_vector</span> <span class="op">=</span> <span class="ident">parse_comma_separated</span>(<span class="ident">s</span>);
         }
@@ -365,13 +382,10 @@
                 <span class="comment">// check length of vector and bail if &gt; 1000</span>
                 <span class="kw">if</span> <span class="ident">url_vector</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="kw-2">*</span><span class="ident">UPPER_CLI_FILE_LIMIT</span> {
                     <span class="kw">let</span> <span class="ident">limit_string</span> <span class="op">=</span> <span class="ident">pretty_print_usize</span>(<span class="kw-2">*</span><span class="ident">UPPER_CLI_FILE_LIMIT</span>);
-                    <span class="macro">bail!</span>(
-                        <span class="string">&quot;[-]\tNumber of taxa specified cannot exceed {}.&quot;</span>,
-                        <span class="ident">limit_string</span>
-                    )
+                    <span class="macro">bail!</span>(<span class="string">&quot;Number of taxa specified cannot exceed {}.&quot;</span>, <span class="ident">limit_string</span>)
                 }
             }
-            <span class="prelude-val">None</span> =&gt; <span class="macro">bail!</span>(<span class="string">&quot;[-]\tOne of -f (--file) or -t (--tax-id) should be specified.&quot;</span>),
+            <span class="prelude-val">None</span> =&gt; <span class="macro">bail!</span>(<span class="string">&quot;One of -f (--file) or -t (--taxon) should be specified.&quot;</span>),
         },
     }
 

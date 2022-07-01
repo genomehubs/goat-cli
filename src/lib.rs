@@ -5,12 +5,10 @@
 //! I'm documenting the code here for others, and for future me.
 
 use lazy_static::lazy_static;
+use std::fmt;
 
 /// Query the GoaT count API.
 pub mod count;
-/// Collection of errors used throughout
-/// the CLI.
-pub mod error;
 /// Query the GoaT lookup API.
 pub mod lookup;
 /// A module to produce a progress
@@ -33,7 +31,7 @@ lazy_static! {
     /// The current GoaT URL.
     pub static ref GOAT_URL: String = format!("{}{}", GOAT_URL_BASE, GOAT_API_VERSION);
     /// The taxonomy that `goat-cli` uses.
-    pub static ref TAXONOMY: String = "ncbi".to_string();
+    pub static ref TAXONOMY: String = "ncbi".into();
 }
 
 // global size limits on pinging the API
@@ -42,4 +40,32 @@ lazy_static! {
     pub static ref UPPER_CLI_SIZE_LIMIT: usize = 50000;
     /// Upper limit for the number of entries in the file for CLI arg `-f`.
     pub static ref UPPER_CLI_FILE_LIMIT: usize = 500;
+}
+
+/// The indexes we make searches over in GoaT.
+///
+/// Currently implemented (to some extent) is taxon
+/// and assembly. Others exist, e.g. feature/sample.
+///
+/// Each tuple variant can store their respective
+/// [`BTreeMap`] databases.
+
+#[derive(Clone, Copy, Debug)]
+pub enum IndexType {
+    /// Taxon search index. The historical main
+    /// functionality of goat-cli went through taxon.
+    Taxon,
+    /// Assembly search index.
+    Assembly,
+}
+
+impl fmt::Display for IndexType {
+    /// Implement [`Display`] for [`IndexType`] so we can
+    /// use `.to_string()` method.
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            IndexType::Taxon => write!(f, "taxon"),
+            IndexType::Assembly => write!(f, "assembly"),
+        }
+    }
 }

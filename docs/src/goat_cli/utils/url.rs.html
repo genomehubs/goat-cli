@@ -280,8 +280,128 @@
 <span id="275">275</span>
 <span id="276">276</span>
 <span id="277">277</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils::expression::CLIexpression</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils::variables::Variables</span>;
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
+<span id="282">282</span>
+<span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
+<span id="293">293</span>
+<span id="294">294</span>
+<span id="295">295</span>
+<span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
+<span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
+<span id="359">359</span>
+<span id="360">360</span>
+<span id="361">361</span>
+<span id="362">362</span>
+<span id="363">363</span>
+<span id="364">364</span>
+<span id="365">365</span>
+<span id="366">366</span>
+<span id="367">367</span>
+<span id="368">368</span>
+<span id="369">369</span>
+<span id="370">370</span>
+<span id="371">371</span>
+<span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
+<span id="375">375</span>
+<span id="376">376</span>
+<span id="377">377</span>
+<span id="378">378</span>
+<span id="379">379</span>
+<span id="380">380</span>
+<span id="381">381</span>
+<span id="382">382</span>
+<span id="383">383</span>
+<span id="384">384</span>
+<span id="385">385</span>
+<span id="386">386</span>
+<span id="387">387</span>
+<span id="388">388</span>
+<span id="389">389</span>
+<span id="390">390</span>
+<span id="391">391</span>
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="kw">crate</span>::{
+    <span class="ident">utils</span>::{
+        <span class="ident">expression::CLIexpression</span>,
+        <span class="ident">variable_data</span>::{<span class="ident">GOAT_ASSEMBLY_VARIABLE_DATA</span>, <span class="ident">GOAT_TAXON_VARIABLE_DATA</span>},
+        <span class="ident">variables::Variables</span>,
+    },
+    <span class="ident">IndexType</span>,
+};
 
 <span class="kw">use</span> <span class="ident">anyhow::Result</span>;
 
@@ -325,66 +445,142 @@
 }
 
 <span class="doccomment">/// Format an expression put into the `-e` flag on the CLI.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">format_expression</span>(<span class="ident">exp</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">format_expression</span>(<span class="ident">exp</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">index_type</span>: <span class="ident">IndexType</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">new_exp</span> <span class="op">=</span> <span class="ident">CLIexpression::new</span>(<span class="ident">exp</span>);
-    <span class="kw">let</span> <span class="ident">parsed_string</span> <span class="op">=</span> <span class="ident">new_exp</span>.<span class="ident">parse</span>()<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">parsed_string</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">index_type</span> {
+        <span class="ident">IndexType::Taxon</span> =&gt; <span class="ident">new_exp</span>.<span class="ident">parse</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">GOAT_TAXON_VARIABLE_DATA</span>)<span class="question-mark">?</span>,
+        <span class="ident">IndexType::Assembly</span> =&gt; <span class="ident">new_exp</span>.<span class="ident">parse</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">GOAT_ASSEMBLY_VARIABLE_DATA</span>)<span class="question-mark">?</span>,
+    };
     <span class="prelude-val">Ok</span>(<span class="ident">parsed_string</span>)
 }
 
 <span class="doccomment">/// Boolean struct containing all of the CLI flag information</span>
-<span class="doccomment">/// passed from the user.</span>
+<span class="doccomment">/// passed from the user. This struct has been expanded to include</span>
+<span class="doccomment">/// both `taxon` and `assembly` indexes.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FieldBuilder</span> {
     <span class="doccomment">/// Add only assembly level/span GoaT fields.</span>
-    <span class="kw">pub</span> <span class="ident">assembly</span>: <span class="ident">bool</span>,
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// A taxon index flag.</span>
+    <span class="kw">pub</span> <span class="ident">taxon_assembly</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Add bioproject GoaT field.</span>
-    <span class="kw">pub</span> <span class="ident">bioproject</span>: <span class="ident">bool</span>,
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// A taxon index flag.</span>
+    <span class="kw">pub</span> <span class="ident">taxon_bioproject</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Add BUSCO completeness.</span>
-    <span class="kw">pub</span> <span class="ident">busco</span>: <span class="ident">bool</span>,
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// A taxon index flag.</span>
+    <span class="kw">pub</span> <span class="ident">taxon_busco</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Add country list GoaT field.</span>
-    <span class="kw">pub</span> <span class="ident">country_list</span>: <span class="ident">bool</span>,
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// A taxon index flag.</span>
+    <span class="kw">pub</span> <span class="ident">taxon_country_list</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Add C-value information GoaT field.</span>
-    <span class="kw">pub</span> <span class="ident">cvalues</span>: <span class="ident">bool</span>,
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// A taxon index flag.</span>
+    <span class="kw">pub</span> <span class="ident">taxon_cvalues</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Add assembly &amp; EBP metric date GoaT fields.</span>
-    <span class="kw">pub</span> <span class="ident">date</span>: <span class="ident">bool</span>,
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// A taxon index flag.</span>
+    <span class="kw">pub</span> <span class="ident">taxon_date</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Add GC percent GoaT field.</span>
-    <span class="kw">pub</span> <span class="ident">gc_percent</span>: <span class="ident">bool</span>,
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// A taxon index flag.</span>
+    <span class="kw">pub</span> <span class="ident">taxon_gc_percent</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Add gene count GoaT field.</span>
-    <span class="kw">pub</span> <span class="ident">gene_count</span>: <span class="ident">bool</span>,
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// A taxon index flag.</span>
+    <span class="kw">pub</span> <span class="ident">taxon_gene_count</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Add genome size GoaT fields.</span>
-    <span class="kw">pub</span> <span class="ident">gs</span>: <span class="ident">bool</span>,
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// A taxon index flag.</span>
+    <span class="kw">pub</span> <span class="ident">taxon_gs</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Add karyotype GoaT fields; chromosome number and</span>
     <span class="doccomment">/// haploid number.</span>
-    <span class="kw">pub</span> <span class="ident">karyotype</span>: <span class="ident">bool</span>,
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// A taxon index flag.</span>
+    <span class="kw">pub</span> <span class="ident">taxon_karyotype</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Add return information for `isb_wildlife_act_1976`,</span>
     <span class="doccomment">/// `habreg_2017`, `marhabreg-2017`, `waca_1981`,</span>
     <span class="doccomment">/// `protection_of_badgers_act_1992`, `echabs92`</span>
-    <span class="kw">pub</span> <span class="ident">legislation</span>: <span class="ident">bool</span>,
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// A taxon index flag.</span>
+    <span class="kw">pub</span> <span class="ident">taxon_legislation</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Add mitochondrial assembly span and gc percent</span>
     <span class="doccomment">/// GoaT fields.</span>
-    <span class="kw">pub</span> <span class="ident">mitochondrion</span>: <span class="ident">bool</span>,
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// A taxon index flag.</span>
+    <span class="kw">pub</span> <span class="ident">taxon_mitochondrion</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Add contig and scaffold n50 GoaT fields.</span>
-    <span class="kw">pub</span> <span class="ident">n50</span>: <span class="ident">bool</span>,
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// A taxon index flag.</span>
+    <span class="kw">pub</span> <span class="ident">taxon_n50</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Add synonym, tolID, and common name GoaT fields.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Not implemented in [`FieldBuilder`] below.</span>
-    <span class="kw">pub</span> <span class="ident">names</span>: <span class="ident">bool</span>,
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// A taxon index flag.</span>
+    <span class="kw">pub</span> <span class="ident">taxon_names</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Add plastid assembly span and gc percent GoaT</span>
     <span class="doccomment">/// fields.</span>
-    <span class="kw">pub</span> <span class="ident">plastid</span>: <span class="ident">bool</span>,
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// A taxon index flag.</span>
+    <span class="kw">pub</span> <span class="ident">taxon_plastid</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Add ploidy GoaT field.</span>
-    <span class="kw">pub</span> <span class="ident">ploidy</span>: <span class="ident">bool</span>,
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// A taxon index flag.</span>
+    <span class="kw">pub</span> <span class="ident">taxon_ploidy</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Add sex determination GoaT field.</span>
-    <span class="kw">pub</span> <span class="ident">sex_determination</span>: <span class="ident">bool</span>,
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// A taxon index flag.</span>
+    <span class="kw">pub</span> <span class="ident">taxon_sex_determination</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Add sample tracking information GoaT field.</span>
-    <span class="kw">pub</span> <span class="ident">status</span>: <span class="ident">bool</span>,
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// A taxon index flag.</span>
+    <span class="kw">pub</span> <span class="ident">taxon_status</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Add `long_list`, `other_priority`, and `family_representative`</span>
     <span class="doccomment">/// GoaT fields.</span>
-    <span class="kw">pub</span> <span class="ident">target_lists</span>: <span class="ident">bool</span>,
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// A taxon index flag.</span>
+    <span class="kw">pub</span> <span class="ident">taxon_target_lists</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Render output in tidy format?</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Not implemented in [`FieldBuilder`] below.</span>
-    <span class="kw">pub</span> <span class="ident">tidy</span>: <span class="ident">bool</span>,
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// A taxon index flag.</span>
+    <span class="kw">pub</span> <span class="ident">taxon_tidy</span>: <span class="ident">bool</span>,
+    <span class="doccomment">/// Assembly span and level.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// An assembly index flag.</span>
+    <span class="kw">pub</span> <span class="ident">assembly_assembly</span>: <span class="ident">bool</span>,
+    <span class="doccomment">/// Only chromosome count.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// An assembly index flag.</span>
+    <span class="kw">pub</span> <span class="ident">assembly_karyotype</span>: <span class="ident">bool</span>,
+    <span class="doccomment">/// All the contig information.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// An assembly index flag.</span>
+    <span class="kw">pub</span> <span class="ident">assembly_contig</span>: <span class="ident">bool</span>,
+    <span class="doccomment">/// All scaffold information.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// An assembly index flag.</span>
+    <span class="kw">pub</span> <span class="ident">assembly_scaffold</span>: <span class="ident">bool</span>,
+    <span class="doccomment">/// GC content.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// An assembly index flag.</span>
+    <span class="kw">pub</span> <span class="ident">assembly_gc</span>: <span class="ident">bool</span>,
+    <span class="doccomment">/// Gene and non-coding gene count.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// An assembly index flag.</span>
+    <span class="kw">pub</span> <span class="ident">assembly_gene</span>: <span class="ident">bool</span>,
+    <span class="doccomment">/// BUSCO completeness, lineage and string.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// An assembly index flag.</span>
+    <span class="kw">pub</span> <span class="ident">assembly_busco</span>: <span class="ident">bool</span>,
+    <span class="doccomment">/// BlobToolKit stats(?). No hit/target.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// An assembly index flag.</span>
+    <span class="kw">pub</span> <span class="ident">assembly_btk</span>: <span class="ident">bool</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">FieldBuilder</span> {
@@ -402,11 +598,12 @@
     <span class="doccomment">/// there is a compelling argument.</span>
     <span class="kw">fn</span> <span class="ident">to_vec_tuples</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">bool</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span><span class="op">&gt;</span>)<span class="op">&gt;</span> {
         <span class="macro">vec!</span>[
-            (<span class="self">self</span>.<span class="ident">assembly</span>, <span class="macro">vec!</span>[<span class="string">&quot;assembly_level&quot;</span>, <span class="string">&quot;assembly_span&quot;</span>]),
-            (<span class="self">self</span>.<span class="ident">bioproject</span>, <span class="macro">vec!</span>[<span class="string">&quot;bioproject&quot;</span>, <span class="string">&quot;biosample&quot;</span>]),
+            <span class="comment">// Add all of the taxon_* fields</span>
+            (<span class="self">self</span>.<span class="ident">taxon_assembly</span>, <span class="macro">vec!</span>[<span class="string">&quot;assembly_level&quot;</span>, <span class="string">&quot;assembly_span&quot;</span>]),
+            (<span class="self">self</span>.<span class="ident">taxon_bioproject</span>, <span class="macro">vec!</span>[<span class="string">&quot;bioproject&quot;</span>, <span class="string">&quot;biosample&quot;</span>]),
             <span class="comment">// testing all these busco fields.</span>
             (
-                <span class="self">self</span>.<span class="ident">busco</span>,
+                <span class="self">self</span>.<span class="ident">taxon_busco</span>,
                 <span class="macro">vec!</span>[
                     <span class="string">&quot;busco_completeness&quot;</span>,
                     <span class="string">&quot;odb10_lineage&quot;</span>,
@@ -414,18 +611,21 @@
                     <span class="string">&quot;busco_string&quot;</span>,
                 ],
             ),
-            (<span class="self">self</span>.<span class="ident">country_list</span>, <span class="macro">vec!</span>[<span class="string">&quot;country_list&quot;</span>]),
-            (<span class="self">self</span>.<span class="ident">cvalues</span>, <span class="macro">vec!</span>[<span class="string">&quot;c_value&quot;</span>]),
-            (<span class="self">self</span>.<span class="ident">date</span>, <span class="macro">vec!</span>[<span class="string">&quot;assembly_date&quot;</span>, <span class="string">&quot;ebp_metric_date&quot;</span>]),
-            (<span class="self">self</span>.<span class="ident">gc_percent</span>, <span class="macro">vec!</span>[<span class="string">&quot;gc_percent&quot;</span>]),
-            (<span class="self">self</span>.<span class="ident">gene_count</span>, <span class="macro">vec!</span>[<span class="string">&quot;gene_count&quot;</span>]),
+            (<span class="self">self</span>.<span class="ident">taxon_country_list</span>, <span class="macro">vec!</span>[<span class="string">&quot;country_list&quot;</span>]),
+            (<span class="self">self</span>.<span class="ident">taxon_cvalues</span>, <span class="macro">vec!</span>[<span class="string">&quot;c_value&quot;</span>]),
+            (<span class="self">self</span>.<span class="ident">taxon_date</span>, <span class="macro">vec!</span>[<span class="string">&quot;assembly_date&quot;</span>, <span class="string">&quot;ebp_metric_date&quot;</span>]),
+            (<span class="self">self</span>.<span class="ident">taxon_gc_percent</span>, <span class="macro">vec!</span>[<span class="string">&quot;gc_percent&quot;</span>]),
+            (<span class="self">self</span>.<span class="ident">taxon_gene_count</span>, <span class="macro">vec!</span>[<span class="string">&quot;gene_count&quot;</span>]),
             (
-                <span class="self">self</span>.<span class="ident">gs</span>,
+                <span class="self">self</span>.<span class="ident">taxon_gs</span>,
                 <span class="macro">vec!</span>[<span class="string">&quot;genome_size&quot;</span>, <span class="string">&quot;genome_size_kmer&quot;</span>, <span class="string">&quot;genome_size_draft&quot;</span>],
             ),
-            (<span class="self">self</span>.<span class="ident">karyotype</span>, <span class="macro">vec!</span>[<span class="string">&quot;chromosome_number&quot;</span>, <span class="string">&quot;haploid_number&quot;</span>]),
             (
-                <span class="self">self</span>.<span class="ident">legislation</span>,
+                <span class="self">self</span>.<span class="ident">taxon_karyotype</span>,
+                <span class="macro">vec!</span>[<span class="string">&quot;chromosome_number&quot;</span>, <span class="string">&quot;haploid_number&quot;</span>],
+            ),
+            (
+                <span class="self">self</span>.<span class="ident">taxon_legislation</span>,
                 <span class="macro">vec!</span>[
                     <span class="string">&quot;isb_wildlife_act_1976&quot;</span>,
                     <span class="string">&quot;HabReg_2017&quot;</span>,
@@ -436,20 +636,20 @@
                 ],
             ),
             (
-                <span class="self">self</span>.<span class="ident">mitochondrion</span>,
+                <span class="self">self</span>.<span class="ident">taxon_mitochondrion</span>,
                 <span class="macro">vec!</span>[<span class="string">&quot;mitochondrion_assembly_span&quot;</span>, <span class="string">&quot;mitochondrion_gc_percent&quot;</span>],
             ),
-            (<span class="self">self</span>.<span class="ident">n50</span>, <span class="macro">vec!</span>[<span class="string">&quot;scaffold_n50&quot;</span>, <span class="string">&quot;contig_n50&quot;</span>]),
+            (<span class="self">self</span>.<span class="ident">taxon_n50</span>, <span class="macro">vec!</span>[<span class="string">&quot;scaffold_n50&quot;</span>, <span class="string">&quot;contig_n50&quot;</span>]),
             (
-                <span class="self">self</span>.<span class="ident">plastid</span>,
+                <span class="self">self</span>.<span class="ident">taxon_plastid</span>,
                 <span class="macro">vec!</span>[<span class="string">&quot;plastid_assembly_span&quot;</span>, <span class="string">&quot;plastid_gc_percent&quot;</span>],
             ),
-            (<span class="self">self</span>.<span class="ident">ploidy</span>, <span class="macro">vec!</span>[<span class="string">&quot;ploidy&quot;</span>]),
-            (<span class="self">self</span>.<span class="ident">sex_determination</span>, <span class="macro">vec!</span>[<span class="string">&quot;sex_determination&quot;</span>]),
+            (<span class="self">self</span>.<span class="ident">taxon_ploidy</span>, <span class="macro">vec!</span>[<span class="string">&quot;ploidy&quot;</span>]),
+            (<span class="self">self</span>.<span class="ident">taxon_sex_determination</span>, <span class="macro">vec!</span>[<span class="string">&quot;sex_determination&quot;</span>]),
             <span class="comment">// there&#39;s now a bunch of sequencing status_asg/b10k/cbp... etc</span>
             <span class="comment">// don&#39;t know if these should go here.</span>
             (
-                <span class="self">self</span>.<span class="ident">status</span>,
+                <span class="self">self</span>.<span class="ident">taxon_status</span>,
                 <span class="macro">vec!</span>[
                     <span class="string">&quot;sequencing_status&quot;</span>,
                     <span class="string">&quot;sample_collected&quot;</span>,
@@ -462,8 +662,32 @@
                 ],
             ),
             (
-                <span class="self">self</span>.<span class="ident">target_lists</span>,
+                <span class="self">self</span>.<span class="ident">taxon_target_lists</span>,
                 <span class="macro">vec!</span>[<span class="string">&quot;long_list&quot;</span>, <span class="string">&quot;other_priority&quot;</span>, <span class="string">&quot;family_representative&quot;</span>],
+            ),
+            <span class="comment">// Add all of the assembly_* fields</span>
+            (
+                <span class="self">self</span>.<span class="ident">assembly_assembly</span>,
+                <span class="macro">vec!</span>[<span class="string">&quot;assembly_level&quot;</span>, <span class="string">&quot;assembly_span&quot;</span>],
+            ),
+            (<span class="self">self</span>.<span class="ident">assembly_btk</span>, <span class="macro">vec!</span>[<span class="string">&quot;nohit&quot;</span>, <span class="string">&quot;target&quot;</span>]),
+            (
+                <span class="self">self</span>.<span class="ident">assembly_busco</span>,
+                <span class="macro">vec!</span>[<span class="string">&quot;busco_completeness&quot;</span>, <span class="string">&quot;busco_lineage&quot;</span>, <span class="string">&quot;busco_string&quot;</span>],
+            ),
+            (
+                <span class="self">self</span>.<span class="ident">assembly_contig</span>,
+                <span class="macro">vec!</span>[<span class="string">&quot;contig_count&quot;</span>, <span class="string">&quot;contig_l50&quot;</span>, <span class="string">&quot;contig_n50&quot;</span>],
+            ),
+            (<span class="self">self</span>.<span class="ident">assembly_gc</span>, <span class="macro">vec!</span>[<span class="string">&quot;gc_percent&quot;</span>]),
+            (
+                <span class="self">self</span>.<span class="ident">assembly_gene</span>,
+                <span class="macro">vec!</span>[<span class="string">&quot;gene_count&quot;</span>, <span class="string">&quot;noncoding_gene_count&quot;</span>],
+            ),
+            (<span class="self">self</span>.<span class="ident">assembly_karyotype</span>, <span class="macro">vec!</span>[<span class="string">&quot;chromosome_count&quot;</span>]),
+            (
+                <span class="self">self</span>.<span class="ident">assembly_scaffold</span>,
+                <span class="macro">vec!</span>[<span class="string">&quot;scaffold_count&quot;</span>, <span class="string">&quot;scaffold_l50&quot;</span>, <span class="string">&quot;scaffold_n50&quot;</span>],
             ),
         ]
     }
@@ -523,6 +747,7 @@
     <span class="ident">expression</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
     <span class="ident">tax_rank</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
     <span class="ident">unique_ids</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+    <span class="ident">index_type</span>: <span class="ident">IndexType</span>,
 ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
 
@@ -532,14 +757,17 @@
     <span class="comment">// either from hand coded variables by the user</span>
     <span class="comment">// or from flag switches</span>
     <span class="kw">let</span> <span class="ident">fields_string</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">variables</span> {
-        <span class="prelude-val">Some</span>(<span class="ident">v</span>) =&gt; <span class="ident">Variables::new</span>(<span class="ident">v</span>).<span class="ident">parse</span>()<span class="question-mark">?</span>,
+        <span class="prelude-val">Some</span>(<span class="ident">v</span>) =&gt; <span class="kw">match</span> <span class="ident">index_type</span> {
+            <span class="ident">IndexType::Taxon</span> =&gt; <span class="ident">Variables::new</span>(<span class="ident">v</span>).<span class="ident">parse</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">GOAT_TAXON_VARIABLE_DATA</span>)<span class="question-mark">?</span>,
+            <span class="ident">IndexType::Assembly</span> =&gt; <span class="ident">Variables::new</span>(<span class="ident">v</span>).<span class="ident">parse</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">GOAT_ASSEMBLY_VARIABLE_DATA</span>)<span class="question-mark">?</span>,
+        },
         <span class="prelude-val">None</span> =&gt; <span class="ident">fields</span>.<span class="ident">build_fields_string</span>(),
     };
-    <span class="kw">let</span> <span class="ident">names</span> <span class="op">=</span> <span class="ident">format_names</span>(<span class="ident">fields</span>.<span class="ident">names</span>);
+    <span class="kw">let</span> <span class="ident">names</span> <span class="op">=</span> <span class="ident">format_names</span>(<span class="ident">fields</span>.<span class="ident">taxon_names</span>);
 
     <span class="kw">let</span> <span class="ident">tidy_data</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>;
 
-    <span class="kw">match</span> <span class="ident">fields</span>.<span class="ident">tidy</span> {
+    <span class="kw">match</span> <span class="ident">fields</span>.<span class="ident">taxon_tidy</span> {
         <span class="bool-val">true</span> =&gt; <span class="ident">tidy_data</span> <span class="op">=</span> <span class="string">&quot;&amp;tidyData=true&quot;</span>,
         <span class="bool-val">false</span> =&gt; <span class="ident">tidy_data</span> <span class="op">=</span> <span class="string">&quot;&quot;</span>,
     }

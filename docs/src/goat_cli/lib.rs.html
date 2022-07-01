@@ -48,6 +48,32 @@
 <span id="43">43</span>
 <span id="44">44</span>
 <span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
+<span id="61">61</span>
+<span id="62">62</span>
+<span id="63">63</span>
+<span id="64">64</span>
+<span id="65">65</span>
+<span id="66">66</span>
+<span id="67">67</span>
+<span id="68">68</span>
+<span id="69">69</span>
+<span id="70">70</span>
+<span id="71">71</span>
 </pre><pre class="rust"><code><span class="doccomment">//! `goat-cli` is a command line interface to query the</span>
 <span class="doccomment">//! [Genomes on a Tree Open API](https://goat.genomehubs.org/api-docs/) using</span>
 <span class="doccomment">//! an asynchronous [`tokio`](&lt;https://docs.rs/tokio/latest/tokio/&gt;) runtime.</span>
@@ -55,12 +81,10 @@
 <span class="doccomment">//! I&#39;m documenting the code here for others, and for future me.</span>
 
 <span class="kw">use</span> <span class="ident">lazy_static::lazy_static</span>;
+<span class="kw">use</span> <span class="ident">std::fmt</span>;
 
 <span class="doccomment">/// Query the GoaT count API.</span>
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">count</span>;
-<span class="doccomment">/// Collection of errors used throughout</span>
-<span class="doccomment">/// the CLI.</span>
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">error</span>;
 <span class="doccomment">/// Query the GoaT lookup API.</span>
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">lookup</span>;
 <span class="doccomment">/// A module to produce a progress</span>
@@ -83,7 +107,7 @@
     <span class="doccomment">/// The current GoaT URL.</span>
     <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">GOAT_URL</span>: <span class="ident">String</span> <span class="op">=</span> <span class="macro">format!</span>(<span class="string">&quot;{}{}&quot;</span>, <span class="ident">GOAT_URL_BASE</span>, <span class="ident">GOAT_API_VERSION</span>);
     <span class="doccomment">/// The taxonomy that `goat-cli` uses.</span>
-    <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">TAXONOMY</span>: <span class="ident">String</span> <span class="op">=</span> <span class="string">&quot;ncbi&quot;</span>.<span class="ident">to_string</span>();
+    <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">TAXONOMY</span>: <span class="ident">String</span> <span class="op">=</span> <span class="string">&quot;ncbi&quot;</span>.<span class="ident">into</span>();
 }
 
 <span class="comment">// global size limits on pinging the API</span>
@@ -92,6 +116,34 @@
     <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">UPPER_CLI_SIZE_LIMIT</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">50000</span>;
     <span class="doccomment">/// Upper limit for the number of entries in the file for CLI arg `-f`.</span>
     <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">ref</span> <span class="ident">UPPER_CLI_FILE_LIMIT</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">500</span>;
+}
+
+<span class="doccomment">/// The indexes we make searches over in GoaT.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// Currently implemented (to some extent) is taxon</span>
+<span class="doccomment">/// and assembly. Others exist, e.g. feature/sample.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// Each tuple variant can store their respective</span>
+<span class="doccomment">/// [`BTreeMap`] databases.</span>
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">IndexType</span> {
+    <span class="doccomment">/// Taxon search index. The historical main</span>
+    <span class="doccomment">/// functionality of goat-cli went through taxon.</span>
+    <span class="ident">Taxon</span>,
+    <span class="doccomment">/// Assembly search index.</span>
+    <span class="ident">Assembly</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">fmt::Display</span> <span class="kw">for</span> <span class="ident">IndexType</span> {
+    <span class="doccomment">/// Implement [`Display`] for [`IndexType`] so we can</span>
+    <span class="doccomment">/// use `.to_string()` method.</span>
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) -&gt; <span class="ident">fmt::Result</span> {
+        <span class="kw">match</span> <span class="self">self</span> {
+            <span class="ident">IndexType::Taxon</span> =&gt; <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;taxon&quot;</span>),
+            <span class="ident">IndexType::Assembly</span> =&gt; <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;assembly&quot;</span>),
+        }
+    }
 }
 </code></pre></div>
 </section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="goat_cli" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.61.0 (fe5b13d68 2022-05-18)" ></div>
