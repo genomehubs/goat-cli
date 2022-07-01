@@ -274,10 +274,53 @@
 <span id="269">269</span>
 <span id="270">270</span>
 <span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
+<span id="282">282</span>
+<span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
+<span id="293">293</span>
+<span id="294">294</span>
+<span id="295">295</span>
+<span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils::utils</span>::{
     <span class="ident">lines_from_file</span>, <span class="ident">parse_comma_separated</span>, <span class="ident">some_kind_of_uppercase_first_letter</span>,
 };
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">GOAT_URL</span>, <span class="ident">TAXONOMY</span>, <span class="ident">UPPER_CLI_FILE_LIMIT</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">IndexType</span>, <span class="ident">GOAT_URL</span>, <span class="ident">TAXONOMY</span>, <span class="ident">UPPER_CLI_FILE_LIMIT</span>};
 
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">bail</span>, <span class="prelude-ty">Result</span>};
 
@@ -288,6 +331,9 @@
     <span class="kw">pub</span> <span class="ident">search</span>: <span class="ident">String</span>,
     <span class="doccomment">/// The size for each search (default = 10)</span>
     <span class="kw">pub</span> <span class="ident">size</span>: <span class="ident">u64</span>,
+    <span class="doccomment">/// The index type, currently taxon or</span>
+    <span class="doccomment">/// assembly</span>
+    <span class="kw">pub</span> <span class="ident">index_type</span>: <span class="ident">IndexType</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">Lookup</span> {
@@ -305,7 +351,7 @@
         <span class="kw">let</span> <span class="ident">size</span> <span class="op">=</span> <span class="macro">format!</span>(<span class="string">&quot;&amp;size={}&quot;</span>, <span class="self">self</span>.<span class="ident">size</span>);
         <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">size</span>;
         <span class="comment">// hardcode the rest for now</span>
-        <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;&amp;result=taxon&amp;taxonomy={}&quot;</span>, <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">TAXONOMY</span>);
+        <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;&amp;result={}&amp;taxonomy={}&quot;</span>, <span class="self">self</span>.<span class="ident">index_type</span>, <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">TAXONOMY</span>);
         <span class="ident">url</span>
     }
 }
@@ -321,7 +367,7 @@
 <span class="kw">impl</span> <span class="ident">Lookups</span> {
     <span class="doccomment">/// Constructor which takes the CLI args and returns</span>
     <span class="doccomment">/// `Self`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">matches</span>: <span class="kw-2">&amp;</span><span class="ident">clap::ArgMatches</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">matches</span>: <span class="kw-2">&amp;</span><span class="ident">clap::ArgMatches</span>, <span class="ident">index_type</span>: <span class="ident">IndexType</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">tax_name_op</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;taxon&quot;</span>);
         <span class="kw">let</span> <span class="ident">filename_op</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;file&quot;</span>);
         <span class="comment">// safe to unwrap, as default is defined.</span>
@@ -352,6 +398,7 @@
             <span class="ident">res</span>.<span class="ident">push</span>(<span class="ident">Lookup</span> {
                 <span class="ident">search</span>: <span class="ident">el</span>,
                 <span class="ident">size</span>: <span class="ident">no_hits</span>,
+                <span class="ident">index_type</span>,
             })
         }
 
@@ -372,10 +419,31 @@
     }
 }
 
-<span class="doccomment">/// Collect the results from concurrent `goat-cli lookup`</span>
+<span class="doccomment">/// Took this out of `print_result` as</span>
+<span class="kw">fn</span> <span class="ident">format_suggestion_string</span>(<span class="ident">suggestions</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">suggestion_str</span> <span class="op">=</span> <span class="ident">String::new</span>();
+    <span class="kw">for</span> <span class="ident">el</span> <span class="kw">in</span> <span class="ident">suggestions</span> {
+        <span class="kw">match</span> <span class="ident">el</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">s</span>) =&gt; {
+                <span class="ident">suggestion_str</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">some_kind_of_uppercase_first_letter</span>(<span class="kw-2">&amp;</span><span class="ident">s</span>[..]);
+                <span class="ident">suggestion_str</span> <span class="op">+</span><span class="op">=</span> <span class="string">&quot;, &quot;</span>;
+            }
+            <span class="prelude-val">None</span> =&gt; {}
+        }
+    }
+    <span class="comment">// remove last comma</span>
+    <span class="kw">if</span> <span class="ident">suggestion_str</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="number">2</span> {
+        <span class="ident">suggestion_str</span>.<span class="ident">drain</span>(<span class="ident">suggestion_str</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="number">2</span>..);
+        <span class="prelude-val">Ok</span>(<span class="macro">eprintln!</span>(<span class="string">&quot;Did you mean: {}?&quot;</span>, <span class="ident">suggestion_str</span>))
+    } <span class="kw">else</span> {
+        <span class="prelude-val">Ok</span>(<span class="macro">eprintln!</span>(<span class="string">&quot;There are no results.&quot;</span>))
+    }
+}
+
+<span class="doccomment">/// Collect the results from concurrent `goat-cli taxon lookup`</span>
 <span class="doccomment">/// queries.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Collector</span> {
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TaxonCollector</span> {
     <span class="doccomment">/// User search value.</span>
     <span class="kw">pub</span> <span class="ident">search</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
     <span class="doccomment">/// The taxon id that we fetch.</span>
@@ -394,7 +462,7 @@
     <span class="kw">pub</span> <span class="ident">suggestions</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
-<span class="kw">impl</span> <span class="ident">Collector</span> {
+<span class="kw">impl</span> <span class="ident">TaxonCollector</span> {
     <span class="doccomment">/// Print the result from a collector struct.</span>
     <span class="doccomment">/// add an index, so we don&#39;t repeat headers</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">print_result</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="ident">usize</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
@@ -404,25 +472,7 @@
                 <span class="comment">// if we got a suggestion</span>
                 <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">suggestions</span> {
                     <span class="comment">// we end up here even if there are no *actual* suggestions.</span>
-                    <span class="prelude-val">Some</span>(<span class="ident">suggestions</span>) =&gt; {
-                        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">suggestion_str</span> <span class="op">=</span> <span class="ident">String::new</span>();
-                        <span class="kw">for</span> <span class="ident">el</span> <span class="kw">in</span> <span class="ident">suggestions</span> {
-                            <span class="kw">match</span> <span class="ident">el</span> {
-                                <span class="prelude-val">Some</span>(<span class="ident">s</span>) =&gt; {
-                                    <span class="ident">suggestion_str</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">some_kind_of_uppercase_first_letter</span>(<span class="kw-2">&amp;</span><span class="ident">s</span>[..]);
-                                    <span class="ident">suggestion_str</span> <span class="op">+</span><span class="op">=</span> <span class="string">&quot;, &quot;</span>;
-                                }
-                                <span class="prelude-val">None</span> =&gt; {}
-                            }
-                        }
-                        <span class="comment">// remove last comma</span>
-                        <span class="kw">if</span> <span class="ident">suggestion_str</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="number">2</span> {
-                            <span class="ident">suggestion_str</span>.<span class="ident">drain</span>(<span class="ident">suggestion_str</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="number">2</span>..);
-                            <span class="prelude-val">Ok</span>(<span class="macro">eprintln!</span>(<span class="string">&quot;Did you mean: {}?&quot;</span>, <span class="ident">suggestion_str</span>))
-                        } <span class="kw">else</span> {
-                            <span class="prelude-val">Ok</span>(<span class="macro">eprintln!</span>(<span class="string">&quot;There are no results.&quot;</span>))
-                        }
-                    }
+                    <span class="prelude-val">Some</span>(<span class="ident">suggestions</span>) =&gt; <span class="ident">format_suggestion_string</span>(<span class="ident">suggestions</span>),
                     <span class="comment">// no suggestion, so we got a hit</span>
                     <span class="prelude-val">None</span> =&gt; {
                         <span class="comment">// Vec&lt;Option&lt;String&gt;&gt; -&gt; Option&lt;Vec&lt;String&gt;&gt;</span>
@@ -486,65 +536,101 @@
             <span class="prelude-val">None</span> =&gt; <span class="prelude-val">Ok</span>(<span class="macro">eprintln!</span>(<span class="string">&quot;No results.&quot;</span>)),
         }
     }
-    <span class="comment">// take matches from search cli</span>
-    <span class="comment">// generate ncbi taxid</span>
-    <span class="comment">// give user warning for spelling mistakes.</span>
-    <span class="comment">// ncbi taxid can then be passed</span>
-    <span class="comment">// the output type must be Option&lt;String&gt; (= taxid in `search` &amp; `count`)</span>
+}
 
-    <span class="comment">// currently deprecated - don&#39;t use this in `search` or `count`</span>
-    <span class="comment">// there is the possibility of URL&#39;s being too long...</span>
-    <span class="comment">// might be useful for `record` API at some point?</span>
+<span class="doccomment">/// Collect the results from concurrent `goat-cli taxon lookup`</span>
+<span class="doccomment">/// queries.</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>)]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AssemblyCollector</span> {
+    <span class="doccomment">/// User search value.</span>
+    <span class="kw">pub</span> <span class="ident">search</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// The taxon id that we fetch.</span>
+    <span class="doccomment">/// Can return multiple taxon id&#39;s.</span>
+    <span class="kw">pub</span> <span class="ident">taxon_id</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// The identifiers, which is an enumeration of all</span>
+    <span class="doccomment">/// of the identifier:class pairs. This could be a Map.</span>
+    <span class="kw">pub</span> <span class="ident">identifiers</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">String</span>, <span class="ident">String</span>)<span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// The suggestions vector.</span>
+    <span class="kw">pub</span> <span class="ident">suggestions</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+}
 
-    <span class="attribute">#[<span class="ident">deprecated</span>(
-        <span class="ident">note</span> <span class="op">=</span> <span class="string">&quot;Currently deprecated. Might be used in future to suggest spelling corrections in search.&quot;</span>
-    )]</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">return_taxid_vec</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+<span class="kw">impl</span> <span class="ident">AssemblyCollector</span> {
+    <span class="doccomment">/// Print the result from a collector struct.</span>
+    <span class="doccomment">/// add an index, so we don&#39;t repeat headers</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">print_result</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="ident">usize</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="comment">// if we got a hit</span>
         <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">search</span> {
             <span class="prelude-val">Some</span>(<span class="ident">search</span>) =&gt; {
                 <span class="comment">// if we got a suggestion</span>
                 <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">suggestions</span> {
                     <span class="comment">// we end up here even if there are no *actual* suggestions.</span>
-                    <span class="prelude-val">Some</span>(<span class="ident">suggestions</span>) =&gt; {
-                        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">suggestion_str</span> <span class="op">=</span> <span class="ident">String::new</span>();
-                        <span class="kw">for</span> <span class="ident">el</span> <span class="kw">in</span> <span class="ident">suggestions</span> {
-                            <span class="kw">match</span> <span class="ident">el</span> {
-                                <span class="prelude-val">Some</span>(<span class="ident">s</span>) =&gt; {
-                                    <span class="ident">suggestion_str</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">some_kind_of_uppercase_first_letter</span>(<span class="kw-2">&amp;</span><span class="ident">s</span>[..]);
-                                    <span class="ident">suggestion_str</span> <span class="op">+</span><span class="op">=</span> <span class="string">&quot;, &quot;</span>;
-                                }
-                                <span class="prelude-val">None</span> =&gt; {}
-                            }
-                        }
-                        <span class="comment">// remove last comma</span>
-                        <span class="kw">if</span> <span class="ident">suggestion_str</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="number">2</span> {
-                            <span class="ident">suggestion_str</span>.<span class="ident">drain</span>(<span class="ident">suggestion_str</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="number">2</span>..);
-                            <span class="macro">eprintln!</span>(<span class="string">&quot;You searched {}. Did you mean: {}?&quot;</span>, <span class="ident">search</span>, <span class="ident">suggestion_str</span>);
-                            <span class="comment">// no taxid here</span>
-                            <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
-                        } <span class="kw">else</span> {
-                            <span class="macro">eprintln!</span>(<span class="string">&quot;There are no results for the search: {}&quot;</span>, <span class="ident">search</span>);
-                            <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
-                        }
-                    }
+                    <span class="prelude-val">Some</span>(<span class="ident">suggestions</span>) =&gt; <span class="ident">format_suggestion_string</span>(<span class="ident">suggestions</span>),
                     <span class="comment">// no suggestion, so we got a hit</span>
                     <span class="prelude-val">None</span> =&gt; {
+                        <span class="comment">// Vec&lt;Option&lt;String&gt;&gt; -&gt; Option&lt;Vec&lt;String&gt;&gt;</span>
+                        <span class="comment">// these vecs should all be the same length?</span>
                         <span class="kw">let</span> <span class="ident">taxon_id</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">taxon_id</span>.<span class="ident">clone</span>();
-                        <span class="kw">let</span> <span class="ident">taxon_ids_op</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">taxon_id</span>.<span class="ident">into_iter</span>().<span class="ident">collect</span>();
+                        <span class="kw">let</span> <span class="ident">assembly_identifiers</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">identifiers</span>.<span class="ident">clone</span>();
 
-                        <span class="kw">let</span> <span class="ident">taxon_id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">taxon_ids_op</span> {
-                            <span class="prelude-val">Some</span>(<span class="ident">t</span>) =&gt; <span class="ident">t</span>.<span class="ident">join</span>(<span class="string">&quot;%2C&quot;</span>),
-                            <span class="prelude-val">None</span> =&gt; <span class="string">&quot;No taxon ID&quot;</span>.<span class="ident">to_string</span>(),
-                        };
-                        <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">taxon_id</span>))
+                        <span class="kw">let</span> <span class="ident">taxon_ids_op</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">taxon_id</span>.<span class="ident">into_iter</span>().<span class="ident">collect</span>();
+                        <span class="comment">// same but for nested vec.</span>
+                        <span class="kw">let</span> <span class="ident">assembly_identifiers_op</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">String</span>, <span class="ident">String</span>)<span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span>
+                            <span class="ident">assembly_identifiers</span>.<span class="ident">into_iter</span>().<span class="ident">collect</span>();
+
+                        <span class="comment">// print headers for first result only.</span>
+                        <span class="kw">if</span> <span class="ident">index</span> <span class="op">==</span> <span class="number">0</span> {
+                            <span class="macro">println!</span>(<span class="string">&quot;taxon\tsearch_query\tidentifier\ttype&quot;</span>);
+                        }
+                        <span class="kw">match</span> <span class="ident">assembly_identifiers_op</span> {
+                            <span class="prelude-val">Some</span>(<span class="ident">n</span>) =&gt; {
+                                <span class="comment">// get taxon_ids and taxon_ranks</span>
+                                <span class="kw">let</span> <span class="ident">taxon_ids</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">taxon_ids_op</span> {
+                                    <span class="prelude-val">Some</span>(<span class="ident">t</span>) =&gt; <span class="ident">t</span>,
+                                    <span class="comment">// empty vec</span>
+                                    <span class="prelude-val">None</span> =&gt; <span class="macro">vec!</span>[],
+                                };
+                                <span class="comment">// zip these vectors together</span>
+                                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">zipped_taxon_vectors</span> <span class="op">=</span> <span class="ident">taxon_ids</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="ident">n</span>.<span class="ident">iter</span>());
+
+                                <span class="comment">// this may not be the best way to print</span>
+                                <span class="comment">// as everything has to be loaded into mem</span>
+                                <span class="comment">// however, each result string should be small.</span>
+                                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">whole_res_string</span> <span class="op">=</span> <span class="ident">String::new</span>();
+
+                                <span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="ident">taxon_id</span>, <span class="ident">taxon_ranks</span>)) <span class="op">=</span>
+                                    <span class="ident">zipped_taxon_vectors</span>.<span class="ident">next</span>()
+                                {
+                                    <span class="kw">for</span> <span class="ident">el</span> <span class="kw">in</span> <span class="ident">taxon_ranks</span> {
+                                        <span class="kw">let</span> <span class="ident">row</span> <span class="op">=</span> <span class="macro">format!</span>(
+                                            <span class="string">&quot;{}\t{}\t{}\t{}\n&quot;</span>,
+                                            <span class="ident">taxon_id</span>, <span class="ident">search</span>, <span class="ident">el</span>.<span class="number">0</span>, <span class="ident">el</span>.<span class="number">1</span>
+                                        );
+                                        <span class="ident">whole_res_string</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">row</span>;
+                                    }
+                                }
+                                <span class="comment">// remove trailing newline</span>
+                                <span class="ident">whole_res_string</span>.<span class="ident">pop</span>();
+                                <span class="prelude-val">Ok</span>(<span class="macro">println!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">whole_res_string</span>))
+                            }
+                            <span class="prelude-val">None</span> =&gt; <span class="prelude-val">Ok</span>(<span class="macro">eprintln!</span>(<span class="string">&quot;There were no taxon names.&quot;</span>)),
+                        }
                     }
                 }
             }
-            <span class="prelude-val">None</span> =&gt; <span class="macro">bail!</span>(<span class="string">&quot;No results.&quot;</span>),
+            <span class="prelude-val">None</span> =&gt; <span class="prelude-val">Ok</span>(<span class="macro">eprintln!</span>(<span class="string">&quot;No results.&quot;</span>)),
         }
     }
 }
+
+<span class="doccomment">/// A wrapper so we can return the same from our request.</span>
+<span class="doccomment">/// Otherwise I am going to have to do extensive changes above</span>
+<span class="doccomment">/// which I decided against.</span>
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Collector</span> {
+    <span class="doccomment">/// The taxon results.</span>
+    <span class="ident">Taxon</span>(<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TaxonCollector</span><span class="op">&gt;</span>),
+    <span class="doccomment">/// The assembly results.</span>
+    <span class="ident">Assembly</span>(<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AssemblyCollector</span><span class="op">&gt;</span>),
+}
 </code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="goat_cli" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.61.0 (fe5b13d68 2022-05-18)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="goat_cli" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0 (a8314ef7d 2022-06-27)" ></div>
 </body></html>

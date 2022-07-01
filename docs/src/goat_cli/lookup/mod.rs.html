@@ -162,10 +162,86 @@
 <span id="157">157</span>
 <span id="158">158</span>
 <span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
 </pre><pre class="rust"><code><span class="doccomment">//!</span>
 <span class="doccomment">//! Invoked by calling:</span>
-<span class="doccomment">//! `goat-cli lookup &lt;args&gt;`</span>
+<span class="doccomment">//! `goat-cli taxon/assembly lookup &lt;args&gt;`</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! The state of the code here is not great, it&#39;s</span>
+<span class="doccomment">//! quite fragmented. Functional, but lacks coherence.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! Probably should be refactored at some point.</span>
 
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::IndexType</span>;
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">bail</span>, <span class="prelude-ty">Result</span>};
 <span class="kw">use</span> <span class="ident">futures::StreamExt</span>;
 <span class="kw">use</span> <span class="ident">reqwest</span>;
@@ -174,11 +250,11 @@
 
 <span class="doccomment">/// The inner structs used in lookup.</span>
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">lookup</span>;
-<span class="kw">use</span> <span class="ident">lookup</span>::{<span class="ident">Collector</span>, <span class="ident">Lookups</span>};
+<span class="kw">use</span> <span class="ident">lookup</span>::{<span class="ident">AssemblyCollector</span>, <span class="ident">Collector</span>, <span class="ident">Lookups</span>, <span class="ident">TaxonCollector</span>};
 
 <span class="doccomment">/// Main entry point for `goat-cli lookup`.</span>
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">lookup</span>(<span class="ident">matches</span>: <span class="kw-2">&amp;</span><span class="ident">clap::ArgMatches</span>, <span class="ident">cli</span>: <span class="ident">bool</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">lookups</span> <span class="op">=</span> <span class="ident">Lookups::new</span>(<span class="ident">matches</span>)<span class="question-mark">?</span>;
+<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">lookup</span>(<span class="ident">matches</span>: <span class="kw-2">&amp;</span><span class="ident">clap::ArgMatches</span>, <span class="ident">cli</span>: <span class="ident">bool</span>, <span class="ident">index_type</span>: <span class="ident">IndexType</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">let</span> <span class="ident">lookups</span> <span class="op">=</span> <span class="ident">Lookups::new</span>(<span class="ident">matches</span>, <span class="ident">index_type</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">url_vector_api</span> <span class="op">=</span> <span class="ident">lookups</span>.<span class="ident">make_urls</span>();
     <span class="kw">let</span> <span class="ident">print_url</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;url&quot;</span>);
     <span class="kw">let</span> <span class="ident">size</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;size&quot;</span>).<span class="ident">unwrap</span>();
@@ -233,63 +309,15 @@
                         }
                         <span class="prelude-val">None</span> =&gt; <span class="prelude-val">None</span>,
                     };
-                    <span class="comment">// and the taxon ID</span>
-                    <span class="comment">// we need to iterate over the array of results.</span>
-                    <span class="comment">// potentially look at the scores, and keep those over a certain amount</span>
-                    <span class="comment">// or keep everything. Currently I&#39;m missing synonymous genera.</span>
-
-                    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">taxon_id_vec</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
-                    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">taxon_rank_vec</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
-                    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">taxon_names_array_vec</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
-
-                    <span class="kw">let</span> <span class="ident">results_array</span> <span class="op">=</span> <span class="ident">v</span>[<span class="string">&quot;results&quot;</span>].<span class="ident">as_array</span>();
-                    <span class="comment">// unwrap safely here</span>
-                    <span class="kw">match</span> <span class="ident">results_array</span> {
-                        <span class="prelude-val">Some</span>(<span class="ident">arr</span>) =&gt; {
-                            <span class="kw">for</span> <span class="ident">el</span> <span class="kw">in</span> <span class="ident">arr</span> {
-                                <span class="kw">let</span> <span class="ident">taxon_id</span> <span class="op">=</span> <span class="ident">el</span>[<span class="string">&quot;result&quot;</span>][<span class="string">&quot;taxon_id&quot;</span>].<span class="ident">as_str</span>();
-                                <span class="kw">let</span> <span class="ident">taxon_rank</span> <span class="op">=</span> <span class="ident">el</span>[<span class="string">&quot;result&quot;</span>][<span class="string">&quot;taxon_rank&quot;</span>].<span class="ident">as_str</span>();
-                                <span class="kw">let</span> <span class="ident">taxon_names_array_op</span> <span class="op">=</span> <span class="ident">el</span>[<span class="string">&quot;result&quot;</span>][<span class="string">&quot;taxon_names&quot;</span>].<span class="ident">as_array</span>();
-
-                                <span class="kw">let</span> <span class="ident">taxon_names_array</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">taxon_names_array_op</span> {
-                                    <span class="prelude-val">Some</span>(<span class="ident">vec</span>) =&gt; {
-                                        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">collect_names</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
-                                        <span class="kw">for</span> <span class="ident">el</span> <span class="kw">in</span> <span class="ident">vec</span>.<span class="ident">into_iter</span>() {
-                                            <span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">el</span>[<span class="string">&quot;name&quot;</span>].<span class="ident">as_str</span>().<span class="ident">unwrap_or</span>(<span class="string">&quot;-&quot;</span>);
-                                            <span class="kw">let</span> <span class="ident">value</span> <span class="op">=</span> <span class="ident">el</span>[<span class="string">&quot;class&quot;</span>].<span class="ident">as_str</span>().<span class="ident">unwrap_or</span>(<span class="string">&quot;-&quot;</span>);
-                                            <span class="comment">// let source = el[&quot;source&quot;].as_str().unwrap_or(&quot;-&quot;);</span>
-                                            <span class="ident">collect_names</span>
-                                                .<span class="ident">push</span>((<span class="ident">key</span>.<span class="ident">to_string</span>(), <span class="ident">value</span>.<span class="ident">to_string</span>()));
-                                        }
-                                        <span class="prelude-val">Some</span>(<span class="ident">collect_names</span>)
-                                    }
-                                    <span class="prelude-val">None</span> =&gt; <span class="prelude-val">None</span>,
-                                };
-
-                                <span class="comment">// gather results into the vecs</span>
-                                <span class="ident">taxon_id_vec</span>.<span class="ident">push</span>(<span class="ident">taxon_id</span>);
-                                <span class="ident">taxon_rank_vec</span>.<span class="ident">push</span>(<span class="ident">taxon_rank</span>);
-                                <span class="ident">taxon_names_array_vec</span>.<span class="ident">push</span>(<span class="ident">taxon_names_array</span>);
-                            }
-                        }
-                        <span class="prelude-val">None</span> =&gt; {}
+                    <span class="comment">// we have all the information to process the results</span>
+                    <span class="kw">match</span> <span class="ident">index_type</span> {
+                        <span class="ident">IndexType::Taxon</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Collector::Taxon</span>(<span class="ident">process_taxon_results</span>(<span class="ident">v</span>, <span class="ident">search_query</span>, <span class="ident">suggestions_text</span>))),
+                        <span class="ident">IndexType::Assembly</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Collector::Assembly</span>(<span class="ident">process_assembly_results</span>(<span class="ident">v</span>, <span class="ident">search_query</span>, <span class="ident">suggestions_text</span>))),
                     }
-
-                    <span class="comment">// Vec&lt;Option&lt;&amp;str&gt;&gt; -&gt; Vec&lt;Option&lt;String&gt;&gt;</span>
-                    <span class="kw">let</span> <span class="ident">taxon_id</span> <span class="op">=</span> <span class="ident">taxon_id_vec</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">map</span>(<span class="ident">String::from</span>)).<span class="ident">collect</span>();
-                    <span class="kw">let</span> <span class="ident">taxon_rank</span> <span class="op">=</span> <span class="ident">taxon_rank_vec</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">map</span>(<span class="ident">String::from</span>)).<span class="ident">collect</span>();
-
-                    <span class="prelude-val">Ok</span>(<span class="ident">Collector</span> {
-                        <span class="ident">search</span>: <span class="prelude-val">Some</span>(<span class="ident">search_query</span>.<span class="ident">to_string</span>()),
-                        <span class="ident">suggestions</span>: <span class="ident">suggestions_text</span>,
-                        <span class="ident">taxon_id</span>,
-                        <span class="ident">taxon_names</span>: <span class="ident">taxon_names_array_vec</span>,
-                        <span class="ident">taxon_rank</span>,
-                    })
                 }
-                <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="macro">bail!</span>(<span class="string">&quot;ERROR reading {}&quot;</span>, <span class="ident">path</span>),
+                <span class="prelude-val">Err</span>(<span class="ident">e</span>) =&gt; <span class="macro">bail!</span>(<span class="string">&quot;Error reading {}: {}&quot;</span>, <span class="ident">path</span>, <span class="ident">e</span>),
             },
-            <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="macro">bail!</span>(<span class="string">&quot;ERROR downloading {}&quot;</span>, <span class="ident">path</span>),
+            <span class="prelude-val">Err</span>(<span class="ident">e</span>) =&gt; <span class="macro">bail!</span>(<span class="string">&quot;Error downloading {}: {}&quot;</span>, <span class="ident">path</span>, <span class="ident">e</span>),
         }
     }))
     .<span class="ident">buffer_unordered</span>(<span class="ident">concurrent_requests</span>)
@@ -297,30 +325,142 @@
 
     <span class="kw">let</span> <span class="ident">awaited_fetches</span> <span class="op">=</span> <span class="ident">fetches</span>.<span class="kw">await</span>;
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">return_taxid_vec</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
-
-    <span class="kw">for</span> (<span class="ident">index</span>, <span class="ident">el</span>) <span class="kw">in</span> <span class="ident">awaited_fetches</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
+    <span class="kw">for</span> (<span class="ident">index</span>, <span class="ident">el</span>) <span class="kw">in</span> <span class="ident">awaited_fetches</span>.<span class="ident">into_iter</span>().<span class="ident">enumerate</span>() {
         <span class="kw">match</span> <span class="ident">el</span> {
             <span class="prelude-val">Ok</span>(<span class="ident">e</span>) =&gt; {
                 <span class="kw">if</span> <span class="ident">cli</span> {
-                    <span class="ident">e</span>.<span class="ident">print_result</span>(<span class="ident">index</span>)<span class="question-mark">?</span>;
-                } <span class="kw">else</span> {
-                    <span class="comment">// dead code currently</span>
-                    <span class="kw">let</span> <span class="ident">taxid_op</span> <span class="op">=</span> <span class="ident">e</span>.<span class="ident">return_taxid_vec</span>()<span class="question-mark">?</span>;
-                    <span class="kw">match</span> <span class="ident">taxid_op</span> {
-                        <span class="prelude-val">Some</span>(<span class="ident">s</span>) =&gt; <span class="ident">return_taxid_vec</span>.<span class="ident">push</span>(<span class="ident">s</span>),
-                        <span class="comment">// the None variant can&#39;t push a &quot;&quot;,</span>
-                        <span class="comment">// otherwise the URL hangs.</span>
-                        <span class="prelude-val">None</span> =&gt; <span class="ident">return_taxid_vec</span>.<span class="ident">push</span>(<span class="string">&quot;-&quot;</span>.<span class="ident">to_string</span>()),
+                    <span class="kw">match</span> <span class="ident">e</span> {
+                        <span class="ident">Collector::Taxon</span>(<span class="ident">e</span>) =&gt; <span class="ident">e</span><span class="question-mark">?</span>.<span class="ident">print_result</span>(<span class="ident">index</span>)<span class="question-mark">?</span>,
+                        <span class="ident">Collector::Assembly</span>(<span class="ident">e</span>) =&gt; <span class="ident">e</span><span class="question-mark">?</span>.<span class="ident">print_result</span>(<span class="ident">index</span>)<span class="question-mark">?</span>,
                     }
+                } <span class="kw">else</span> {
+                    <span class="comment">// this avenue is for internal use</span>
+                    <span class="comment">// where the user could get info about</span>
+                    <span class="comment">// bad spelling etc...</span>
+                    <span class="macro">bail!</span>(<span class="string">&quot;This is not yet implemented.&quot;</span>)
                 }
             }
             <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="macro">bail!</span>(<span class="string">&quot;No results found.&quot;</span>),
         }
     }
 
-    <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">return_taxid_vec</span>))
+    <span class="prelude-val">Ok</span>(())
+}
+
+<span class="doccomment">/// As the taxon and assembly return JSON&#39;s are in</span>
+<span class="doccomment">/// different structures, they have to be parsed differently.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// Each must return [`Result&lt;Collector, anyhow::Error&gt;`].</span>
+<span class="kw">fn</span> <span class="ident">process_taxon_results</span>(
+    <span class="ident">v</span>: <span class="ident">Value</span>,
+    <span class="ident">search_query</span>: <span class="ident">String</span>,
+    <span class="ident">suggestions_text</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TaxonCollector</span><span class="op">&gt;</span> {
+    <span class="comment">// and the taxon ID</span>
+    <span class="comment">// we need to iterate over the array of results.</span>
+    <span class="comment">// potentially look at the scores, and keep those over a certain amount</span>
+    <span class="comment">// or keep everything. Currently I&#39;m missing synonymous genera.</span>
+
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">taxon_id_vec</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">taxon_rank_vec</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">taxon_names_array_vec</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
+
+    <span class="kw">let</span> <span class="ident">results_array</span> <span class="op">=</span> <span class="ident">v</span>[<span class="string">&quot;results&quot;</span>].<span class="ident">as_array</span>();
+    <span class="comment">// unwrap safely here</span>
+    <span class="kw">match</span> <span class="ident">results_array</span> {
+        <span class="prelude-val">Some</span>(<span class="ident">arr</span>) =&gt; {
+            <span class="kw">for</span> <span class="ident">el</span> <span class="kw">in</span> <span class="ident">arr</span> {
+                <span class="kw">let</span> <span class="ident">taxon_id</span> <span class="op">=</span> <span class="ident">el</span>[<span class="string">&quot;result&quot;</span>][<span class="string">&quot;taxon_id&quot;</span>].<span class="ident">as_str</span>();
+                <span class="kw">let</span> <span class="ident">taxon_rank</span> <span class="op">=</span> <span class="ident">el</span>[<span class="string">&quot;result&quot;</span>][<span class="string">&quot;taxon_rank&quot;</span>].<span class="ident">as_str</span>();
+                <span class="kw">let</span> <span class="ident">taxon_names_array_op</span> <span class="op">=</span> <span class="ident">el</span>[<span class="string">&quot;result&quot;</span>][<span class="string">&quot;taxon_names&quot;</span>].<span class="ident">as_array</span>();
+
+                <span class="kw">let</span> <span class="ident">taxon_names_array</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">taxon_names_array_op</span> {
+                    <span class="prelude-val">Some</span>(<span class="ident">vec</span>) =&gt; {
+                        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">collect_names</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
+                        <span class="kw">for</span> <span class="ident">el</span> <span class="kw">in</span> <span class="ident">vec</span>.<span class="ident">into_iter</span>() {
+                            <span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">el</span>[<span class="string">&quot;name&quot;</span>].<span class="ident">as_str</span>().<span class="ident">unwrap_or</span>(<span class="string">&quot;-&quot;</span>);
+                            <span class="kw">let</span> <span class="ident">value</span> <span class="op">=</span> <span class="ident">el</span>[<span class="string">&quot;class&quot;</span>].<span class="ident">as_str</span>().<span class="ident">unwrap_or</span>(<span class="string">&quot;-&quot;</span>);
+                            <span class="comment">// let source = el[&quot;source&quot;].as_str().unwrap_or(&quot;-&quot;);</span>
+                            <span class="ident">collect_names</span>.<span class="ident">push</span>((<span class="ident">key</span>.<span class="ident">to_string</span>(), <span class="ident">value</span>.<span class="ident">to_string</span>()));
+                        }
+                        <span class="prelude-val">Some</span>(<span class="ident">collect_names</span>)
+                    }
+                    <span class="prelude-val">None</span> =&gt; <span class="prelude-val">None</span>,
+                };
+
+                <span class="comment">// gather results into the vecs</span>
+                <span class="ident">taxon_id_vec</span>.<span class="ident">push</span>(<span class="ident">taxon_id</span>);
+                <span class="ident">taxon_rank_vec</span>.<span class="ident">push</span>(<span class="ident">taxon_rank</span>);
+                <span class="ident">taxon_names_array_vec</span>.<span class="ident">push</span>(<span class="ident">taxon_names_array</span>);
+            }
+        }
+        <span class="prelude-val">None</span> =&gt; {}
+    }
+
+    <span class="comment">// Vec&lt;Option&lt;&amp;str&gt;&gt; -&gt; Vec&lt;Option&lt;String&gt;&gt;</span>
+    <span class="kw">let</span> <span class="ident">taxon_id</span> <span class="op">=</span> <span class="ident">taxon_id_vec</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">map</span>(<span class="ident">String::from</span>)).<span class="ident">collect</span>();
+    <span class="kw">let</span> <span class="ident">taxon_rank</span> <span class="op">=</span> <span class="ident">taxon_rank_vec</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">map</span>(<span class="ident">String::from</span>)).<span class="ident">collect</span>();
+
+    <span class="prelude-val">Ok</span>(<span class="ident">TaxonCollector</span> {
+        <span class="ident">search</span>: <span class="prelude-val">Some</span>(<span class="ident">search_query</span>.<span class="ident">to_string</span>()),
+        <span class="ident">suggestions</span>: <span class="ident">suggestions_text</span>,
+        <span class="ident">taxon_id</span>,
+        <span class="ident">taxon_names</span>: <span class="ident">taxon_names_array_vec</span>,
+        <span class="ident">taxon_rank</span>,
+    })
+}
+
+<span class="doccomment">/// The assembly counterpart to the above function.</span>
+<span class="kw">fn</span> <span class="ident">process_assembly_results</span>(
+    <span class="ident">v</span>: <span class="ident">Value</span>,
+    <span class="ident">search_query</span>: <span class="ident">String</span>,
+    <span class="ident">suggestions_text</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AssemblyCollector</span><span class="op">&gt;</span> {
+    <span class="comment">// taxon ID stays the same</span>
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">taxon_id_vec</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
+    <span class="comment">// there is no taxon rank</span>
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">identifiers_array_vec</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
+
+    <span class="kw">let</span> <span class="ident">results_array</span> <span class="op">=</span> <span class="ident">v</span>[<span class="string">&quot;results&quot;</span>].<span class="ident">as_array</span>();
+    <span class="comment">// unwrap safely here</span>
+    <span class="kw">match</span> <span class="ident">results_array</span> {
+        <span class="prelude-val">Some</span>(<span class="ident">arr</span>) =&gt; {
+            <span class="kw">for</span> <span class="ident">el</span> <span class="kw">in</span> <span class="ident">arr</span> {
+                <span class="kw">let</span> <span class="ident">taxon_id</span> <span class="op">=</span> <span class="ident">el</span>[<span class="string">&quot;result&quot;</span>][<span class="string">&quot;taxon_id&quot;</span>].<span class="ident">as_str</span>();
+                <span class="kw">let</span> <span class="ident">identifiers_array_op</span> <span class="op">=</span> <span class="ident">el</span>[<span class="string">&quot;result&quot;</span>][<span class="string">&quot;identifiers&quot;</span>].<span class="ident">as_array</span>();
+
+                <span class="kw">let</span> <span class="ident">identifiers_array</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">identifiers_array_op</span> {
+                    <span class="prelude-val">Some</span>(<span class="ident">vec</span>) =&gt; {
+                        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">collect_names</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
+                        <span class="kw">for</span> <span class="ident">el</span> <span class="kw">in</span> <span class="ident">vec</span>.<span class="ident">into_iter</span>() {
+                            <span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">el</span>[<span class="string">&quot;identifier&quot;</span>].<span class="ident">as_str</span>().<span class="ident">unwrap_or</span>(<span class="string">&quot;-&quot;</span>);
+                            <span class="kw">let</span> <span class="ident">value</span> <span class="op">=</span> <span class="ident">el</span>[<span class="string">&quot;class&quot;</span>].<span class="ident">as_str</span>().<span class="ident">unwrap_or</span>(<span class="string">&quot;-&quot;</span>);
+                            <span class="comment">// let source = el[&quot;source&quot;].as_str().unwrap_or(&quot;-&quot;);</span>
+                            <span class="ident">collect_names</span>.<span class="ident">push</span>((<span class="ident">key</span>.<span class="ident">to_string</span>(), <span class="ident">value</span>.<span class="ident">to_string</span>()));
+                        }
+                        <span class="prelude-val">Some</span>(<span class="ident">collect_names</span>)
+                    }
+                    <span class="prelude-val">None</span> =&gt; <span class="prelude-val">None</span>,
+                };
+
+                <span class="comment">// gather results into the vecs</span>
+                <span class="ident">taxon_id_vec</span>.<span class="ident">push</span>(<span class="ident">taxon_id</span>);
+                <span class="ident">identifiers_array_vec</span>.<span class="ident">push</span>(<span class="ident">identifiers_array</span>);
+            }
+        }
+        <span class="prelude-val">None</span> =&gt; {}
+    }
+
+    <span class="comment">// Vec&lt;Option&lt;&amp;str&gt;&gt; -&gt; Vec&lt;Option&lt;String&gt;&gt;</span>
+    <span class="kw">let</span> <span class="ident">taxon_id</span> <span class="op">=</span> <span class="ident">taxon_id_vec</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">map</span>(<span class="ident">String::from</span>)).<span class="ident">collect</span>();
+
+    <span class="prelude-val">Ok</span>(<span class="ident">AssemblyCollector</span> {
+        <span class="ident">search</span>: <span class="prelude-val">Some</span>(<span class="ident">search_query</span>.<span class="ident">to_string</span>()),
+        <span class="ident">suggestions</span>: <span class="ident">suggestions_text</span>,
+        <span class="ident">taxon_id</span>,
+        <span class="ident">identifiers</span>: <span class="ident">identifiers_array_vec</span>,
+    })
 }
 </code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="goat_cli" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.61.0 (fe5b13d68 2022-05-18)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="goat_cli" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0 (a8314ef7d 2022-06-27)" ></div>
 </body></html>
