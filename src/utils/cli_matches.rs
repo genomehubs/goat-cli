@@ -34,6 +34,7 @@ pub fn process_cli_args(
 ) -> Result<(u64, Vec<String>, Vec<String>)> {
     // command line args same between taxon/assembly
     let print_url = matches.is_present("url");
+    let print_goat_ui_url = matches.is_present("goat-ui-url");
     let tax_tree_enum = match matches.is_present("descendents") {
         true => TaxType::Tree,
         false => TaxType::Name,
@@ -219,6 +220,13 @@ pub fn process_cli_args(
     if print_url {
         for (index, url) in url_vector_api.iter().enumerate() {
             println!("{}.\tGoaT API URL: {}", index, url);
+        }
+        std::process::exit(0);
+    } else if print_goat_ui_url {
+        for (index, url) in url_vector_api.iter().enumerate() {
+            // remove api/v2/
+            let new_url = url.replace("api/v2/", "");
+            println!("{}.\tGoaT API URL: {}", index, new_url);
         }
         std::process::exit(0);
     }

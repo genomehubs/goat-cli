@@ -18,8 +18,6 @@ pub struct Report {
     pub search: Vec<String>,
     /// The rank of the return type.
     pub rank: String,
-    ///
-    pub url: bool,
 }
 
 impl Report {
@@ -28,7 +26,6 @@ impl Report {
         // simply return the populated struct
         // taxon, url, rank
         let search_op = matches.value_of("taxon");
-        let url = matches.is_present("url");
         // safe to unwrap, as default is defined.
         let rank = matches.value_of("rank").unwrap().to_string();
 
@@ -38,7 +35,7 @@ impl Report {
             None => bail!("There was no taxon input."),
         };
 
-        Ok(Self { search, rank, url })
+        Ok(Self { search, rank })
     }
 
     /// Make the URL. Currently only [`RecordType::Newick`] supported.

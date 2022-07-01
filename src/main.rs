@@ -240,6 +240,12 @@ async fn main() -> Result<()> {
                     .long("url")
                     .help("Print the underlying GoaT API URL(s). Useful for debugging."),
             )
+            .arg(
+                Arg::new("goat-ui-url")
+                    .short('U')
+                    .long("goat-ui-url")
+                    .help("Print the underlying GoaT UI URL(s). View on the browser!"),
+            )
         };
 
     let assembly_search_and_count = |name, about| {
@@ -376,6 +382,12 @@ async fn main() -> Result<()> {
                     .short('u')
                     .long("url")
                     .help("Print the underlying GoaT API URL(s). Useful for debugging."),
+            )
+            .arg(
+                Arg::new("goat-ui-url")
+                    .short('U')
+                    .long("goat-ui-url")
+                    .help("Print the underlying GoaT UI URL(s). View on the browser!"),
             )
     };
 
