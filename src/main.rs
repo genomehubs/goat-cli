@@ -382,7 +382,7 @@ async fn main() -> Result<()> {
     // actually parse the matches.
     let matches = Command::new("goat")
         // to fix the binary name in the help messages
-        .bin_name("goat")
+        .bin_name("goat-cli")
         .version(crate_version!())
         .propagate_version(true)
         .arg_required_else_help(true)
