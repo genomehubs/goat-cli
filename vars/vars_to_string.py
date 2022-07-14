@@ -6,6 +6,18 @@ import sys
 # does min/max work with assembly_vars.json??
 
 
+def eprint(*args, **kwargs):
+    """Print to stderr.
+    Args:
+        *args: arguments to print.
+        **kwargs: keyword arguments to print.
+    Notes:
+        A thin wrapper of print() that prints to stderr.
+        See https://stackoverflow.com/questions/5574702/how-to-print-to-stderr-in-python.
+    """
+    print(*args, file=sys.stderr, **kwargs)
+
+
 def type_to_type_of(string):
     if string == "long":
         return "Long"
@@ -23,6 +35,9 @@ def type_to_type_of(string):
         return "HalfFloat"
     elif string == "keyword":
         return "Keyword"
+    elif string == "None":
+        eprint(f"{string} not found!")
+        return "None"
 
 
 cli_json_file = sys.argv[1]
@@ -37,7 +52,10 @@ with open(cli_json_file, "r") as json_file:
         except KeyError:
             display_name = name
         # print(display_name)
-        type_ = data["fields"][field]["type"]
+        try:
+            type_ = data["fields"][field]["type"]
+        except KeyError:
+            type_ = "None"
         type_of = type_to_type_of(type_)
 
         # more functions may be supported in the future

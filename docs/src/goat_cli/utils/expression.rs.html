@@ -602,7 +602,7 @@
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span>) -&gt; <span class="ident">fmt::Result</span> {
         <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="self">self</span> {
             <span class="comment">// do nothing with None at the moment.</span>
-            <span class="ident">TypeOf::None</span> =&gt; <span class="prelude-val">Ok</span>(()),
+            <span class="ident">TypeOf::None</span> =&gt; <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;Please don&#39;t use yet! This variable needs fixing.&quot;</span>),
             <span class="ident">TypeOf::Long</span> =&gt; <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;!=, &lt;, &lt;=, =, ==, &gt;, &gt;=&quot;</span>),
             <span class="ident">TypeOf::Short</span> =&gt; <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;!=, &lt;, &lt;=, =, ==, &gt;, &gt;=&quot;</span>),
             <span class="ident">TypeOf::OneDP</span> =&gt; <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;!=, &lt;, &lt;=, =, ==, &gt;, &gt;=&quot;</span>),

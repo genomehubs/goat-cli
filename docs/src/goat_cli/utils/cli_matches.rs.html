@@ -231,6 +231,14 @@
 <span id="226">226</span>
 <span id="227">227</span>
 <span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
+<span id="236">236</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils</span>::{
     <span class="ident">expression</span>, <span class="ident">tax_ranks</span>, <span class="ident">url</span>, <span class="ident">utils</span>,
     <span class="ident">variable_data</span>::{<span class="ident">GOAT_ASSEMBLY_VARIABLE_DATA</span>, <span class="ident">GOAT_TAXON_VARIABLE_DATA</span>},
@@ -267,6 +275,7 @@
 ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">u64</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>)<span class="op">&gt;</span> {
     <span class="comment">// command line args same between taxon/assembly</span>
     <span class="kw">let</span> <span class="ident">print_url</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;url&quot;</span>);
+    <span class="kw">let</span> <span class="ident">print_goat_ui_url</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;goat-ui-url&quot;</span>);
     <span class="kw">let</span> <span class="ident">tax_tree_enum</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;descendents&quot;</span>) {
         <span class="bool-val">true</span> =&gt; <span class="ident">TaxType::Tree</span>,
         <span class="bool-val">false</span> =&gt; <span class="ident">TaxType::Name</span>,
@@ -452,6 +461,13 @@
     <span class="kw">if</span> <span class="ident">print_url</span> {
         <span class="kw">for</span> (<span class="ident">index</span>, <span class="ident">url</span>) <span class="kw">in</span> <span class="ident">url_vector_api</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
             <span class="macro">println!</span>(<span class="string">&quot;{}.\tGoaT API URL: {}&quot;</span>, <span class="ident">index</span>, <span class="ident">url</span>);
+        }
+        <span class="ident">std::process::exit</span>(<span class="number">0</span>);
+    } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">print_goat_ui_url</span> {
+        <span class="kw">for</span> (<span class="ident">index</span>, <span class="ident">url</span>) <span class="kw">in</span> <span class="ident">url_vector_api</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
+            <span class="comment">// remove api/v2/</span>
+            <span class="kw">let</span> <span class="ident">new_url</span> <span class="op">=</span> <span class="ident">url</span>.<span class="ident">replace</span>(<span class="string">&quot;api/v2/&quot;</span>, <span class="string">&quot;&quot;</span>);
+            <span class="macro">println!</span>(<span class="string">&quot;{}.\tGoaT API URL: {}&quot;</span>, <span class="ident">index</span>, <span class="ident">new_url</span>);
         }
         <span class="ident">std::process::exit</span>(<span class="number">0</span>);
     }

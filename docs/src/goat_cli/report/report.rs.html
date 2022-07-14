@@ -77,9 +77,6 @@
 <span id="72">72</span>
 <span id="73">73</span>
 <span id="74">74</span>
-<span id="75">75</span>
-<span id="76">76</span>
-<span id="77">77</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils::utils</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">GOAT_URL</span>, <span class="ident">TAXONOMY</span>};
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">bail</span>, <span class="prelude-ty">Result</span>};
@@ -100,8 +97,6 @@
     <span class="kw">pub</span> <span class="ident">search</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
     <span class="doccomment">/// The rank of the return type.</span>
     <span class="kw">pub</span> <span class="ident">rank</span>: <span class="ident">String</span>,
-    <span class="doccomment">///</span>
-    <span class="kw">pub</span> <span class="ident">url</span>: <span class="ident">bool</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">Report</span> {
@@ -110,7 +105,6 @@
         <span class="comment">// simply return the populated struct</span>
         <span class="comment">// taxon, url, rank</span>
         <span class="kw">let</span> <span class="ident">search_op</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;taxon&quot;</span>);
-        <span class="kw">let</span> <span class="ident">url</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;url&quot;</span>);
         <span class="comment">// safe to unwrap, as default is defined.</span>
         <span class="kw">let</span> <span class="ident">rank</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;rank&quot;</span>).<span class="ident">unwrap</span>().<span class="ident">to_string</span>();
 
@@ -120,7 +114,7 @@
             <span class="prelude-val">None</span> =&gt; <span class="macro">bail!</span>(<span class="string">&quot;There was no taxon input.&quot;</span>),
         };
 
-        <span class="prelude-val">Ok</span>(<span class="self">Self</span> { <span class="ident">search</span>, <span class="ident">rank</span>, <span class="ident">url</span> })
+        <span class="prelude-val">Ok</span>(<span class="self">Self</span> { <span class="ident">search</span>, <span class="ident">rank</span> })
     }
 
     <span class="doccomment">/// Make the URL. Currently only [`RecordType::Newick`] supported.</span>

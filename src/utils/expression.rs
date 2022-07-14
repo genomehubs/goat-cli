@@ -84,7 +84,7 @@ impl<'a> fmt::Display for TypeOf<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match &*self {
             // do nothing with None at the moment.
-            TypeOf::None => Ok(()),
+            TypeOf::None => write!(f, "Please don't use yet! This variable needs fixing."),
             TypeOf::Long => write!(f, "!=, <, <=, =, ==, >, >="),
             TypeOf::Short => write!(f, "!=, <, <=, =, ==, >, >="),
             TypeOf::OneDP => write!(f, "!=, <, <=, =, ==, >, >="),

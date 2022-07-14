@@ -1167,9 +1167,20 @@
             "type": "keyword",
             "constraint": {
                 "enum": [
+                    "dalu",
+                    "ghc",
+                    "mba",
                     "nhm",
+                    "nsu",
+                    "psu",
+                    "qmul",
+                    "rbge",
+                    "kew",
+                    "san",
+                    "ubc",
+                    "derb",
                     "oxf",
-                    "sanger"
+                    "vien"
                 ]
             },
             "sequence": 44
@@ -1238,6 +1249,26 @@
             "type": "keyword",
             "sequence": 49
         },
+        "sequencing_status_ag100pest": {
+            "group": "taxon",
+            "name": "sequencing_status_ag100pest",
+            "display_group": "sequencing_status",
+            "display_level": 2,
+            "constraint": {
+                "enum": [
+                    "published",
+                    "insdc_open",
+                    "in_progress",
+                    "sample_acquired",
+                    "sample_collected"
+                ]
+            },
+            "summary": "enum",
+            "traverse": "enum",
+            "traverse_direction": "up",
+            "type": "keyword",
+            "sequence": 50
+        },
         "sequencing_status_asg": {
             "group": "taxon",
             "name": "sequencing_status_asg",
@@ -1256,7 +1287,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 50
+            "sequence": 51
         },
         "sequencing_status_b10k": {
             "group": "taxon",
@@ -1276,7 +1307,27 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 51
+            "sequence": 52
+        },
+        "sequencing_status_canbp": {
+            "group": "taxon",
+            "name": "sequencing_status_canbp",
+            "display_group": "sequencing_status",
+            "display_level": 2,
+            "constraint": {
+                "enum": [
+                    "published",
+                    "insdc_open",
+                    "in_progress",
+                    "sample_acquired",
+                    "sample_collected"
+                ]
+            },
+            "summary": "enum",
+            "traverse": "enum",
+            "traverse_direction": "up",
+            "type": "keyword",
+            "sequence": 53
         },
         "sequencing_status_cbp": {
             "group": "taxon",
@@ -1296,7 +1347,27 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 52
+            "sequence": 54
+        },
+        "sequencing_status_ccgp": {
+            "group": "taxon",
+            "name": "sequencing_status_ccgp",
+            "display_group": "sequencing_status",
+            "display_level": 2,
+            "constraint": {
+                "enum": [
+                    "published",
+                    "insdc_open",
+                    "in_progress",
+                    "sample_acquired",
+                    "sample_collected"
+                ]
+            },
+            "summary": "enum",
+            "traverse": "enum",
+            "traverse_direction": "up",
+            "type": "keyword",
+            "sequence": 55
         },
         "sequencing_status_cfgp": {
             "group": "taxon",
@@ -1316,7 +1387,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 53
+            "sequence": 56
         },
         "sequencing_status_dtol": {
             "group": "taxon",
@@ -1336,27 +1407,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 54
-        },
-        "sequencing_status_ebp": {
-            "group": "taxon",
-            "name": "sequencing_status_ebp",
-            "display_group": "sequencing_status",
-            "display_level": 2,
-            "constraint": {
-                "enum": [
-                    "published",
-                    "insdc_open",
-                    "in_progress",
-                    "sample_acquired",
-                    "sample_collected"
-                ]
-            },
-            "summary": "enum",
-            "traverse": "enum",
-            "traverse_direction": "up",
-            "type": "keyword",
-            "sequence": 55
+            "sequence": 57
         },
         "sequencing_status_ebpn": {
             "group": "taxon",
@@ -1376,7 +1427,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 56
+            "sequence": 58
         },
         "sequencing_status_endemixit": {
             "group": "taxon",
@@ -1396,7 +1447,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 57
+            "sequence": 59
         },
         "sequencing_status_erga": {
             "group": "taxon",
@@ -1416,7 +1467,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 58
+            "sequence": 60
         },
         "sequencing_status_eurofish": {
             "group": "taxon",
@@ -1436,7 +1487,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 59
+            "sequence": 61
         },
         "sequencing_status_gaga": {
             "group": "taxon",
@@ -1456,7 +1507,27 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 60
+            "sequence": 62
+        },
+        "sequencing_status_ilebp": {
+            "group": "taxon",
+            "name": "sequencing_status_ilebp",
+            "display_group": "sequencing_status",
+            "display_level": 2,
+            "constraint": {
+                "enum": [
+                    "published",
+                    "insdc_open",
+                    "in_progress",
+                    "sample_acquired",
+                    "sample_collected"
+                ]
+            },
+            "summary": "enum",
+            "traverse": "enum",
+            "traverse_direction": "up",
+            "type": "keyword",
+            "sequence": 63
         },
         "sequencing_status_metainvert": {
             "group": "taxon",
@@ -1476,7 +1547,27 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 61
+            "sequence": 64
+        },
+        "sequencing_status_pgp": {
+            "group": "taxon",
+            "name": "sequencing_status_pgp",
+            "display_group": "sequencing_status",
+            "display_level": 2,
+            "constraint": {
+                "enum": [
+                    "published",
+                    "insdc_open",
+                    "in_progress",
+                    "sample_acquired",
+                    "sample_collected"
+                ]
+            },
+            "summary": "enum",
+            "traverse": "enum",
+            "traverse_direction": "up",
+            "type": "keyword",
+            "sequence": 65
         },
         "sequencing_status_squalomix": {
             "group": "taxon",
@@ -1496,7 +1587,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 62
+            "sequence": 66
         },
         "sequencing_status_vgp": {
             "group": "taxon",
@@ -1516,91 +1607,11 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 63
-        },
-        "sequencing_status_berri": {
-            "group": "taxon",
-            "name": "sequencing_status_berri",
-            "display_group": "sequencing_status",
-            "display_level": 2,
-            "constraint": {
-                "enum": [
-                    "published",
-                    "insdc_open",
-                    "in_progress",
-                    "sample_acquired",
-                    "sample_collected"
-                ]
-            },
-            "summary": "enum",
-            "traverse": "enum",
-            "traverse_direction": "up",
-            "type": "keyword",
-            "sequence": 64
-        },
-        "sequencing_status_blax": {
-            "group": "taxon",
-            "name": "sequencing_status_blax",
-            "display_group": "sequencing_status",
-            "display_level": 2,
-            "constraint": {
-                "enum": [
-                    "published",
-                    "insdc_open",
-                    "in_progress",
-                    "sample_acquired",
-                    "sample_collected"
-                ]
-            },
-            "summary": "enum",
-            "traverse": "enum",
-            "traverse_direction": "up",
-            "type": "keyword",
-            "sequence": 65
-        },
-        "sequencing_status_durb": {
-            "group": "taxon",
-            "name": "sequencing_status_durb",
-            "display_group": "sequencing_status",
-            "display_level": 2,
-            "constraint": {
-                "enum": [
-                    "published",
-                    "insdc_open",
-                    "in_progress",
-                    "sample_acquired",
-                    "sample_collected"
-                ]
-            },
-            "summary": "enum",
-            "traverse": "enum",
-            "traverse_direction": "up",
-            "type": "keyword",
-            "sequence": 66
-        },
-        "sequencing_status_ergapi": {
-            "group": "taxon",
-            "name": "sequencing_status_ergapi",
-            "display_group": "sequencing_status",
-            "display_level": 2,
-            "constraint": {
-                "enum": [
-                    "published",
-                    "insdc_open",
-                    "in_progress",
-                    "sample_acquired",
-                    "sample_collected"
-                ]
-            },
-            "summary": "enum",
-            "traverse": "enum",
-            "traverse_direction": "up",
-            "type": "keyword",
             "sequence": 67
         },
-        "sequencing_status_lawn": {
+        "sequencing_status_zoonomia": {
             "group": "taxon",
-            "name": "sequencing_status_lawn",
+            "name": "sequencing_status_zoonomia",
             "display_group": "sequencing_status",
             "display_level": 2,
             "constraint": {
@@ -1618,66 +1629,6 @@
             "type": "keyword",
             "sequence": 68
         },
-        "sequencing_status_meier": {
-            "group": "taxon",
-            "name": "sequencing_status_meier",
-            "display_group": "sequencing_status",
-            "display_level": 2,
-            "constraint": {
-                "enum": [
-                    "published",
-                    "insdc_open",
-                    "in_progress",
-                    "sample_acquired",
-                    "sample_collected"
-                ]
-            },
-            "summary": "enum",
-            "traverse": "enum",
-            "traverse_direction": "up",
-            "type": "keyword",
-            "sequence": 69
-        },
-        "sequencing_status_misk": {
-            "group": "taxon",
-            "name": "sequencing_status_misk",
-            "display_group": "sequencing_status",
-            "display_level": 2,
-            "constraint": {
-                "enum": [
-                    "published",
-                    "insdc_open",
-                    "in_progress",
-                    "sample_acquired",
-                    "sample_collected"
-                ]
-            },
-            "summary": "enum",
-            "traverse": "enum",
-            "traverse_direction": "up",
-            "type": "keyword",
-            "sequence": 70
-        },
-        "sequencing_status_rnd": {
-            "group": "taxon",
-            "name": "sequencing_status_rnd",
-            "display_group": "sequencing_status",
-            "display_level": 2,
-            "constraint": {
-                "enum": [
-                    "published",
-                    "insdc_open",
-                    "in_progress",
-                    "sample_acquired",
-                    "sample_collected"
-                ]
-            },
-            "summary": "enum",
-            "traverse": "enum",
-            "traverse_direction": "up",
-            "type": "keyword",
-            "sequence": 71
-        },
         "long_list": {
             "group": "taxon",
             "name": "long_list",
@@ -1685,34 +1636,40 @@
             "display_level": 2,
             "constraint": {
                 "enum": [
+                    "africabp",
+                    "ag100pest",
+                    "agi",
+                    "arg",
                     "asg",
+                    "b10k",
+                    "canbp",
                     "cbp",
-                    "ebpn",
-                    "ein",
+                    "ccgp",
                     "cfgp",
                     "dtol",
                     "ebpn",
+                    "ein",
                     "endemixit",
                     "erga",
                     "eurofish",
                     "gaga",
-                    "squalomix",
-                    "metainvert",
-                    "vgp",
-                    "agi",
-                    "arg",
                     "gap",
                     "gbr",
+                    "ilebp",
+                    "metainvert",
                     "omg",
+                    "pgp",
+                    "squalomix",
                     "tsi",
-                    "b10k"
+                    "vgp",
+                    "zoonomia"
                 ]
             },
             "summary": "list",
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 72
+            "sequence": 69
         },
         "other_priority": {
             "group": "taxon",
@@ -1721,34 +1678,40 @@
             "display_level": 2,
             "constraint": {
                 "enum": [
+                    "africabp",
+                    "ag100pest",
+                    "agi",
+                    "arg",
                     "asg",
+                    "b10k",
+                    "canbp",
                     "cbp",
-                    "ebpn",
-                    "ein",
+                    "ccgp",
                     "cfgp",
                     "dtol",
                     "ebpn",
+                    "ein",
                     "endemixit",
                     "erga",
                     "eurofish",
                     "gaga",
-                    "squalomix",
-                    "metainvert",
-                    "vgp",
-                    "agi",
-                    "arg",
                     "gap",
                     "gbr",
+                    "ilebp",
+                    "metainvert",
                     "omg",
+                    "pgp",
+                    "squalomix",
                     "tsi",
-                    "b10k"
+                    "vgp",
+                    "zoonomia"
                 ]
             },
             "summary": "list",
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 73
+            "sequence": 70
         },
         "family_representative": {
             "group": "taxon",
@@ -1757,34 +1720,96 @@
             "display_level": 2,
             "constraint": {
                 "enum": [
+                    "africabp",
+                    "ag100pest",
+                    "agi",
+                    "arg",
                     "asg",
+                    "b10k",
+                    "canbp",
                     "cbp",
-                    "ebpn",
-                    "ein",
+                    "ccgp",
                     "cfgp",
                     "dtol",
                     "ebpn",
+                    "ein",
                     "endemixit",
                     "erga",
                     "eurofish",
                     "gaga",
-                    "squalomix",
-                    "metainvert",
-                    "vgp",
-                    "agi",
-                    "arg",
                     "gap",
                     "gbr",
+                    "ilebp",
+                    "metainvert",
                     "omg",
+                    "pgp",
+                    "squalomix",
                     "tsi",
-                    "b10k"
+                    "vgp",
+                    "zoonomia"
                 ]
             },
             "summary": "list",
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
+            "sequence": 71
+        },
+        "sequencing_status_omg": {
+            "group": "taxon",
+            "name": "sequencing_status_omg",
+            "source": "Australian Genomes Google Spreadsheet",
+            "source_date": "2022-07-08",
+            "sequence": 72
+        },
+        "sequencing_status_arg": {
+            "group": "taxon",
+            "name": "sequencing_status_arg",
+            "source": "Australian Genomes Google Spreadsheet",
+            "source_date": "2022-07-08",
+            "sequence": 73
+        },
+        "sequencing_status_tsi": {
+            "group": "taxon",
+            "name": "sequencing_status_tsi",
+            "source": "Australian Genomes Google Spreadsheet",
+            "source_date": "2022-07-08",
             "sequence": 74
+        },
+        "sequencing_status_gap": {
+            "group": "taxon",
+            "name": "sequencing_status_gap",
+            "source": "Australian Genomes Google Spreadsheet",
+            "source_date": "2022-07-08",
+            "sequence": 75
+        },
+        "sequencing_status_gbr": {
+            "group": "taxon",
+            "name": "sequencing_status_gbr",
+            "source": "Australian Genomes Google Spreadsheet",
+            "source_date": "2022-07-08",
+            "sequence": 76
+        },
+        "sequencing_status_agi": {
+            "group": "taxon",
+            "name": "sequencing_status_agi",
+            "source": "Australian Genomes Google Spreadsheet",
+            "source_date": "2022-07-08",
+            "sequence": 77
+        },
+        "sequencing_status_ebp": {
+            "group": "taxon",
+            "name": "sequencing_status_ebp",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "display_group": "sequencing_status",
+            "separator": [
+                ";"
+            ],
+            "translate": {
+                "prjna533106": "insdc_open"
+            },
+            "sequence": 78
         }
     },
     "identifiers": {
@@ -1810,6 +1835,6 @@
         }
     },
     "hub": "goat",
-    "release": "2022.06.28",
+    "release": "2022.07.14",
     "source": "https://github.com/genomehubs/goat-data"
 }
