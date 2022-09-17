@@ -21,7 +21,8 @@
             "display_name": "Assembly level",
             "organelle": "nucleus",
             "type": "keyword",
-            "sequence": 0
+            "sequence": 0,
+            "processed_type": "keyword"
         },
         "assembly_span": {
             "group": "assembly",
@@ -43,7 +44,8 @@
             "organelle": "nucleus",
             "type": "long",
             "units": "bases",
-            "sequence": 1
+            "sequence": 1,
+            "processed_type": "float"
         },
         "assembly_type": {
             "group": "assembly",
@@ -55,7 +57,8 @@
             "display_name": "Assembly type",
             "organelle": "nucleus",
             "type": "keyword",
-            "sequence": 2
+            "sequence": 2,
+            "processed_type": "keyword"
         },
         "bioproject": {
             "group": "assembly",
@@ -74,7 +77,8 @@
                 "bioproject_accession"
             ],
             "type": "keyword",
-            "sequence": 3
+            "sequence": 3,
+            "processed_type": "keyword"
         },
         "biosample": {
             "group": "assembly",
@@ -93,7 +97,8 @@
                 "biosample_accession"
             ],
             "type": "keyword",
-            "sequence": 4
+            "sequence": 4,
+            "processed_type": "keyword"
         },
         "chromosome_count": {
             "group": "assembly",
@@ -109,7 +114,8 @@
             "organelle": "nucleus",
             "type": "long",
             "units": "bases",
-            "sequence": 5
+            "sequence": 5,
+            "processed_type": "float"
         },
         "contig_count": {
             "group": "assembly",
@@ -125,7 +131,8 @@
             "organelle": "nucleus",
             "type": "long",
             "units": "bases",
-            "sequence": 6
+            "sequence": 6,
+            "processed_type": "float"
         },
         "contig_l50": {
             "group": "assembly",
@@ -141,7 +148,8 @@
             "organelle": "nucleus",
             "type": "long",
             "units": "bases",
-            "sequence": 7
+            "sequence": 7,
+            "processed_type": "float"
         },
         "contig_n50": {
             "group": "assembly",
@@ -163,7 +171,8 @@
             "organelle": "nucleus",
             "type": "long",
             "units": "bases",
-            "sequence": 8
+            "sequence": 8,
+            "processed_type": "float"
         },
         "ebp_metric_date": {
             "group": "assembly",
@@ -175,7 +184,8 @@
             "display_name": "EBP metric date",
             "organelle": "nucleus",
             "type": "date",
-            "sequence": 9
+            "sequence": 9,
+            "processed_type": "date"
         },
         "gene_count": {
             "group": "assembly",
@@ -196,7 +206,8 @@
             "display_name": "Gene count",
             "organelle": "nucleus",
             "type": "integer",
-            "sequence": 10
+            "sequence": 10,
+            "processed_type": "float"
         },
         "isolate": {
             "group": "assembly",
@@ -208,7 +219,8 @@
             "display_name": "Isolate",
             "organelle": "nucleus",
             "type": "keyword",
-            "sequence": 11
+            "sequence": 11,
+            "processed_type": "keyword"
         },
         "last_updated": {
             "group": "assembly",
@@ -220,7 +232,8 @@
             "display_name": "Last updated",
             "organelle": "nucleus",
             "type": "date",
-            "sequence": 12
+            "sequence": 12,
+            "processed_type": "date"
         },
         "noncoding_gene_count": {
             "group": "assembly",
@@ -235,7 +248,8 @@
             "display_name": "Non-coding gene count",
             "organelle": "nucleus",
             "type": "integer",
-            "sequence": 13
+            "sequence": 13,
+            "processed_type": "float"
         },
         "protein_count": {
             "group": "assembly",
@@ -250,7 +264,8 @@
             "display_name": "Protein count",
             "organelle": "nucleus",
             "type": "integer",
-            "sequence": 14
+            "sequence": 14,
+            "processed_type": "float"
         },
         "pseudogene_count": {
             "group": "assembly",
@@ -265,7 +280,8 @@
             "display_name": "Pseudogene count",
             "organelle": "nucleus",
             "type": "integer",
-            "sequence": 15
+            "sequence": 15,
+            "processed_type": "float"
         },
         "refseq_category": {
             "group": "assembly",
@@ -277,7 +293,8 @@
             "display_name": "RefSeq category",
             "organelle": "nucleus",
             "type": "keyword",
-            "sequence": 16
+            "sequence": 16,
+            "processed_type": "keyword"
         },
         "sample_sex": {
             "group": "assembly",
@@ -289,7 +306,8 @@
             "display_name": "Sample sex",
             "organelle": "nucleus",
             "type": "keyword",
-            "sequence": 17
+            "sequence": 17,
+            "processed_type": "keyword"
         },
         "scaffold_count": {
             "group": "assembly",
@@ -305,7 +323,8 @@
             "organelle": "nucleus",
             "type": "long",
             "units": "bases",
-            "sequence": 18
+            "sequence": 18,
+            "processed_type": "float"
         },
         "scaffold_l50": {
             "group": "assembly",
@@ -321,7 +340,8 @@
             "organelle": "nucleus",
             "type": "long",
             "units": "bases",
-            "sequence": 19
+            "sequence": 19,
+            "processed_type": "float"
         },
         "scaffold_n50": {
             "group": "assembly",
@@ -343,7 +363,8 @@
             "organelle": "nucleus",
             "type": "long",
             "units": "bases",
-            "sequence": 20
+            "sequence": 20,
+            "processed_type": "float"
         },
         "sequence_count": {
             "group": "assembly",
@@ -359,7 +380,8 @@
             "organelle": "nucleus",
             "type": "long",
             "units": "bases",
-            "sequence": 21
+            "sequence": 21,
+            "processed_type": "float"
         },
         "submitter": {
             "group": "assembly",
@@ -371,7 +393,8 @@
             "display_name": "Submitter",
             "organelle": "nucleus",
             "type": "keyword",
-            "sequence": 22
+            "sequence": 22,
+            "processed_type": "keyword"
         },
         "ungapped_span": {
             "group": "assembly",
@@ -387,7 +410,8 @@
             "organelle": "nucleus",
             "type": "long",
             "units": "bases",
-            "sequence": 23
+            "sequence": 23,
+            "processed_type": "float"
         },
         "busco_completeness": {
             "group": "assembly",
@@ -400,7 +424,8 @@
             "display_name": "BUSCO completeness",
             "type": "1dp",
             "units": "%",
-            "sequence": 27
+            "sequence": 27,
+            "processed_type": "float"
         },
         "busco_lineage": {
             "group": "assembly",
@@ -412,7 +437,8 @@
             "display_level": 2,
             "display_name": "BUSCO lineage",
             "type": "keyword",
-            "sequence": 28
+            "sequence": 28,
+            "processed_type": "keyword"
         },
         "busco_string": {
             "group": "assembly",
@@ -424,7 +450,8 @@
             "display_level": 2,
             "display_name": "BUSCO string",
             "type": "keyword",
-            "sequence": 29
+            "sequence": 29,
+            "processed_type": "keyword"
         },
         "nohit": {
             "group": "assembly",
@@ -437,7 +464,8 @@
             "display_name": "No hit",
             "type": "1dp",
             "units": "%",
-            "sequence": 30
+            "sequence": 30,
+            "processed_type": "float"
         },
         "target": {
             "group": "assembly",
@@ -450,7 +478,8 @@
             "display_name": "Target",
             "type": "1dp",
             "units": "%",
-            "sequence": 31
+            "sequence": 31,
+            "processed_type": "float"
         },
         "gc_percent": {
             "group": "assembly",
@@ -465,7 +494,8 @@
             "display_level": 1,
             "type": "2dp",
             "units": "%",
-            "sequence": 24
+            "sequence": 24,
+            "processed_type": "float"
         },
         "n_percent": {
             "group": "assembly",
@@ -480,7 +510,8 @@
             "display_level": 1,
             "type": "2dp",
             "units": "%",
-            "sequence": 25
+            "sequence": 25,
+            "processed_type": "float"
         },
         "sample_location": {
             "group": "assembly",
@@ -490,11 +521,12 @@
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/nuccore/",
             "display_level": 2,
             "type": "geo_point",
-            "sequence": 26
+            "sequence": 26,
+            "processed_type": "geo_point"
         }
     },
     "identifiers": {},
     "hub": "goat",
-    "release": "2022.07.14",
+    "release": "2022.09.16",
     "source": "https://github.com/genomehubs/goat-data"
 }

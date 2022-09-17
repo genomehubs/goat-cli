@@ -27,7 +27,8 @@
                 "enum"
             ],
             "traverse": "enum",
-            "traverse_direction": "up"
+            "traverse_direction": "up",
+            "processed_type": "ordered_keyword"
         },
         "assembly_span": {
             "group": "taxon",
@@ -58,7 +59,8 @@
                 "count"
             ],
             "traverse": "median",
-            "traverse_direction": "both"
+            "traverse_direction": "both",
+            "processed_type": "float"
         },
         "bioproject": {
             "group": "taxon",
@@ -83,7 +85,8 @@
                 "list"
             ],
             "traverse": "list",
-            "traverse_direction": "up"
+            "traverse_direction": "up",
+            "processed_type": "keyword"
         },
         "biosample": {
             "group": "taxon",
@@ -108,7 +111,8 @@
                 "list"
             ],
             "traverse": "list",
-            "traverse_direction": "up"
+            "traverse_direction": "up",
+            "processed_type": "keyword"
         },
         "contig_n50": {
             "group": "taxon",
@@ -139,7 +143,8 @@
                 "count"
             ],
             "traverse": "median",
-            "traverse_direction": "up"
+            "traverse_direction": "up",
+            "processed_type": "float"
         },
         "assembly_date": {
             "group": "taxon",
@@ -158,7 +163,8 @@
                 "min"
             ],
             "traverse": "min",
-            "traverse_direction": "up"
+            "traverse_direction": "up",
+            "processed_type": "date"
         },
         "scaffold_n50": {
             "group": "taxon",
@@ -189,7 +195,8 @@
                 "count"
             ],
             "traverse": "median",
-            "traverse_direction": "up"
+            "traverse_direction": "up",
+            "processed_type": "float"
         },
         "gene_count": {
             "group": "taxon",
@@ -217,7 +224,8 @@
                 "min",
                 "max",
                 "count"
-            ]
+            ],
+            "processed_type": "float"
         },
         "ebp_metric_date": {
             "group": "taxon",
@@ -235,7 +243,8 @@
                 "max"
             ],
             "traverse": "min",
-            "traverse_direction": "up"
+            "traverse_direction": "up",
+            "processed_type": "date"
         },
         "mitochondrion_assembly_span": {
             "group": "taxon",
@@ -261,7 +270,8 @@
             "key": "mitochondrion_assembly_span",
             "summary": "median",
             "traverse": "median",
-            "traverse_limit": "phylum"
+            "traverse_limit": "phylum",
+            "processed_type": "float"
         },
         "mitochondrion_gc_percent": {
             "group": "taxon",
@@ -287,7 +297,8 @@
             "key": "mitochondrion_gc_percent",
             "summary": "median",
             "traverse": "median",
-            "traverse_limit": "phylum"
+            "traverse_limit": "phylum",
+            "processed_type": "float"
         },
         "plastid_assembly_span": {
             "group": "taxon",
@@ -313,7 +324,8 @@
             "key": "plastid_assembly_span",
             "summary": "median",
             "traverse": "median",
-            "traverse_limit": "phylum"
+            "traverse_limit": "phylum",
+            "processed_type": "float"
         },
         "plastid_gc_percent": {
             "group": "taxon",
@@ -339,7 +351,8 @@
             "key": "plastid_gc_percent",
             "summary": "median",
             "traverse": "median",
-            "traverse_limit": "phylum"
+            "traverse_limit": "phylum",
+            "processed_type": "float"
         },
         "chromosome_number": {
             "group": "taxon",
@@ -367,7 +380,8 @@
             "traverse": "median_high",
             "traverse_direction": "both",
             "type": "short",
-            "sequence": 31
+            "sequence": 31,
+            "processed_type": "float"
         },
         "haploid_number": {
             "group": "taxon",
@@ -395,7 +409,8 @@
             "traverse": "median_high",
             "traverse_direction": "both",
             "type": "short",
-            "sequence": 32
+            "sequence": 32,
+            "processed_type": "float"
         },
         "sex_determination": {
             "group": "taxon",
@@ -408,7 +423,8 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 33
+            "sequence": 33,
+            "processed_type": "keyword"
         },
         "ploidy": {
             "group": "taxon",
@@ -436,7 +452,8 @@
             "traverse": "median_high",
             "traverse_direction": "both",
             "type": "short",
-            "sequence": 34
+            "sequence": 34,
+            "processed_type": "float"
         },
         "echabs92": {
             "group": "taxon",
@@ -456,7 +473,8 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 36
+            "sequence": 36,
+            "processed_type": "keyword"
         },
         "habreg_2017": {
             "group": "taxon",
@@ -475,7 +493,8 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 37
+            "sequence": 37,
+            "processed_type": "keyword"
         },
         "marhabreg-2017": {
             "group": "taxon",
@@ -493,7 +512,8 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 38
+            "sequence": 38,
+            "processed_type": "keyword"
         },
         "waca_1981": {
             "group": "taxon",
@@ -512,7 +532,8 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 39
+            "sequence": 39,
+            "processed_type": "keyword"
         },
         "isb_wildlife_act_1976": {
             "group": "taxon",
@@ -531,7 +552,8 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 40
+            "sequence": 40,
+            "processed_type": "keyword"
         },
         "protection_of_badgers_act_1992": {
             "group": "taxon",
@@ -549,7 +571,8 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 41
+            "sequence": 41,
+            "processed_type": "keyword"
         },
         "sample_sex": {
             "group": "taxon",
@@ -566,7 +589,8 @@
                 "primary",
                 "list",
                 "count"
-            ]
+            ],
+            "processed_type": "keyword"
         },
         "sample_location": {
             "group": "taxon",
@@ -585,7 +609,8 @@
                 "list"
             ],
             "traverse": "list",
-            "traverse_direction": "up"
+            "traverse_direction": "up",
+            "processed_type": "geo_point"
         },
         "country_list": {
             "group": "taxon",
@@ -604,7 +629,8 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 35
+            "sequence": 35,
+            "processed_type": "keyword"
         },
         "c_value": {
             "group": "taxon",
@@ -633,7 +659,8 @@
             "traverse_direction": "both",
             "type": "half_float",
             "units": "pgDNA",
-            "sequence": 25
+            "sequence": 25,
+            "processed_type": "float"
         },
         "c_value_method": {
             "group": "taxon",
@@ -708,7 +735,8 @@
             },
             "traverse": false,
             "type": "keyword",
-            "sequence": 26
+            "sequence": 26,
+            "processed_type": "keyword"
         },
         "c_value_cell_type": {
             "group": "taxon",
@@ -825,7 +853,8 @@
             },
             "traverse": false,
             "type": "keyword",
-            "sequence": 27
+            "sequence": 27,
+            "processed_type": "keyword"
         },
         "genome_size": {
             "group": "taxon",
@@ -853,7 +882,8 @@
             "traverse_direction": "both",
             "type": "long",
             "units": "bases",
-            "sequence": 28
+            "sequence": 28,
+            "processed_type": "float"
         },
         "genome_size_kmer": {
             "group": "taxon",
@@ -879,7 +909,8 @@
             ],
             "type": "long",
             "units": "bases",
-            "sequence": 29
+            "sequence": 29,
+            "processed_type": "float"
         },
         "genome_size_draft": {
             "group": "taxon",
@@ -905,7 +936,8 @@
             ],
             "type": "long",
             "units": "bases",
-            "sequence": 30
+            "sequence": 30,
+            "processed_type": "float"
         },
         "busco_completeness": {
             "group": "taxon",
@@ -927,7 +959,8 @@
             },
             "key": "busco_completeness",
             "summary": "max",
-            "traverse": false
+            "traverse": false,
+            "processed_type": "float"
         },
         "busco_lineage": {
             "group": "taxon",
@@ -942,7 +975,8 @@
             "sequence": 28,
             "key": "busco_lineage",
             "summary": "list",
-            "traverse": false
+            "traverse": false,
+            "processed_type": "keyword"
         },
         "busco_string": {
             "group": "taxon",
@@ -957,7 +991,8 @@
             "sequence": 29,
             "key": "busco_string",
             "summary": "list",
-            "traverse": false
+            "traverse": false,
+            "processed_type": "keyword"
         },
         "gc_percent": {
             "group": "taxon",
@@ -984,7 +1019,8 @@
             "key": "gc_percent",
             "summary": "median",
             "traverse": "median",
-            "traverse_direction": "both"
+            "traverse_direction": "both",
+            "processed_type": "float"
         },
         "n_percent": {
             "group": "taxon",
@@ -1013,7 +1049,8 @@
                 "primary",
                 "min"
             ],
-            "traverse": false
+            "traverse": false,
+            "processed_type": "float"
         },
         "nohit": {
             "group": "taxon",
@@ -1035,7 +1072,8 @@
             },
             "key": "nohit",
             "summary": "median",
-            "traverse": "median"
+            "traverse": "median",
+            "processed_type": "float"
         },
         "target": {
             "group": "taxon",
@@ -1057,7 +1095,8 @@
             },
             "key": "target",
             "summary": "median",
-            "traverse": "median"
+            "traverse": "median",
+            "processed_type": "float"
         },
         "odb10_lineage": {
             "group": "taxon",
@@ -1143,7 +1182,8 @@
             "summary": "list",
             "traverse": false,
             "traverse_direction": "none",
-            "sequence": 42
+            "sequence": 42,
+            "processed_type": "keyword"
         },
         "sample_collected": {
             "group": "taxon",
@@ -1154,7 +1194,8 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 43
+            "sequence": 43,
+            "processed_type": "keyword"
         },
         "sample_collected_by": {
             "group": "taxon",
@@ -1183,7 +1224,8 @@
                     "vien"
                 ]
             },
-            "sequence": 44
+            "sequence": 44,
+            "processed_type": "keyword"
         },
         "sample_acquired": {
             "group": "taxon",
@@ -1194,7 +1236,8 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 45
+            "sequence": 45,
+            "processed_type": "keyword"
         },
         "in_progress": {
             "group": "taxon",
@@ -1205,7 +1248,8 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 46
+            "sequence": 46,
+            "processed_type": "keyword"
         },
         "insdc_open": {
             "group": "taxon",
@@ -1216,7 +1260,8 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 47
+            "sequence": 47,
+            "processed_type": "keyword"
         },
         "published": {
             "group": "taxon",
@@ -1227,7 +1272,8 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 48
+            "sequence": 48,
+            "processed_type": "keyword"
         },
         "sequencing_status": {
             "group": "taxon",
@@ -1247,7 +1293,8 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 49
+            "sequence": 49,
+            "processed_type": "ordered_keyword"
         },
         "sequencing_status_ag100pest": {
             "group": "taxon",
@@ -1267,7 +1314,8 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 50
+            "sequence": 50,
+            "processed_type": "ordered_keyword"
         },
         "sequencing_status_asg": {
             "group": "taxon",
@@ -1287,7 +1335,8 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 51
+            "sequence": 51,
+            "processed_type": "ordered_keyword"
         },
         "sequencing_status_b10k": {
             "group": "taxon",
@@ -1307,7 +1356,8 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 52
+            "sequence": 52,
+            "processed_type": "ordered_keyword"
         },
         "sequencing_status_canbp": {
             "group": "taxon",
@@ -1327,7 +1377,8 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 53
+            "sequence": 53,
+            "processed_type": "ordered_keyword"
         },
         "sequencing_status_cbp": {
             "group": "taxon",
@@ -1347,7 +1398,8 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 54
+            "sequence": 54,
+            "processed_type": "ordered_keyword"
         },
         "sequencing_status_ccgp": {
             "group": "taxon",
@@ -1367,7 +1419,8 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 55
+            "sequence": 55,
+            "processed_type": "ordered_keyword"
         },
         "sequencing_status_cfgp": {
             "group": "taxon",
@@ -1387,7 +1440,8 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 56
+            "sequence": 56,
+            "processed_type": "ordered_keyword"
         },
         "sequencing_status_dtol": {
             "group": "taxon",
@@ -1407,7 +1461,8 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 57
+            "sequence": 57,
+            "processed_type": "ordered_keyword"
         },
         "sequencing_status_ebpn": {
             "group": "taxon",
@@ -1427,7 +1482,8 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 58
+            "sequence": 58,
+            "processed_type": "ordered_keyword"
         },
         "sequencing_status_endemixit": {
             "group": "taxon",
@@ -1447,7 +1503,8 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 59
+            "sequence": 59,
+            "processed_type": "ordered_keyword"
         },
         "sequencing_status_erga": {
             "group": "taxon",
@@ -1467,7 +1524,8 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 60
+            "sequence": 60,
+            "processed_type": "ordered_keyword"
         },
         "sequencing_status_eurofish": {
             "group": "taxon",
@@ -1487,7 +1545,8 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 61
+            "sequence": 61,
+            "processed_type": "ordered_keyword"
         },
         "sequencing_status_gaga": {
             "group": "taxon",
@@ -1507,7 +1566,29 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 62
+            "sequence": 62,
+            "processed_type": "ordered_keyword"
+        },
+        "sequencing_status_giga": {
+            "group": "taxon",
+            "name": "sequencing_status_giga",
+            "display_group": "sequencing_status",
+            "display_level": 2,
+            "constraint": {
+                "enum": [
+                    "published",
+                    "insdc_open",
+                    "in_progress",
+                    "sample_acquired",
+                    "sample_collected"
+                ]
+            },
+            "summary": "enum",
+            "traverse": "enum",
+            "traverse_direction": "up",
+            "type": "keyword",
+            "sequence": 63,
+            "processed_type": "ordered_keyword"
         },
         "sequencing_status_ilebp": {
             "group": "taxon",
@@ -1527,7 +1608,8 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 63
+            "sequence": 64,
+            "processed_type": "ordered_keyword"
         },
         "sequencing_status_metainvert": {
             "group": "taxon",
@@ -1547,7 +1629,8 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 64
+            "sequence": 65,
+            "processed_type": "ordered_keyword"
         },
         "sequencing_status_pgp": {
             "group": "taxon",
@@ -1567,7 +1650,8 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 65
+            "sequence": 66,
+            "processed_type": "ordered_keyword"
         },
         "sequencing_status_squalomix": {
             "group": "taxon",
@@ -1587,7 +1671,8 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 66
+            "sequence": 67,
+            "processed_type": "ordered_keyword"
         },
         "sequencing_status_vgp": {
             "group": "taxon",
@@ -1607,7 +1692,8 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 67
+            "sequence": 68,
+            "processed_type": "ordered_keyword"
         },
         "sequencing_status_zoonomia": {
             "group": "taxon",
@@ -1627,7 +1713,134 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 68
+            "sequence": 69,
+            "processed_type": "ordered_keyword"
+        },
+        "sequencing_status_omg": {
+            "group": "taxon",
+            "name": "sequencing_status_omg",
+            "display_group": "sequencing_status",
+            "display_level": 2,
+            "constraint": {
+                "enum": [
+                    "published",
+                    "insdc_open",
+                    "in_progress",
+                    "sample_acquired",
+                    "sample_collected"
+                ]
+            },
+            "summary": "enum",
+            "traverse": "enum",
+            "traverse_direction": "up",
+            "type": "keyword",
+            "sequence": 70,
+            "processed_type": "ordered_keyword"
+        },
+        "sequencing_status_arg": {
+            "group": "taxon",
+            "name": "sequencing_status_arg",
+            "display_group": "sequencing_status",
+            "display_level": 2,
+            "constraint": {
+                "enum": [
+                    "published",
+                    "insdc_open",
+                    "in_progress",
+                    "sample_acquired",
+                    "sample_collected"
+                ]
+            },
+            "summary": "enum",
+            "traverse": "enum",
+            "traverse_direction": "up",
+            "type": "keyword",
+            "sequence": 71,
+            "processed_type": "ordered_keyword"
+        },
+        "sequencing_status_agi": {
+            "group": "taxon",
+            "name": "sequencing_status_agi",
+            "display_group": "sequencing_status",
+            "display_level": 2,
+            "constraint": {
+                "enum": [
+                    "published",
+                    "insdc_open",
+                    "in_progress",
+                    "sample_acquired",
+                    "sample_collected"
+                ]
+            },
+            "summary": "enum",
+            "traverse": "enum",
+            "traverse_direction": "up",
+            "type": "keyword",
+            "sequence": 72,
+            "processed_type": "ordered_keyword"
+        },
+        "sequencing_status_tsi": {
+            "group": "taxon",
+            "name": "sequencing_status_tsi",
+            "display_group": "sequencing_status",
+            "display_level": 2,
+            "constraint": {
+                "enum": [
+                    "published",
+                    "insdc_open",
+                    "in_progress",
+                    "sample_acquired",
+                    "sample_collected"
+                ]
+            },
+            "summary": "enum",
+            "traverse": "enum",
+            "traverse_direction": "up",
+            "type": "keyword",
+            "sequence": 73,
+            "processed_type": "ordered_keyword"
+        },
+        "sequencing_status_gap": {
+            "group": "taxon",
+            "name": "sequencing_status_gap",
+            "display_group": "sequencing_status",
+            "display_level": 2,
+            "constraint": {
+                "enum": [
+                    "published",
+                    "insdc_open",
+                    "in_progress",
+                    "sample_acquired",
+                    "sample_collected"
+                ]
+            },
+            "summary": "enum",
+            "traverse": "enum",
+            "traverse_direction": "up",
+            "type": "keyword",
+            "sequence": 74,
+            "processed_type": "ordered_keyword"
+        },
+        "sequencing_status_gbr": {
+            "group": "taxon",
+            "name": "sequencing_status_gbr",
+            "display_group": "sequencing_status",
+            "display_level": 2,
+            "constraint": {
+                "enum": [
+                    "published",
+                    "insdc_open",
+                    "in_progress",
+                    "sample_acquired",
+                    "sample_collected"
+                ]
+            },
+            "summary": "enum",
+            "traverse": "enum",
+            "traverse_direction": "up",
+            "type": "keyword",
+            "sequence": 75,
+            "processed_type": "ordered_keyword"
         },
         "long_list": {
             "group": "taxon",
@@ -1655,6 +1868,7 @@
                     "gaga",
                     "gap",
                     "gbr",
+                    "giga",
                     "ilebp",
                     "metainvert",
                     "omg",
@@ -1669,7 +1883,8 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 69
+            "sequence": 76,
+            "processed_type": "keyword"
         },
         "other_priority": {
             "group": "taxon",
@@ -1697,6 +1912,7 @@
                     "gaga",
                     "gap",
                     "gbr",
+                    "giga",
                     "ilebp",
                     "metainvert",
                     "omg",
@@ -1711,7 +1927,8 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 70
+            "sequence": 77,
+            "processed_type": "keyword"
         },
         "family_representative": {
             "group": "taxon",
@@ -1739,6 +1956,7 @@
                     "gaga",
                     "gap",
                     "gbr",
+                    "giga",
                     "ilebp",
                     "metainvert",
                     "omg",
@@ -1753,49 +1971,8 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 71
-        },
-        "sequencing_status_omg": {
-            "group": "taxon",
-            "name": "sequencing_status_omg",
-            "source": "Australian Genomes Google Spreadsheet",
-            "source_date": "2022-07-08",
-            "sequence": 72
-        },
-        "sequencing_status_arg": {
-            "group": "taxon",
-            "name": "sequencing_status_arg",
-            "source": "Australian Genomes Google Spreadsheet",
-            "source_date": "2022-07-08",
-            "sequence": 73
-        },
-        "sequencing_status_tsi": {
-            "group": "taxon",
-            "name": "sequencing_status_tsi",
-            "source": "Australian Genomes Google Spreadsheet",
-            "source_date": "2022-07-08",
-            "sequence": 74
-        },
-        "sequencing_status_gap": {
-            "group": "taxon",
-            "name": "sequencing_status_gap",
-            "source": "Australian Genomes Google Spreadsheet",
-            "source_date": "2022-07-08",
-            "sequence": 75
-        },
-        "sequencing_status_gbr": {
-            "group": "taxon",
-            "name": "sequencing_status_gbr",
-            "source": "Australian Genomes Google Spreadsheet",
-            "source_date": "2022-07-08",
-            "sequence": 76
-        },
-        "sequencing_status_agi": {
-            "group": "taxon",
-            "name": "sequencing_status_agi",
-            "source": "Australian Genomes Google Spreadsheet",
-            "source_date": "2022-07-08",
-            "sequence": 77
+            "sequence": 78,
+            "processed_type": "keyword"
         },
         "sequencing_status_ebp": {
             "group": "taxon",
@@ -1809,7 +1986,7 @@
             "translate": {
                 "prjna533106": "insdc_open"
             },
-            "sequence": 78
+            "sequence": 79
         }
     },
     "identifiers": {
@@ -1835,6 +2012,6 @@
         }
     },
     "hub": "goat",
-    "release": "2022.07.14",
+    "release": "2022.09.16",
     "source": "https://github.com/genomehubs/goat-data"
 }
