@@ -5,17 +5,13 @@ use reqwest::header::ACCEPT;
 
 use crate::report::report::{Report, ReportType};
 
-// TODO: maybe newick can accept multiple taxa for separate newicks?
-// e.g. goat newick -f "taxon 1, taxon2" "taxon3" ?
-
-/// CLI entry point to get the Newick file from the GoaT API.
-pub async fn get_newick(matches: &clap::ArgMatches, unique_ids: Vec<String>) -> Result<()> {
-    let record = Report::new(matches, ReportType::Newick)?;
-    let newick_url = record.make_url(unique_ids);
+pub async fn get_histogram(matches: &clap::ArgMatches, unique_ids: Vec<String>) -> Result<()> {
+    let record = Report::new(matches, ReportType::Histogram)?;
+    let histogram_url = record.make_url(unique_ids);
 
     let print_url = matches.is_present("url");
     if print_url {
-        println!("GoaT lookup API URL:\t{}", newick_url);
+        println!("GoaT lookup API URL:\t{}", histogram_url);
         std::process::exit(0);
     }
 
@@ -25,14 +21,21 @@ pub async fn get_newick(matches: &clap::ArgMatches, unique_ids: Vec<String>) -> 
     // but for future work, might be useful to have concurrent requests
     // for now this is a bit of extra work for a single request.
     // but whatever!
-    let url_vector_api = vec![newick_url];
+    let url_vector_api = vec![histogram_url];
 
     let fetches = futures::stream::iter(url_vector_api.into_iter().map(|path| async move {
         // possibly make a again::RetryPolicy
         // to catch all the values in a *very* large request.
         let client = reqwest::Client::new();
 
-        match again::retry(|| client.get(&path).header(ACCEPT, "text/x-nh").send()).await {
+        match again::retry(|| {
+            client
+                .get(&path)
+                .header(ACCEPT, "text/tab-separated-values")
+                .send()
+        })
+        .await
+        {
             Ok(resp) => match resp.text().await {
                 Ok(body) => Ok(body),
                 Err(_) => bail!("ERROR reading {}", path),
@@ -45,9 +48,9 @@ pub async fn get_newick(matches: &clap::ArgMatches, unique_ids: Vec<String>) -> 
 
     let awaited_fetches = fetches.await;
 
-    let newick = &awaited_fetches[0];
+    let histogram = &awaited_fetches[0];
 
-    match newick {
+    match histogram {
         Ok(s) => print!("{}", s),
         Err(e) => bail!("{}", e),
     }

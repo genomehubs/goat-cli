@@ -69,3 +69,34 @@ impl fmt::Display for IndexType {
         }
     }
 }
+
+/// The type of result to return.
+///
+/// This is true for both `taxon` and
+/// `assembly` indexes?
+#[derive(Default, Clone, Copy)]
+pub enum TaxType {
+    /// tax_tree() returns a node and all
+    /// of its descendants.
+    #[default]
+    Tree,
+    /// tax_name() returns only the taxon of
+    /// interest.
+    Name,
+    /// tax_lineage() returns all of the nodes
+    /// from a given taxon back to the root of the
+    /// tree.
+    Lineage,
+}
+
+impl fmt::Display for TaxType {
+    /// Implement [`Display`] for [`TaxType`] so we can
+    /// use `.to_string()` method.
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            TaxType::Tree => write!(f, "tax_tree"),
+            TaxType::Name => write!(f, "tax_name"),
+            TaxType::Lineage => write!(f, "tax_lineage"),
+        }
+    }
+}

@@ -98,7 +98,7 @@ pub fn lines_from_file(filename: impl AsRef<Path>) -> Result<Vec<String>> {
 /// Parse a comma separated string and return each of the elements
 /// stripped of whitespace in a vector.
 pub fn parse_comma_separated(taxids: &str) -> Vec<String> {
-    let res: Vec<&str> = taxids.split(",").map(|s| s).collect();
+    let res: Vec<&str> = taxids.split(",").collect();
 
     let mut res2 = Vec::new();
     for mut str in res {

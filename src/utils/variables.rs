@@ -19,6 +19,32 @@ impl<'a> Variables<'a> {
         Self { variables: str }
     }
 
+    /// Parse a single variable. Used in report
+    /// until something more sophisticated is made.
+    pub fn parse_one(
+        &self,
+        reference_data: &BTreeMap<&'static str, Variable<'static>>,
+    ) -> Result<String> {
+        let variable = self.variables;
+
+        let var_vec_check = reference_data
+            .iter()
+            .map(|(e, _)| e.to_string())
+            .collect::<Vec<String>>();
+
+        if !var_vec_check.contains(&variable.to_string()) {
+            let var_vec_mean = did_you_mean(&var_vec_check, variable);
+            if let Some(value) = var_vec_mean {
+                bail!(
+                    "In your variable (`-v`) you typed \"{}\" - did you mean \"{}\"?",
+                    variable,
+                    value
+                )
+            }
+        }
+        Ok(variable.to_string())
+    }
+
     /// Simple parsing of a comma separated string,
     /// which will error if the variable is not found
     /// with a suggestion as to which one you meant.

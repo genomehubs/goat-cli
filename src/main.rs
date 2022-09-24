@@ -8,7 +8,7 @@ use tokio;
 
 use goat_cli::{
     count, lookup, progress,
-    report::newick,
+    report,
     search,
     utils::utils::{generate_unique_strings, pretty_print_usize},
     IndexType,
@@ -476,6 +476,58 @@ async fn main() -> Result<()> {
                                     .help("Add a progress bar to large queries, to estimate time left.")
                             ),
                     )
+                    .subcommand(
+                        Command::new("histogram")
+                            .about("Generate a histogram report from input taxa.")
+                            .arg(
+                                Arg::new("taxon")
+                                    .short('t')
+                                    .long("taxon")
+                                    .takes_value(true)
+                                    .required_unless_present("file")
+                                    .help("The taxon to return a newick of. Multiple taxa will return the joint tree."),
+                            )
+                            .arg(
+                                Arg::new("url")
+                                    .short('u')
+                                    .long("url")
+                                    .help("Print lookup URL.")
+                            )
+                            .arg(
+                                Arg::new("no-descendents")
+                                    .short('n')
+                                    .long("no-descendents")
+                                    .help("If a taxon is supplied, do not return values for its descendents (i.e. a tax_name() call).")
+                            )
+                            .arg(
+                                Arg::new("rank")
+                                    .short('r')
+                                    .long("rank")
+                                    .default_value("species")
+                                    .possible_values(&["species", "genus", "family", "order"])
+                                    .help("The number of results to return."),
+                            )
+                            .arg(
+                                Arg::new("x-variable")
+                                    .short('x')
+                                    .long("x-variable")
+                                    .takes_value(true)
+                                    .help("The name of the x variable."),
+                            )
+                            .arg(
+                                Arg::new("x-opts")
+                                    .short('o')
+                                    .long("opts")
+                                    .takes_value(true)
+                                    .required(false)
+                                    .help("The options for the variable axis. A comma separated string of options in the order:
+\t1. minimum value
+\t2. maximum value
+\t3. tick count
+\t4. scale (linear, sqrt, log10, log2, log, proportion, or ordinal)
+\t5. axis title\n"),
+                            )
+                    )
             )
         // alright, so what subcommands go here?
         .subcommand(
@@ -552,6 +604,10 @@ async fn main() -> Result<()> {
             Some(("lookup", matches)) => {
                 lookup::lookup(&matches, true, IndexType::Taxon).await?;
             }
+            Some(("histogram", matches)) => {
+                let unique_ids = generate_unique_strings(matches, IndexType::Taxon)?;
+                report::histogram::get_histogram(matches, unique_ids).await?;
+            }
             Some(("newick", matches)) => {
                 let progress_bar = matches.is_present("progress-bar");
                 let unique_ids = generate_unique_strings(matches, IndexType::Taxon)?;
@@ -559,11 +615,11 @@ async fn main() -> Result<()> {
                 match progress_bar {
                     true => {
                         try_join!(
-                            newick::get_newick(matches, unique_ids.clone()),
+                            report::newick::get_newick(matches, unique_ids.clone()),
                             progress::progress_bar(&matches, "newick", unique_ids, IndexType::Taxon)
                         )?;
                     }
-                    false => newick::get_newick(matches, unique_ids).await?,
+                    false => report::newick::get_newick(matches, unique_ids).await?,
                 }
             }
             _ => {

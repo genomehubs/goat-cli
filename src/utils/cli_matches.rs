@@ -2,25 +2,8 @@ use crate::utils::{
     expression, tax_ranks, url, utils,
     variable_data::{GOAT_ASSEMBLY_VARIABLE_DATA, GOAT_TAXON_VARIABLE_DATA},
 };
-use crate::{IndexType, GOAT_URL, TAXONOMY, UPPER_CLI_FILE_LIMIT, UPPER_CLI_SIZE_LIMIT};
+use crate::{IndexType, TaxType, GOAT_URL, TAXONOMY, UPPER_CLI_FILE_LIMIT, UPPER_CLI_SIZE_LIMIT};
 use anyhow::{bail, Result};
-
-/// The type of result to return.
-///
-/// This is true for both `taxon` and
-/// `assembly` indexes?
-enum TaxType {
-    /// tax_tree() returns a node and all
-    /// of its descendants.
-    Tree,
-    /// tax_name() returns only the taxon of
-    /// interest.
-    Name,
-    /// tax_lineage() returns all of the nodes
-    /// from a given taxon back to the root of the
-    /// tree.
-    Lineage,
-}
 
 /// Take CLI arguments and parse them. Return a tuple of:
 ///
