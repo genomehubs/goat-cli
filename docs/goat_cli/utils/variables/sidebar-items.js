@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Variables","A struct to store the variables passed in the `-v` flag on the CLI."]]});
+window.SIDEBAR_ITEMS = {"struct":[["Variables","A struct to store the variables passed in the `-v` flag on the CLI."]]};

@@ -1,5 +1,5 @@
 use crate::utils::variable_data;
-use crate::utils::{utils, variables::Variables};
+use crate::utils::{tax_ranks::TaxRanks, utils, variables::Variables};
 use crate::{TaxType, GOAT_URL, TAXONOMY};
 use anyhow::{bail, Context, Result};
 use std::fmt;
@@ -12,7 +12,7 @@ use std::fmt;
 ///
 /// Should support all main report types, at least in their
 /// basic forms.
-#[derive(Default)]
+#[derive(Default, Clone, Copy)]
 pub enum ReportType {
     /// A Newick text string.
     #[default]
@@ -194,7 +194,11 @@ impl fmt::Display for Opts {
             None => "".into(),
         };
 
-        write!(f, "{}", [min, max, tick_count, scale, axis_title].join("%2C"))
+        write!(
+            f,
+            "{}",
+            [min, max, tick_count, scale, axis_title].join("%2C")
+        )
     }
 }
 
@@ -210,10 +214,12 @@ pub struct Report {
     pub rank: String,
     /// Taxon type: tax_tree or tax_name
     pub taxon_type: TaxType,
-    /// The x value
-    pub x: String,
+    /// The size of the result to return
+    pub size: Option<usize>,
     // these below are optional extras, which are
     // needed for some report return types.
+    /// The x value
+    pub x: Option<String>,
     /// The y value. Required for Scatterplot.
     pub y: Option<String>,
     /// x options. Always optional.
@@ -245,13 +251,26 @@ impl Report {
         // for future reference. But will require a flag on the cli.
 
         // the x string will be just a variable.
-        let x_variable = matches.value_of("x-variable").unwrap();
+        let x_variable = matches.value_of("x-variable");
 
-        let x = Variables::new(x_variable)
-            .parse_one(&variable_data::GOAT_TAXON_VARIABLE_DATA)
-            .expect("could not parse the x variable into `Report`.");
-        // assign to struct
-        report.x = x;
+        let _ = match x_variable {
+            Some(xvar) => {
+                let inner_x = Variables::new(xvar)
+                    .parse_one(&variable_data::GOAT_TAXON_VARIABLE_DATA)
+                    .expect("could not parse the x variable into `Report`.");
+                // assign to struct
+                report.x = Some(inner_x);
+            }
+            // no assignmnt is fine.
+            None => (),
+        };
+
+        // parse size
+        let size = matches.value_of("size");
+        if let Some(s) = size {
+            let size_usize = s.parse::<usize>()?;
+            report.size = Some(size_usize);
+        }
 
         // descendents (default) or not?
         let no_descendents = matches.is_present("no-descendents");
@@ -264,19 +283,45 @@ impl Report {
         if let Some(y_var) = y_variable {
             report.y = Some(y_var.to_string());
         }
-
+        // x options
         let xopts = matches.value_of("x-opts");
         if let Some(x_opts) = xopts {
             report.x_opts = Some(Opts::try_from_string(x_opts)?);
         }
-
+        // y options
         let yopts = matches.value_of("y-opts");
         if let Some(y_opts) = yopts {
             report.y_opts = Some(Opts::try_from_string(y_opts)?);
         }
+        // category for histogram.
         let category = matches.value_of("category");
         if let Some(cat) = category {
-            report.category = Some(cat.to_string());
+            // check this variable against the various lists
+            let parsed_taxon_rank = TaxRanks::parse(&TaxRanks::init(), cat, true);
+            let parsed_category =
+                Variables::new(cat).parse_one(&variable_data::GOAT_TAXON_VARIABLE_DATA);
+
+            match parsed_taxon_rank {
+                Ok(tr) => {
+                    report.category = Some(tr);
+                    // kinda janky but works for now.
+                    return Ok(report);
+                }
+                Err(e) => {
+                    // propagate this error through
+                    match parsed_category {
+                        Ok(pc) => {
+                            report.category = Some(pc);
+                            return Ok(report);
+                        }
+                        Err(e2) => {
+                            // TODO: this is quite a brutally large error, but can't think
+                            // right now how to make it nicer.
+                            bail!("In category: {}\n\nOr taxon rank: {}.", e2, e);
+                        }
+                    }
+                }
+            }
         }
 
         Ok(report)
@@ -284,7 +329,7 @@ impl Report {
 
     /// A function to construct the report URL for any kind of
     /// report.
-    pub fn make_url(&self, unique_ids: Vec<String>) -> String {
+    pub fn make_url(&self, unique_ids: Vec<String>) -> Result<String> {
         match self.report_type {
             ReportType::Newick => {
                 let mut url = String::new();
@@ -311,7 +356,7 @@ impl Report {
                 url += &format!("&taxonomy={}", &*TAXONOMY);
                 // fix this for now, as only single requests can be submitted
                 url += &format!("&queryId=goat_cli_{}", unique_ids[0]);
-                url
+                Ok(url)
             }
             ReportType::Histogram => {
                 let mut url = String::new();
@@ -333,7 +378,7 @@ impl Report {
                 // and the taxa
                 let taxa = self.search.join("%2C");
                 // and the variable
-                let variable = self.x.clone();
+                let variable = self.x.clone().unwrap();
                 url += &format!("&x={}%28{}%29%20AND%20{}", taxon_type, taxa, variable);
 
                 // add x options if any
@@ -341,9 +386,42 @@ impl Report {
                     url += &format!("&xOpts={}", xopts);
                 }
 
-                url
+                Ok(url)
             }
-            ReportType::CategoricalHistogram => todo!(),
+            ReportType::CategoricalHistogram => {
+                let mut url = String::new();
+                url += &GOAT_URL;
+                // it's a taxon report
+                url += &"report?result=taxon";
+                // default stuff for now
+                // no estimates
+                url += &"&includeEstimates=false";
+                // standard taxonomy
+                url += &format!("&taxonomy={}", &*TAXONOMY);
+                // it's a table
+                url += &format!("&report={}", self.report_type);
+                // add the rank from the CLI
+                url += &format!("&rank={}", self.rank);
+                // taxon type: tax_rank/tax_tree
+                let taxon_type = self.taxon_type;
+                // and the taxa
+                let taxa = self.search.join("%2C");
+                // and the variable
+                let variable = self.x.clone().unwrap();
+                // safe to unwrap this.
+                let cat = self.category.clone().unwrap();
+                url += &format!(
+                    "&x={}%28{}%29%20AND%20{}&cat={}%5B{}%5D",
+                    taxon_type, taxa, variable, cat, self.size.unwrap(),
+                );
+
+                // add x options if any
+                if let Some(xopts) = &self.x_opts {
+                    url += &format!("&xOpts={}", xopts);
+                }
+
+                Ok(url)
+            }
             ReportType::Scatterplot => todo!(),
         }
     }

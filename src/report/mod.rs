@@ -1,6 +1,4 @@
-/// Return a histogram from GoaT.
-pub mod histogram;
-/// Module to return a Newick file from GoaT.
-pub mod newick;
+/// Fetch the corresponding report from the GoaT API.
+pub mod fetch;
 /// Module providing parsing functionality for GoaT reports.
 pub mod report;

@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["ReportType","The record type to return. Currently only Newick is supported."]],"struct":[["Report","The record struct to make URLs from."]]});
+window.SIDEBAR_ITEMS = {"enum":[["ReportType","The record type to return."]],"struct":[["Opts","The x or y options for a returned table."],["Report","The record struct to make URLs from."]]};

@@ -73,7 +73,24 @@ impl<'a> TaxRanks<'a> {
 
     /// Convert a `--tax-rank` CLI comma separated string
     /// into a URL encoded string of taxon ranks.
-    pub fn parse(&self, cmp: &str) -> Result<String> {
+    ///
+    /// If report == true, we are comparing a taxon rank for `report`.
+    /// Was unsure whether to keep this functionality here or to split
+    /// it out. Probably confusing to keep it here, but will change later.
+    pub fn parse(&self, cmp: &str, report: bool) -> Result<String> {
+        // if we are in the report API
+        if report {
+            let needle = cmp;
+            if self.ranks.contains(&needle) {
+                return Ok(needle.to_string());
+            } else {
+                bail!(
+                    "Taxonomic rank \"{}\" is not recognised.\n\nEnter one of: {}",
+                    needle,
+                    Self::init()
+                );
+            }
+        }
         // split the string on commas
         let split = utils::parse_comma_separated(cmp);
         let mut tax_rank_string = String::new();

@@ -5,19 +5,27 @@ use reqwest::header::ACCEPT;
 
 use crate::report::report::{Report, ReportType};
 
-// TODO: maybe newick can accept multiple taxa for separate newicks?
-// e.g. goat newick -f "taxon 1, taxon2" "taxon3" ?
-
 /// CLI entry point to get the Newick file from the GoaT API.
-pub async fn get_newick(matches: &clap::ArgMatches, unique_ids: Vec<String>) -> Result<()> {
-    let record = Report::new(matches, ReportType::Newick)?;
-    let newick_url = record.make_url(unique_ids);
+pub async fn fetch_report(
+    matches: &clap::ArgMatches,
+    unique_ids: Vec<String>,
+    report_type: ReportType,
+) -> Result<()> {
+    let report = Report::new(matches, report_type)?;
+    let url = report.make_url(unique_ids)?;
 
     let print_url = matches.is_present("url");
     if print_url {
-        println!("GoaT lookup API URL:\t{}", newick_url);
+        println!("GoaT lookup API URL:\t{}", url);
         std::process::exit(0);
     }
+
+    // otherwise we get schema errors.
+    // more schemas could be defined here.
+    let header_value = match report_type {
+        ReportType::Newick => "text/x-nh",
+        _ => "text/tab-separated-values",
+    };
 
     // for now, you can only submit a single request at once.
     let concurrent_requests = 1;
@@ -25,14 +33,14 @@ pub async fn get_newick(matches: &clap::ArgMatches, unique_ids: Vec<String>) -> 
     // but for future work, might be useful to have concurrent requests
     // for now this is a bit of extra work for a single request.
     // but whatever!
-    let url_vector_api = vec![newick_url];
+    let url_vector_api = vec![url];
 
     let fetches = futures::stream::iter(url_vector_api.into_iter().map(|path| async move {
         // possibly make a again::RetryPolicy
         // to catch all the values in a *very* large request.
         let client = reqwest::Client::new();
 
-        match again::retry(|| client.get(&path).header(ACCEPT, "text/x-nh").send()).await {
+        match again::retry(|| client.get(&path).header(ACCEPT, header_value).send()).await {
             Ok(resp) => match resp.text().await {
                 Ok(body) => Ok(body),
                 Err(_) => bail!("ERROR reading {}", path),

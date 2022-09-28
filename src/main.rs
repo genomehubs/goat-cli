@@ -8,7 +8,7 @@ use tokio;
 
 use goat_cli::{
     count, lookup, progress,
-    report,
+    report::{self, report::ReportType},
     search,
     utils::utils::{generate_unique_strings, pretty_print_usize},
     IndexType,
@@ -460,7 +460,7 @@ async fn main() -> Result<()> {
                                 Arg::new("url")
                                     .short('u')
                                     .long("url")
-                                    .help("Print lookup URL.")
+                                    .help("Print report URL.")
                             )
                             .arg(
                                 Arg::new("rank")
@@ -468,7 +468,7 @@ async fn main() -> Result<()> {
                                     .long("rank")
                                     .default_value("species")
                                     .possible_values(&["species", "genus", "family", "order"])
-                                    .help("The number of results to return."),
+                                    .help("The rank of the results to return."),
                             )
                             .arg(
                                 Arg::new("progress-bar")
@@ -477,7 +477,7 @@ async fn main() -> Result<()> {
                             ),
                     )
                     .subcommand(
-                        Command::new("histogram")
+                        Command::new("hist")
                             .about("Generate a histogram report from input taxa.")
                             .arg(
                                 Arg::new("taxon")
@@ -485,13 +485,13 @@ async fn main() -> Result<()> {
                                     .long("taxon")
                                     .takes_value(true)
                                     .required_unless_present("file")
-                                    .help("The taxon to return a newick of. Multiple taxa will return the joint tree."),
+                                    .help("The taxon to return a histogram of. Multiple taxa will return the joint histogram."),
                             )
                             .arg(
                                 Arg::new("url")
                                     .short('u')
                                     .long("url")
-                                    .help("Print lookup URL.")
+                                    .help("Print report URL.")
                             )
                             .arg(
                                 Arg::new("no-descendents")
@@ -512,7 +512,76 @@ async fn main() -> Result<()> {
                                     .short('x')
                                     .long("x-variable")
                                     .takes_value(true)
+                                    .required(true)
                                     .help("The name of the x variable."),
+                            )
+                            .arg(
+                                Arg::new("x-opts")
+                                    .short('o')
+                                    .long("opts")
+                                    .takes_value(true)
+                                    .required(false)
+                                    .help("The options for the variable axis. A comma separated string of options in the order:
+\t1. minimum value
+\t2. maximum value
+\t3. tick count
+\t4. scale (linear, sqrt, log10, log2, log, proportion, or ordinal)
+\t5. axis title\n"),
+                            )
+                    )
+                    .subcommand(
+                        Command::new("cat-hist")
+                            .about("Generate a categorical histogram report from input taxa.")
+                            .arg(
+                                Arg::new("taxon")
+                                    .short('t')
+                                    .long("taxon")
+                                    .takes_value(true)
+                                    .required_unless_present("file")
+                                    .help("The taxon to return a categorical histogram of. Multiple taxa will return the joint histogram."),
+                            )
+                            .arg(
+                                Arg::new("url")
+                                    .short('u')
+                                    .long("url")
+                                    .help("Print report URL.")
+                            )
+                            .arg(
+                                Arg::new("no-descendents")
+                                    .short('n')
+                                    .long("no-descendents")
+                                    .help("If a taxon is supplied, do not return values for its descendents (i.e. a tax_name() call).")
+                            )
+                            .arg(
+                                Arg::new("rank")
+                                    .short('r')
+                                    .long("rank")
+                                    .default_value("species")
+                                    .possible_values(&["species", "genus", "family", "order"])
+                                    .help("The rank of the results to return."),
+                            )
+                            .arg(
+                                Arg::new("x-variable")
+                                    .short('x')
+                                    .long("x-variable")
+                                    .takes_value(true)
+                                    .required(true)
+                                    .help("The name of the x variable."),
+                            )
+                            .arg(
+                                Arg::new("category")
+                                    .short('c')
+                                    .long("category")
+                                    .takes_value(true)
+                                    .required(true)
+                                    .help("The category with which to group the histogram over."),
+                            )
+                            .arg(
+                                Arg::new("size")
+                                    .short('s')
+                                    .long("size")
+                                    .default_value("10")
+                                    .help("The number of category levels to return."),
                             )
                             .arg(
                                 Arg::new("x-opts")
@@ -604,9 +673,13 @@ async fn main() -> Result<()> {
             Some(("lookup", matches)) => {
                 lookup::lookup(&matches, true, IndexType::Taxon).await?;
             }
-            Some(("histogram", matches)) => {
+            Some(("hist", matches)) => {
                 let unique_ids = generate_unique_strings(matches, IndexType::Taxon)?;
-                report::histogram::get_histogram(matches, unique_ids).await?;
+                report::fetch::fetch_report(matches, unique_ids, ReportType::Histogram).await?;
+            }
+            Some(("cat-hist", matches)) => {
+                let unique_ids = generate_unique_strings(matches, IndexType::Taxon)?;
+                report::fetch::fetch_report(matches, unique_ids, ReportType::CategoricalHistogram).await?;
             }
             Some(("newick", matches)) => {
                 let progress_bar = matches.is_present("progress-bar");
@@ -615,11 +688,11 @@ async fn main() -> Result<()> {
                 match progress_bar {
                     true => {
                         try_join!(
-                            report::newick::get_newick(matches, unique_ids.clone()),
-                            progress::progress_bar(&matches, "newick", unique_ids, IndexType::Taxon)
+                            report::fetch::fetch_report(matches, unique_ids.clone(), ReportType::Newick),
+                            progress::progress_bar(matches, "newick", unique_ids, IndexType::Taxon)
                         )?;
                     }
-                    false => report::newick::get_newick(matches, unique_ids).await?,
+                    false => report::fetch::fetch_report(matches, unique_ids, ReportType::Newick).await?,
                 }
             }
             _ => {

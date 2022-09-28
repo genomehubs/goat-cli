@@ -1,1 +1,1 @@
-initSidebarItems({"constant":[["TAX_RANKS","Taken from the NCBI taxdump on the date: 22.02.22."]],"struct":[["TaxRanks","The [`TaxRanks`] struct holds the NCBI taxon ranks defined in the [`TAX_RANKS`] const."]]});
+window.SIDEBAR_ITEMS = {"constant":[["TAX_RANKS","Taken from the NCBI taxdump on the date: 22.02.22."]],"struct":[["TaxRanks","The [`TaxRanks`] struct holds the NCBI taxon ranks defined in the [`TAX_RANKS`] const."]]};

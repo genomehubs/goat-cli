@@ -38,7 +38,7 @@ pub fn process_cli_args(
     let print_expression = matches.is_present("print-expression");
 
     let tax_rank = match matches.value_of("tax-rank") {
-        Some(t) => tax_ranks::TaxRanks::init().parse(t)?,
+        Some(t) => tax_ranks::TaxRanks::init().parse(t, false)?,
         None => "".to_string(),
     };
     let size = match matches.value_of("size") {
