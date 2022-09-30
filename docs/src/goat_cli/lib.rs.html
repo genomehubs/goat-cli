@@ -151,7 +151,6 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// Each tuple variant can store their respective</span>
 <span class="doccomment">/// [`BTreeMap`] databases.</span>
-
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">IndexType</span> {
     <span class="doccomment">/// Taxon search index. The historical main</span>
@@ -172,10 +171,11 @@
     }
 }
 
-<span class="doccomment">/// The type of result to return.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// This is true for both `taxon` and</span>
-<span class="doccomment">/// `assembly` indexes?</span>
+<span class="doccomment">/// The type of result to return in GoaT.</span>
+<span class="doccomment">/// </span>
+<span class="doccomment">/// Tax tree is a descendents call to the API,</span>
+<span class="doccomment">/// tax name is a single species, and tax lineage</span>
+<span class="doccomment">/// tracks back up the tree.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">TaxType</span> {
     <span class="doccomment">/// tax_tree() returns a node and all</span>

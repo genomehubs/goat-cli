@@ -4,6 +4,7 @@ use crate::utils::{
 };
 use crate::{IndexType, TaxType, GOAT_URL, TAXONOMY, UPPER_CLI_FILE_LIMIT, UPPER_CLI_SIZE_LIMIT};
 use anyhow::{bail, Result};
+use std::path::PathBuf;
 
 /// Take CLI arguments and parse them. Return a tuple of:
 ///
@@ -16,81 +17,112 @@ pub fn process_cli_args(
     index_type: IndexType,
 ) -> Result<(u64, Vec<String>, Vec<String>)> {
     // command line args same between taxon/assembly
-    let print_url = matches.is_present("url");
-    let print_goat_ui_url = matches.is_present("goat-ui-url");
-    let tax_tree_enum = match matches.is_present("descendents") {
+    let print_url = *matches.get_one::<bool>("url").expect("cli defaults false");
+    let print_goat_ui_url = *matches
+        .get_one::<bool>("goat-ui-url")
+        .expect("cli defaults false");
+    let tax_tree_enum = match *matches
+        .get_one::<bool>("descendents")
+        .expect("cli defaults false")
+    {
         true => TaxType::Tree,
         false => TaxType::Name,
     };
     // I think lineage is of limited value for assembly? but keep here anyways
-    let tax_lineage_enum = match matches.is_present("lineage") {
+    let tax_lineage_enum = match *matches.get_one::<bool>("lineage").unwrap_or(&false) {
         true => TaxType::Lineage,
         false => TaxType::Name,
     };
-    let include_estimates = matches.is_present("include-estimates");
-    let expression = match matches.value_of("expression") {
+    let include_estimates = *matches
+        .get_one::<bool>("include-estimates")
+        .expect("cli defaults false");
+    let expression = match matches.get_one::<String>("expression") {
         Some(s) => url::format_expression(s, index_type)?,
         None => "".to_string(),
     };
-    let variable_string = matches.value_of("variables");
+    // map needed to convert Option<String> -> Option<&str>
+    let variable_string = matches.get_one::<String>("variables").map(|x| &**x);
     // this output will differ depending on taxon/assembly
     // but keep cli arg the same
-    let print_expression = matches.is_present("print-expression");
+    let print_expression = *matches
+        .get_one::<bool>("print-expression")
+        .expect("cli defaults false");
 
-    let tax_rank = match matches.value_of("tax-rank") {
+    let tax_rank = match matches.get_one::<String>("tax-rank") {
         Some(t) => tax_ranks::TaxRanks::init().parse(t, false)?,
         None => "".to_string(),
     };
-    let size = match matches.value_of("size") {
-        Some(s) => s,
-        None => "0",
-    };
-    let ranks = match matches.value_of("ranks") {
-        Some(r) => r,
-        // only to stop progress panicking on newick.
-        None => "",
-    };
-    let tax_name_op = matches.value_of("taxon");
-    let filename_op = matches.value_of("file");
+    let size = *matches.get_one::<u64>("size").expect("cli default = 50");
+    let ranks = matches
+        .get_one::<String>("ranks")
+        .expect("cli default = none");
+    let tax_name_op = matches.get_one::<String>("taxon");
+    let filename_op = matches.get_one::<PathBuf>("file");
     let result = index_type.to_string();
     let summarise_values_by = "count";
 
     // command line args unique to taxon
 
-    let taxon_include_raw_values = matches.is_present("taxon-raw");
+    let taxon_include_raw_values = *matches.get_one::<bool>("taxon-raw").unwrap_or(&false);
     let taxon_tidy = match taxon_include_raw_values {
         true => true,
-        false => matches.is_present("taxon-tidy"),
+        false => *matches.get_one::<bool>("taxon-tidy").unwrap_or(&false),
     };
-    let taxon_assembly = matches.is_present("taxon-assembly");
-    let taxon_cvalues = matches.is_present("taxon-c-values");
-    let taxon_karyotype = matches.is_present("taxon-karyotype");
-    let taxon_gs = matches.is_present("taxon-genome-size");
-    let taxon_busco = matches.is_present("taxon-busco");
-    let taxon_gc_percent = matches.is_present("taxon-gc-percent");
-    let taxon_mitochondrion = matches.is_present("taxon-mitochondria");
-    let taxon_plastid = matches.is_present("taxon-plastid");
-    let taxon_ploidy = matches.is_present("taxon-ploidy");
-    let taxon_sex_determination = matches.is_present("taxon-sex-determination");
-    let taxon_legislation = matches.is_present("taxon-legislation");
-    let taxon_names = matches.is_present("taxon-names");
-    let taxon_target_lists = matches.is_present("taxon-target-lists");
-    let taxon_n50 = matches.is_present("taxon-n50");
-    let taxon_bioproject = matches.is_present("taxon-bioproject");
-    let taxon_gene_count = matches.is_present("taxon-gene-count");
-    let taxon_date = matches.is_present("taxon-date");
-    let taxon_country_list = matches.is_present("taxon-country-list");
-    let taxon_status = matches.is_present("taxon-status");
+    let taxon_assembly = *matches.get_one::<bool>("taxon-assembly").unwrap_or(&false);
+    let taxon_cvalues = *matches.get_one::<bool>("taxon-c-values").unwrap_or(&false);
+    let taxon_karyotype = *matches.get_one::<bool>("taxon-karyotype").unwrap_or(&false);
+    let taxon_gs = *matches
+        .get_one::<bool>("taxon-genome-size")
+        .unwrap_or(&false);
+    let taxon_busco = *matches.get_one::<bool>("taxon-busco").unwrap_or(&false);
+    let taxon_gc_percent = *matches
+        .get_one::<bool>("taxon-gc-percent")
+        .unwrap_or(&false);
+    let taxon_mitochondrion = *matches
+        .get_one::<bool>("taxon-mitochondria")
+        .unwrap_or(&false);
+    let taxon_plastid = *matches.get_one::<bool>("taxon-plastid").unwrap_or(&false);
+    let taxon_ploidy = *matches.get_one::<bool>("taxon-ploidy").unwrap_or(&false);
+    let taxon_sex_determination = *matches
+        .get_one::<bool>("taxon-sex-determination")
+        .unwrap_or(&false);
+    let taxon_legislation = *matches
+        .get_one::<bool>("taxon-legislation")
+        .unwrap_or(&false);
+    let taxon_names = *matches.get_one::<bool>("taxon-names").unwrap_or(&false);
+    let taxon_target_lists = *matches
+        .get_one::<bool>("taxon-target-lists")
+        .unwrap_or(&false);
+    let taxon_n50 = *matches.get_one::<bool>("taxon-n50").unwrap_or(&false);
+    let taxon_bioproject = *matches
+        .get_one::<bool>("taxon-bioproject")
+        .unwrap_or(&false);
+    let taxon_gene_count = *matches
+        .get_one::<bool>("taxon-gene-count")
+        .unwrap_or(&false);
+    let taxon_date = *matches.get_one::<bool>("taxon-date").unwrap_or(&false);
+    let taxon_country_list = *matches
+        .get_one::<bool>("taxon-country-list")
+        .unwrap_or(&false);
+    let taxon_status = *matches.get_one::<bool>("taxon-status").unwrap_or(&false);
 
     // command line args unique to assembly
-    let assembly_assembly = matches.is_present("assembly-assembly");
-    let assembly_karyotype = matches.is_present("assembly-karyotype");
-    let assembly_contig = matches.is_present("assembly-contig");
-    let assembly_scaffold = matches.is_present("assembly-scaffold");
-    let assembly_gc = matches.is_present("assembly-gc");
-    let assembly_gene = matches.is_present("assembly-gene-count");
-    let assembly_busco = matches.is_present("assembly-busco");
-    let assembly_btk = matches.is_present("assembly-btk");
+    let assembly_assembly = *matches
+        .get_one::<bool>("assembly-assembly")
+        .unwrap_or(&false);
+    let assembly_karyotype = *matches
+        .get_one::<bool>("assembly-karyotype")
+        .unwrap_or(&false);
+    let assembly_contig = *matches.get_one::<bool>("assembly-contig").unwrap_or(&false);
+    let assembly_scaffold = *matches
+        .get_one::<bool>("assembly-scaffold")
+        .unwrap_or(&false);
+    let assembly_gc = *matches.get_one::<bool>("assembly-gc").unwrap_or(&false);
+    let assembly_gene = *matches
+        .get_one::<bool>("assembly-gene-count")
+        .unwrap_or(&false);
+    let assembly_busco = *matches.get_one::<bool>("assembly-busco").unwrap_or(&false);
+    let assembly_btk = *matches.get_one::<bool>("assembly-btk").unwrap_or(&false);
 
     if print_expression {
         match index_type {
@@ -132,19 +164,12 @@ pub fn process_cli_args(
         assembly_btk,
     };
 
-    let size_int: u64;
-    match size.parse::<u64>() {
-        Ok(e) => {
-            size_int = e;
-            if e as usize > *UPPER_CLI_SIZE_LIMIT {
-                let limit_string = utils::pretty_print_usize(*UPPER_CLI_SIZE_LIMIT);
-                bail!(
-                    "Searches with more than {} results are not currently supported.",
-                    limit_string
-                )
-            }
-        }
-        Err(e) => bail!("Did you pass an integer to `--size`? Info: {}", e),
+    if size as usize > *UPPER_CLI_SIZE_LIMIT {
+        let limit_string = utils::pretty_print_usize(*UPPER_CLI_SIZE_LIMIT);
+        bail!(
+            "Searches with more than {} results are not currently supported.",
+            limit_string
+        )
     }
 
     // tree includes all descendents of a node
@@ -160,7 +185,7 @@ pub fn process_cli_args(
     match tax_name_op {
         Some(s) => {
             // catch empty string hanging here.
-            if s == "" {
+            if s.is_empty() {
                 bail!("Empty string found, please specify a taxon.")
             }
             url_vector = utils::parse_comma_separated(s)
@@ -215,5 +240,5 @@ pub fn process_cli_args(
     }
 
     // return the url vector
-    Ok((size_int, url_vector, url_vector_api))
+    Ok((size, url_vector, url_vector_api))
 }

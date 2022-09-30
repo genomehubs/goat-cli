@@ -37,7 +37,7 @@ impl<'a> TypeOf<'a> {
     fn check(&self, other: &str, variable: &str) -> Result<()> {
         // we will have to parse the `other` conditionally on what the
         // `TypeOf` is.
-        let _ = match self {
+        match self {
             TypeOf::Long => match other.parse::<i64>() {
                 Ok(_) => (),
                 Err(_) => bail!(format!("For variable \"{variable}\" in the expression, an input error was found. Pass an integer as a value.")),
@@ -61,7 +61,7 @@ impl<'a> TypeOf<'a> {
             // dates should be in a specified format
             // yyyy-mm-dd
             TypeOf::Date => {
-                let tokens = other.split("-").collect::<Vec<_>>();
+                let tokens = other.split('-').collect::<Vec<_>>();
                 ensure!(
                     tokens.len() == 1 || tokens.len() == 3,
                     "Improperly formatted date. Please make sure date is in the format yyyy-mm-dd, or yyyy."
@@ -82,7 +82,7 @@ impl<'a> TypeOf<'a> {
 
 impl<'a> fmt::Display for TypeOf<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match &*self {
+        match self {
             // do nothing with None at the moment.
             TypeOf::None => write!(f, "Please don't use yet! This variable needs fixing."),
             TypeOf::Long => write!(f, "!=, <, <=, =, ==, >, >="),
@@ -110,7 +110,7 @@ pub enum Function<'a> {
 
 impl<'a> fmt::Display for Function<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match &*self {
+        match self {
             Function::None => write!(f, ""),
             Function::Some(fun) => write!(f, "{}", fun.join(", ")),
         }
@@ -135,7 +135,7 @@ struct ColHeader(#[tabled(rename = "Expression Name")] &'static str);
 /// Print the table of GoaT variable data.
 pub fn print_variable_data(data: &BTreeMap<&'static str, Variable<'static>>) {
     // for some space
-    println!("");
+    println!();
     // map the header to a tuple combination
     // see https://github.com/zhiburt/tabled/blob/master/README.md
     let table_data = data
@@ -187,7 +187,7 @@ impl<'a> CLIexpression<'a> {
         let mut res_vec = Vec::new();
         // commands only accept AND? Rich!
         let re = Regex::new("AND").unwrap();
-        let splitter = SplitCaptures::new(&re, &self.inner);
+        let splitter = SplitCaptures::new(&re, self.inner);
         for state in splitter {
             let el = match state {
                 SplitState::Unmatched(s) => s,
@@ -196,7 +196,7 @@ impl<'a> CLIexpression<'a> {
             res_vec.push(el);
         }
         Self {
-            inner: &self.inner,
+            inner: self.inner,
             length: self.length,
             expression: res_vec,
         }
@@ -309,9 +309,9 @@ impl<'a> CLIexpression<'a> {
                     // trim strings
                     // replace rogue quotes (not sure why this is happening now, but was not before...)
                     // manually escape these...
-                    let variable = &curr_el_vec[0].trim().replace("\"", "").replace("'", "")[..];
+                    let variable = &curr_el_vec[0].trim().replace('\"', "").replace('\'', "")[..];
                     let operator = switch_string_to_url_encoding(curr_el_vec[1])?.trim();
-                    let value = &curr_el_vec[2].trim().replace("\"", "").replace("'", "")[..];
+                    let value = &curr_el_vec[2].trim().replace('\"', "").replace('\'', "")[..];
 
                     if !var_vec_check.contains(&variable)
                         && !var_vec_min_max_check.contains(&variable.to_string())
@@ -327,11 +327,11 @@ impl<'a> CLIexpression<'a> {
                             .chain(
                                 var_vec_min_max_check
                                     .iter()
-                                    .map(|e| String::from(e))
+                                    .map(String::from)
                                     .collect::<Vec<String>>()
                                     .iter(),
                             )
-                            .map(|e| String::from(e))
+                            .map(String::from)
                             .collect::<Vec<String>>();
 
                         let var_vec_mean = did_you_mean(&combined_checks, variable);
@@ -362,8 +362,8 @@ impl<'a> CLIexpression<'a> {
                     };
 
                     // if there are parentheses - i.e. in min()/max() functions
-                    let url_encoded_variable = variable.replace("(", "%28");
-                    let url_encoded_variable = url_encoded_variable.replace(")", "%29");
+                    let url_encoded_variable = variable.replace('(', "%28");
+                    let url_encoded_variable = url_encoded_variable.replace(')', "%29");
 
                     // if there are keywords, make sure they are a match
                     match keyword_enums {
@@ -371,11 +371,10 @@ impl<'a> CLIexpression<'a> {
                             // split on commas here
                             // and trim
                             let value_split_commas = value
-                                .split(",")
+                                .split(',')
                                 .map(|e| {
                                     let trimmed = e.trim();
-                                    let remove_bools = trimmed.replace("!", "");
-                                    remove_bools
+                                    trimmed.replace('!', "")
                                 })
                                 .collect::<Vec<String>>();
 
@@ -383,10 +382,10 @@ impl<'a> CLIexpression<'a> {
                             for val in &value_split_commas {
                                 let possibilities =
                                     k.iter().map(|e| String::from(*e)).collect::<Vec<_>>();
-                                let did_you_mean_str = did_you_mean(&possibilities, &val);
+                                let did_you_mean_str = did_you_mean(&possibilities, val);
 
                                 if let Some(value) = did_you_mean_str {
-                                    if value != val.to_owned() {
+                                    if value != *val {
                                         bail!("In your expression (RHS) you typed \"{}\" - did you mean \"{}\"?", val, value)
                                     }
                                 }
@@ -394,16 +393,15 @@ impl<'a> CLIexpression<'a> {
 
                             // now modify value_split_commas to parse parentheses
                             let parsed_value_split_commas = value
-                                .split(",")
+                                .split(',')
                                 .map(|e| {
                                     // trim again but keep bool flags
                                     let f = e.trim();
                                     // janky but will do for now.
-                                    let f = f.replace("(", "%28");
-                                    let f = f.replace(")", "%29");
-                                    let f = f.replace(" ", "%20");
-                                    let f = f.replace("!", "%21");
-                                    f
+                                    let f = f.replace('(', "%28");
+                                    let f = f.replace(')', "%29");
+                                    let f = f.replace(' ', "%20");
+                                    f.replace('!', "%21")
                                 })
                                 .collect::<Vec<String>>();
                             // build expression

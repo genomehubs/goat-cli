@@ -149,7 +149,7 @@
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">parsed_string</span> <span class="op">=</span> <span class="ident">String::new</span>();
 
-        <span class="kw">let</span> <span class="ident">split_vec</span> <span class="op">=</span> <span class="ident">parse_comma_separated</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">variables</span>);
+        <span class="kw">let</span> <span class="ident">split_vec</span> <span class="op">=</span> <span class="ident">parse_comma_separated</span>(<span class="self">self</span>.<span class="ident">variables</span>);
         <span class="comment">// check that all the strings in split_vec are real</span>
         <span class="kw">let</span> <span class="ident">var_vec_check</span> <span class="op">=</span> <span class="ident">reference_data</span>
             .<span class="ident">iter</span>()

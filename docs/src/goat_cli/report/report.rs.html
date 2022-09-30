@@ -426,6 +426,9 @@
 <span id="426">426</span>
 <span id="427">427</span>
 <span id="428">428</span>
+<span id="429">429</span>
+<span id="430">430</span>
+<span id="431">431</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils::variable_data</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils</span>::{<span class="ident">tax_ranks::TaxRanks</span>, <span class="ident">utils</span>, <span class="ident">variables::Variables</span>};
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">TaxType</span>, <span class="ident">GOAT_URL</span>, <span class="ident">TAXONOMY</span>};
@@ -492,7 +495,7 @@
     ];
     <span class="doccomment">/// Try and parse a string of options into the CLI.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// e.g. 1,10 =&gt;</span>
+    <span class="doccomment">/// e.g. 1,10 () =&gt;</span>
     <span class="doccomment">///     </span>
     <span class="doccomment">/// Opts {</span>
     <span class="doccomment">///     min: Some(1),</span>
@@ -513,7 +516,7 @@
     <span class="doccomment">/// TODO: test this</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">try_from_string</span>(<span class="ident">cli_opts</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">tokens</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">cli_opts</span>
-            .<span class="ident">split</span>(<span class="string">&quot;,&quot;</span>)
+            .<span class="ident">split</span>(<span class="string">&#39;,&#39;</span>)
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">e</span>.<span class="ident">trim</span>() {
                 <span class="string">&quot;&quot;</span> =&gt; <span class="prelude-val">None</span>,
                 <span class="kw">_</span> =&gt; <span class="prelude-val">Some</span>(<span class="ident">e</span>),
@@ -662,67 +665,66 @@
     <span class="doccomment">/// Constructor function for [`Record`].</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">matches</span>: <span class="kw-2">&amp;</span><span class="ident">clap::ArgMatches</span>, <span class="ident">report_type</span>: <span class="ident">ReportType</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="comment">// create the default struct</span>
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">report</span>: <span class="ident">Report</span> <span class="op">=</span> <span class="ident">Default::default</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">report</span>: <span class="ident">Report</span> <span class="op">=</span> <span class="ident">Report</span> {
+            <span class="ident">report_type</span>,
+            ..<span class="ident">Default::default</span>()
+        };
 
         <span class="comment">// fill the mandatory fields.</span>
-        <span class="ident">report</span>.<span class="ident">report_type</span> <span class="op">=</span> <span class="ident">report_type</span>;
         <span class="comment">// search from CLI</span>
-        <span class="kw">let</span> <span class="ident">search_op</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;taxon&quot;</span>);
+        <span class="kw">let</span> <span class="ident">search</span> <span class="op">=</span> <span class="ident">matches</span>
+            .<span class="ident">get_one</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>(<span class="string">&quot;taxon&quot;</span>)
+            .<span class="ident">expect</span>(<span class="string">&quot;cli requires input&quot;</span>);
         <span class="comment">// TODO: could also take from file</span>
-        <span class="ident">report</span>.<span class="ident">search</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">search_op</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">s</span>) =&gt; <span class="ident">utils::parse_comma_separated</span>(<span class="ident">s</span>),
-            <span class="prelude-val">None</span> =&gt; <span class="macro">bail!</span>(<span class="string">&quot;There was no taxon input.&quot;</span>),
-        };
+        <span class="ident">report</span>.<span class="ident">search</span> <span class="op">=</span> <span class="ident">utils::parse_comma_separated</span>(<span class="kw-2">&amp;</span><span class="ident">search</span>);
+
         <span class="comment">// safe to unwrap, as default is defined.</span>
-        <span class="ident">report</span>.<span class="ident">rank</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;rank&quot;</span>).<span class="ident">unwrap</span>().<span class="ident">to_string</span>();
+        <span class="ident">report</span>.<span class="ident">rank</span> <span class="op">=</span> <span class="ident">matches</span>
+            .<span class="ident">get_one</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>(<span class="string">&quot;rank&quot;</span>)
+            .<span class="ident">expect</span>(<span class="string">&quot;cli default = species&quot;</span>)
+            .<span class="ident">to_string</span>();
         <span class="comment">// taxon type will be by default tax_tree(). change this here</span>
         <span class="comment">// for future reference. But will require a flag on the cli.</span>
 
         <span class="comment">// the x string will be just a variable.</span>
-        <span class="kw">let</span> <span class="ident">x_variable</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;x-variable&quot;</span>);
+        <span class="kw">let</span> <span class="ident">x_variable</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">get_one</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>(<span class="string">&quot;x-variable&quot;</span>);
 
-        <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">x_variable</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">xvar</span>) =&gt; {
-                <span class="kw">let</span> <span class="ident">inner_x</span> <span class="op">=</span> <span class="ident">Variables::new</span>(<span class="ident">xvar</span>)
-                    .<span class="ident">parse_one</span>(<span class="kw-2">&amp;</span><span class="ident">variable_data::GOAT_TAXON_VARIABLE_DATA</span>)
-                    .<span class="ident">expect</span>(<span class="string">&quot;could not parse the x variable into `Report`.&quot;</span>);
-                <span class="comment">// assign to struct</span>
-                <span class="ident">report</span>.<span class="ident">x</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">inner_x</span>);
-            }
-            <span class="comment">// no assignmnt is fine.</span>
-            <span class="prelude-val">None</span> =&gt; (),
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">xvar</span>) <span class="op">=</span> <span class="ident">x_variable</span> {
+            <span class="kw">let</span> <span class="ident">inner_x</span> <span class="op">=</span>
+                <span class="ident">Variables::new</span>(<span class="ident">xvar</span>).<span class="ident">parse_one</span>(<span class="kw-2">&amp;</span><span class="ident">variable_data::GOAT_TAXON_VARIABLE_DATA</span>)<span class="question-mark">?</span>;
+            <span class="comment">// assign to struct</span>
+            <span class="ident">report</span>.<span class="ident">x</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">inner_x</span>);
         };
 
         <span class="comment">// parse size</span>
-        <span class="kw">let</span> <span class="ident">size</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;size&quot;</span>);
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">s</span>) <span class="op">=</span> <span class="ident">size</span> {
-            <span class="kw">let</span> <span class="ident">size_usize</span> <span class="op">=</span> <span class="ident">s</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
-            <span class="ident">report</span>.<span class="ident">size</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">size_usize</span>);
-        }
+        <span class="kw">let</span> <span class="ident">size</span> <span class="op">=</span> <span class="kw-2">*</span><span class="ident">matches</span>.<span class="ident">get_one</span>::<span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>(<span class="string">&quot;size&quot;</span>).<span class="ident">expect</span>(<span class="string">&quot;cli default = 10&quot;</span>);
+        <span class="ident">report</span>.<span class="ident">size</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">size</span>);
 
         <span class="comment">// descendents (default) or not?</span>
-        <span class="kw">let</span> <span class="ident">no_descendents</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;no-descendents&quot;</span>);
+        <span class="kw">let</span> <span class="ident">no_descendents</span> <span class="op">=</span> <span class="kw-2">*</span><span class="ident">matches</span>
+            .<span class="ident">get_one</span>::<span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>(<span class="string">&quot;no-descendents&quot;</span>)
+            .<span class="ident">expect</span>(<span class="string">&quot;cli default false&quot;</span>);
         <span class="kw">if</span> <span class="ident">no_descendents</span> {
             <span class="ident">report</span>.<span class="ident">taxon_type</span> <span class="op">=</span> <span class="ident">TaxType::Name</span>;
         }
 
         <span class="comment">// now the optionals.</span>
-        <span class="kw">let</span> <span class="ident">y_variable</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;y-variable&quot;</span>);
+        <span class="kw">let</span> <span class="ident">y_variable</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">get_one</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>(<span class="string">&quot;y-variable&quot;</span>);
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">y_var</span>) <span class="op">=</span> <span class="ident">y_variable</span> {
             <span class="ident">report</span>.<span class="ident">y</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">y_var</span>.<span class="ident">to_string</span>());
         }
         <span class="comment">// x options</span>
-        <span class="kw">let</span> <span class="ident">xopts</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;x-opts&quot;</span>);
+        <span class="kw">let</span> <span class="ident">xopts</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">get_one</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>(<span class="string">&quot;x-opts&quot;</span>);
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">x_opts</span>) <span class="op">=</span> <span class="ident">xopts</span> {
             <span class="ident">report</span>.<span class="ident">x_opts</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">Opts::try_from_string</span>(<span class="ident">x_opts</span>)<span class="question-mark">?</span>);
         }
         <span class="comment">// y options</span>
-        <span class="kw">let</span> <span class="ident">yopts</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;y-opts&quot;</span>);
+        <span class="kw">let</span> <span class="ident">yopts</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">get_one</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>(<span class="string">&quot;y-opts&quot;</span>);
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">y_opts</span>) <span class="op">=</span> <span class="ident">yopts</span> {
             <span class="ident">report</span>.<span class="ident">y_opts</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">Opts::try_from_string</span>(<span class="ident">y_opts</span>)<span class="question-mark">?</span>);
         }
         <span class="comment">// category for histogram.</span>
-        <span class="kw">let</span> <span class="ident">category</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;category&quot;</span>);
+        <span class="kw">let</span> <span class="ident">category</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">get_one</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>(<span class="string">&quot;category&quot;</span>);
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">cat</span>) <span class="op">=</span> <span class="ident">category</span> {
             <span class="comment">// check this variable against the various lists</span>
             <span class="kw">let</span> <span class="ident">parsed_taxon_rank</span> <span class="op">=</span> <span class="ident">TaxRanks::parse</span>(<span class="kw-2">&amp;</span><span class="ident">TaxRanks::init</span>(), <span class="ident">cat</span>, <span class="bool-val">true</span>);
@@ -763,7 +765,7 @@
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">url</span> <span class="op">=</span> <span class="ident">String::new</span>();
                 <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">GOAT_URL</span>;
                 <span class="comment">// add report API, and result=taxon</span>
-                <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="string">&quot;report?result=taxon&quot;</span>;
+                <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="string">&quot;report?result=taxon&quot;</span>;
                 <span class="comment">// it&#39;s a tree we&#39;re returning</span>
                 <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;&amp;report={}&quot;</span>, <span class="self">self</span>.<span class="ident">report_type</span>);
                 <span class="comment">// get a string of comma separated queries</span>
@@ -780,7 +782,7 @@
                 );
                 <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">x_value_source</span>;
                 <span class="comment">// default stuff for now</span>
-                <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="string">&quot;&amp;includeEstimates=true&quot;</span>;
+                <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="string">&quot;&amp;includeEstimates=true&quot;</span>;
                 <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;&amp;taxonomy={}&quot;</span>, <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">TAXONOMY</span>);
                 <span class="comment">// fix this for now, as only single requests can be submitted</span>
                 <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;&amp;queryId=goat_cli_{}&quot;</span>, <span class="ident">unique_ids</span>[<span class="number">0</span>]);
@@ -791,10 +793,10 @@
                 <span class="comment">// add base URL</span>
                 <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">GOAT_URL</span>;
                 <span class="comment">// it&#39;s a taxon report</span>
-                <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="string">&quot;report?result=taxon&quot;</span>;
+                <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="string">&quot;report?result=taxon&quot;</span>;
                 <span class="comment">// default stuff for now</span>
                 <span class="comment">// no estimates</span>
-                <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="string">&quot;&amp;includeEstimates=false&quot;</span>;
+                <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="string">&quot;&amp;includeEstimates=false&quot;</span>;
                 <span class="comment">// standard taxonomy</span>
                 <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;&amp;taxonomy={}&quot;</span>, <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">TAXONOMY</span>);
                 <span class="comment">// it&#39;s a table</span>
@@ -820,10 +822,10 @@
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">url</span> <span class="op">=</span> <span class="ident">String::new</span>();
                 <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">GOAT_URL</span>;
                 <span class="comment">// it&#39;s a taxon report</span>
-                <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="string">&quot;report?result=taxon&quot;</span>;
+                <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="string">&quot;report?result=taxon&quot;</span>;
                 <span class="comment">// default stuff for now</span>
                 <span class="comment">// no estimates</span>
-                <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="string">&quot;&amp;includeEstimates=false&quot;</span>;
+                <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="string">&quot;&amp;includeEstimates=false&quot;</span>;
                 <span class="comment">// standard taxonomy</span>
                 <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;&amp;taxonomy={}&quot;</span>, <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">TAXONOMY</span>);
                 <span class="comment">// it&#39;s a table</span>
@@ -840,7 +842,11 @@
                 <span class="kw">let</span> <span class="ident">cat</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">category</span>.<span class="ident">clone</span>().<span class="ident">unwrap</span>();
                 <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="macro">format!</span>(
                     <span class="string">&quot;&amp;x={}%28{}%29%20AND%20{}&amp;cat={}%5B{}%5D&quot;</span>,
-                    <span class="ident">taxon_type</span>, <span class="ident">taxa</span>, <span class="ident">variable</span>, <span class="ident">cat</span>, <span class="self">self</span>.<span class="ident">size</span>.<span class="ident">unwrap</span>(),
+                    <span class="ident">taxon_type</span>,
+                    <span class="ident">taxa</span>,
+                    <span class="ident">variable</span>,
+                    <span class="ident">cat</span>,
+                    <span class="self">self</span>.<span class="ident">size</span>.<span class="ident">unwrap</span>(),
                 );
 
                 <span class="comment">// add x options if any</span>

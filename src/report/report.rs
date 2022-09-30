@@ -64,7 +64,7 @@ impl Opts {
     ];
     /// Try and parse a string of options into the CLI.
     ///
-    /// e.g. 1,10 =>
+    /// e.g. 1,10 () =>
     ///     
     /// Opts {
     ///     min: Some(1),
@@ -85,7 +85,7 @@ impl Opts {
     /// TODO: test this
     pub fn try_from_string(cli_opts: &str) -> Result<Self> {
         let mut tokens: Vec<Option<_>> = cli_opts
-            .split(",")
+            .split(',')
             .map(|e| match e.trim() {
                 "" => None,
                 _ => Some(e),
@@ -234,67 +234,66 @@ impl Report {
     /// Constructor function for [`Record`].
     pub fn new(matches: &clap::ArgMatches, report_type: ReportType) -> Result<Self> {
         // create the default struct
-        let mut report: Report = Default::default();
+        let mut report: Report = Report {
+            report_type,
+            ..Default::default()
+        };
 
         // fill the mandatory fields.
-        report.report_type = report_type;
         // search from CLI
-        let search_op = matches.value_of("taxon");
+        let search = matches
+            .get_one::<String>("taxon")
+            .expect("cli requires input");
         // TODO: could also take from file
-        report.search = match search_op {
-            Some(s) => utils::parse_comma_separated(s),
-            None => bail!("There was no taxon input."),
-        };
+        report.search = utils::parse_comma_separated(&search);
+
         // safe to unwrap, as default is defined.
-        report.rank = matches.value_of("rank").unwrap().to_string();
+        report.rank = matches
+            .get_one::<String>("rank")
+            .expect("cli default = species")
+            .to_string();
         // taxon type will be by default tax_tree(). change this here
         // for future reference. But will require a flag on the cli.
 
         // the x string will be just a variable.
-        let x_variable = matches.value_of("x-variable");
+        let x_variable = matches.get_one::<String>("x-variable");
 
-        let _ = match x_variable {
-            Some(xvar) => {
-                let inner_x = Variables::new(xvar)
-                    .parse_one(&variable_data::GOAT_TAXON_VARIABLE_DATA)
-                    .expect("could not parse the x variable into `Report`.");
-                // assign to struct
-                report.x = Some(inner_x);
-            }
-            // no assignmnt is fine.
-            None => (),
+        if let Some(xvar) = x_variable {
+            let inner_x =
+                Variables::new(xvar).parse_one(&variable_data::GOAT_TAXON_VARIABLE_DATA)?;
+            // assign to struct
+            report.x = Some(inner_x);
         };
 
         // parse size
-        let size = matches.value_of("size");
-        if let Some(s) = size {
-            let size_usize = s.parse::<usize>()?;
-            report.size = Some(size_usize);
-        }
+        let size = *matches.get_one::<usize>("size").expect("cli default = 10");
+        report.size = Some(size);
 
         // descendents (default) or not?
-        let no_descendents = matches.is_present("no-descendents");
+        let no_descendents = *matches
+            .get_one::<bool>("no-descendents")
+            .expect("cli default false");
         if no_descendents {
             report.taxon_type = TaxType::Name;
         }
 
         // now the optionals.
-        let y_variable = matches.value_of("y-variable");
+        let y_variable = matches.get_one::<String>("y-variable");
         if let Some(y_var) = y_variable {
             report.y = Some(y_var.to_string());
         }
         // x options
-        let xopts = matches.value_of("x-opts");
+        let xopts = matches.get_one::<String>("x-opts");
         if let Some(x_opts) = xopts {
             report.x_opts = Some(Opts::try_from_string(x_opts)?);
         }
         // y options
-        let yopts = matches.value_of("y-opts");
+        let yopts = matches.get_one::<String>("y-opts");
         if let Some(y_opts) = yopts {
             report.y_opts = Some(Opts::try_from_string(y_opts)?);
         }
         // category for histogram.
-        let category = matches.value_of("category");
+        let category = matches.get_one::<String>("category");
         if let Some(cat) = category {
             // check this variable against the various lists
             let parsed_taxon_rank = TaxRanks::parse(&TaxRanks::init(), cat, true);
@@ -335,7 +334,7 @@ impl Report {
                 let mut url = String::new();
                 url += &GOAT_URL;
                 // add report API, and result=taxon
-                url += &"report?result=taxon";
+                url += "report?result=taxon";
                 // it's a tree we're returning
                 url += &format!("&report={}", self.report_type);
                 // get a string of comma separated queries
@@ -352,7 +351,7 @@ impl Report {
                 );
                 url += &x_value_source;
                 // default stuff for now
-                url += &"&includeEstimates=true";
+                url += "&includeEstimates=true";
                 url += &format!("&taxonomy={}", &*TAXONOMY);
                 // fix this for now, as only single requests can be submitted
                 url += &format!("&queryId=goat_cli_{}", unique_ids[0]);
@@ -363,10 +362,10 @@ impl Report {
                 // add base URL
                 url += &GOAT_URL;
                 // it's a taxon report
-                url += &"report?result=taxon";
+                url += "report?result=taxon";
                 // default stuff for now
                 // no estimates
-                url += &"&includeEstimates=false";
+                url += "&includeEstimates=false";
                 // standard taxonomy
                 url += &format!("&taxonomy={}", &*TAXONOMY);
                 // it's a table
@@ -392,10 +391,10 @@ impl Report {
                 let mut url = String::new();
                 url += &GOAT_URL;
                 // it's a taxon report
-                url += &"report?result=taxon";
+                url += "report?result=taxon";
                 // default stuff for now
                 // no estimates
-                url += &"&includeEstimates=false";
+                url += "&includeEstimates=false";
                 // standard taxonomy
                 url += &format!("&taxonomy={}", &*TAXONOMY);
                 // it's a table
@@ -412,7 +411,11 @@ impl Report {
                 let cat = self.category.clone().unwrap();
                 url += &format!(
                     "&x={}%28{}%29%20AND%20{}&cat={}%5B{}%5D",
-                    taxon_type, taxa, variable, cat, self.size.unwrap(),
+                    taxon_type,
+                    taxa,
+                    variable,
+                    cat,
+                    self.size.unwrap(),
                 );
 
                 // add x options if any

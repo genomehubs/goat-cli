@@ -17,7 +17,7 @@ pub async fn search(
     index_type: IndexType,
 ) -> Result<()> {
     let (_size_int, _url_vector, url_vector_api) =
-        cli_matches::process_cli_args(matches, "search", unique_ids.clone(), index_type.clone())?;
+        cli_matches::process_cli_args(matches, "search", unique_ids.clone(), index_type)?;
     let concurrent_requests = url_vector_api.len();
 
     // print count warnings.

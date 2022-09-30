@@ -1,10 +1,11 @@
 // Max Brown
 // Wellcome Sanger Institute: 2022
 
-use anyhow::{Result};
-use clap::{crate_version, AppSettings, Arg, Command};
+use std::path::PathBuf;
+
+use anyhow::Result;
+use clap::{crate_version, Arg, Command, value_parser};
 use futures::try_join;
-use tokio;
 
 use goat_cli::{
     count, lookup, progress,
@@ -20,8 +21,8 @@ async fn main() -> Result<()> {
     // global helps for both assembly/taxon subcommands.
     let upper_file_limit = pretty_print_usize(*UPPER_CLI_FILE_LIMIT);
     let upper_cli_limit = pretty_print_usize(*UPPER_CLI_SIZE_LIMIT);
-    let taxon_file_or_lookup_help = &format!("A file of NCBI taxonomy ID's (tips) and/or binomial names.\nEach line should contain a single entry.\nFile size is limited to {} entries.", upper_file_limit)[..];
-    let taxon_size_help = &format!("The number of results to return. Max {} currently.", upper_cli_limit)[..];
+    let taxon_file_or_lookup_help = format!("A file of NCBI taxonomy ID's (tips) and/or binomial names.\nEach line should contain a single entry.\nFile size is limited to {} entries.", upper_file_limit);
+    let taxon_size_help = format!("The number of results to return. Max {} currently.", upper_cli_limit);
 
     let taxon_search_and_count = |name, about| {
         Command::new(name) 
@@ -30,7 +31,6 @@ async fn main() -> Result<()> {
                 Arg::new("taxon")
                     .short('t')
                     .long("taxon")
-                    .takes_value(true)
                     .required_unless_present_any(["file", "print-expression", "variables"])
                     .help("The taxon to search. An NCBI taxon ID, or the name of a taxon at any rank."),
             )
@@ -38,15 +38,14 @@ async fn main() -> Result<()> {
                 Arg::new("file")
                     .short('f')
                     .long("file")
-                    .takes_value(true)
+                    .value_parser(value_parser!(PathBuf))
                     .required_unless_present_any(["taxon", "print-expression", "variables"])
-                    .help(taxon_file_or_lookup_help),
+                    .help(taxon_file_or_lookup_help.clone()),
             )
             .arg(
                 Arg::new("variables")
                     .short('v')
                     .long("variables")
-                    .takes_value(true)
                     .required_unless_present_any(["file", "print-expression", "taxon"])
                     .help("Variable parser. Input a comma separated string of variables.")
             )
@@ -54,13 +53,14 @@ async fn main() -> Result<()> {
                 Arg::new("size")
                     .long("size")
                     .default_value("50")
-                    .help(taxon_size_help),
+                    .value_parser(value_parser!(u64))
+                    .help(taxon_size_help.clone()),
             )
             .arg(
                 Arg::new("ranks")
                     .short('R')
                     .long("ranks")
-                    .possible_values(&["none", "subspecies", "species", "genus", "family", "order", "class", "phylum", "kingdom", "superkingdom"])
+                    .value_parser(["none", "subspecies", "species", "genus", "family", "order", "class", "phylum", "kingdom", "superkingdom"])
                     .default_value("none")
                     .help("Choose a rank to display with the results. All ranks up to the given rank are displayed.")
             )
@@ -68,14 +68,12 @@ async fn main() -> Result<()> {
                 Arg::new("expression")
                     .short('e')
                     .long("expression")
-                    .takes_value(true)
                     .required(false)
                     .help("Use an expression to filter results server-side.")
             )
             .arg(
                 Arg::new("tax-rank")
                     .long("tax-rank")
-                    .takes_value(true)
                     .required(false)
                     .help("The taxonomic rank to return the results at.")
             )
@@ -84,30 +82,35 @@ async fn main() -> Result<()> {
                 Arg::new("taxon-assembly")
                     .short('a')
                     .long("assembly")
-                    .help("Print assembly data (assembly span, assembly level)"),
+                    .action(clap::ArgAction::SetTrue)
+                    .help("Print assembly data (assembly span, assembly level)."),
             )
             .arg(
                 Arg::new("taxon-busco")
                     .short('b')
                     .long("busco")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print BUSCO estimates."),
             )
             .arg(
                 Arg::new("taxon-gc-percent")
                     .short('g') 
                     .long("gc-percent")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print GC%.")
             )
             .arg(
                 Arg::new("taxon-karyotype")
                     .short('k')
                     .long("karyotype")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print karyotype data (chromosome number & haploid number)."),
             )
             .arg(
                 Arg::new("taxon-genome-size")
                     .short('G')
                     .long("genome-size")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print genome size data."),
             )
             // further display levels
@@ -115,135 +118,158 @@ async fn main() -> Result<()> {
                 Arg::new("taxon-bioproject")
                     .short('B')
                     .long("bioproject")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print the bioproject and biosample ID of records.")
             )
             .arg(
                 Arg::new("taxon-n50")
                     .short('N')
                     .long("n50")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print the contig & scaffold n50 of assemblies.")
             )
             .arg(
                 Arg::new("taxon-date")
                     .short('D')
                     .long("date")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print EBP & assembly dates.")
             )
             .arg(
                 Arg::new("taxon-gene-count")
                     .long("gene-count")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print gene count data.")
             )
             .arg(
                 Arg::new("taxon-mitochondria")
                     .short('m')
                     .long("mitochondria")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print mitochondrial genome assembly size & GC%.")
             )
             .arg(
                 Arg::new("taxon-plastid")
                     .short('p')
                     .long("plastid")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print plastid genome assembly size & GC%.")
             )
             .arg(
                 Arg::new("taxon-sex-determination")
                     .short('S')
                     .long("sex-determination")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print sex determination data."),
             )
             .arg(
                 Arg::new("taxon-ploidy")
                     .short('P')
                     .long("ploidy")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print ploidy estimates.")
             )
             .arg(
                 Arg::new("taxon-c-values")
                     .short('c')
                     .long("c-values")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print c-value data."),
             )
             .arg(
                 Arg::new("taxon-legislation")
                     .long("legislation")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print legislation data."),
             )
             .arg(
                 Arg::new("lineage")
                     .short('l')
                     .long("lineage")
+                    .action(clap::ArgAction::SetTrue)
                     .conflicts_with("descendents")
                     .help("Displays lineage information. I.e. from this node in the tree go back and give all the nodes to the root. Conflicts with descendents."),
             )
             .arg(
                 Arg::new("taxon-target-lists")
                     .long("target-lists")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print target list data associated with each taxon.")
             )
             .arg(
                 Arg::new("taxon-country-list")
                     .short('C')
                     .long("country-list")
+                    .action(clap::ArgAction::SetTrue)
                     // what's the best description for this?
                     .help("Print list of countries where taxon is found.")
             )
             .arg(
                 Arg::new("taxon-status")
                     .long("status")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print all data associated with how far this taxon has progressed with genomic sequencing.\nThis includes sample collection, acquisition, progress in sequencing, and whether submitted to INSDC.")
             )
             .arg(
                 Arg::new("taxon-names")
                     .short('n')
                     .long("names")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print all associated name data (synonyms, Tree of Life ID, and common names)."),
             )
             .arg(
                 Arg::new("taxon-raw")
                     .short('r')
                     .long("raw")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print raw values (i.e. no aggregation/summary)."),
             )
             .arg(
                 Arg::new("descendents")
                     .short('d')
                     .long("descendents")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Get information for all descendents of a common ancestor."),
             )
             .arg(
                 Arg::new("taxon-tidy")
                     .long("tidy")
                     .short('T')
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print data in tidy format.")
             )
             .arg(
                 Arg::new("include-estimates")
                     .short('i')
                     .long("include-estimates")
+                    .action(clap::ArgAction::SetTrue)
                     .conflicts_with("raw")
                     .help("Include ancestral estimates. Omitting this flag includes only direct estimates from a taxon. Cannot be used with --raw.")
             )
             .arg(
                 Arg::new("print-expression")
                     .long("print-expression")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print all variables in GoaT currently, with their associated variants.\nUseful for construction of expressions.")
             )
             .arg(
                 Arg::new("progress-bar")
                     .long("progress-bar")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Add a progress bar to large queries, to estimate time left.")
             )
             .arg(
                 Arg::new("url")
                     .short('u')
                     .long("url")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print the underlying GoaT API URL(s). Useful for debugging."),
             )
             .arg(
                 Arg::new("goat-ui-url")
                     .short('U')
                     .long("goat-ui-url")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print the underlying GoaT UI URL(s). View on the browser!"),
             )
         };
@@ -255,7 +281,6 @@ async fn main() -> Result<()> {
                 Arg::new("taxon")
                     .short('t')
                     .long("taxon")
-                    .takes_value(true)
                     .required_unless_present_any(["file", "print-expression", "variables"])
                     .help("The taxon to search. An NCBI taxon ID, or the name of a taxon at any rank."),
             )
@@ -263,16 +288,15 @@ async fn main() -> Result<()> {
                 Arg::new("file")
                     .short('f')
                     .long("file")
-                    .takes_value(true)
+                    .value_parser(value_parser!(PathBuf))
                     .required_unless_present_any(["taxon", "print-expression", "variables"])
-                    .help(taxon_file_or_lookup_help),
+                    .help(taxon_file_or_lookup_help.clone()),
             )
             .arg(
                 // will require a new database
                 Arg::new("variables")
                     .short('v')
                     .long("variables")
-                    .takes_value(true)
                     .required_unless_present_any(["file", "print-expression", "taxon"])
                     .help("Variable parser. Input a comma separated string of variables.")
             )
@@ -280,13 +304,14 @@ async fn main() -> Result<()> {
                 Arg::new("size")
                     .long("size")
                     .default_value("50")
-                    .help(taxon_size_help),
+                    .value_parser(value_parser!(u64))
+                    .help(taxon_size_help.clone()),
             )
             .arg(
                 Arg::new("ranks")
                     .short('R')
                     .long("ranks")
-                    .possible_values(&["none", "subspecies", "species", "genus", "family", "order", "class", "phylum", "kingdom", "superkingdom"])
+                    .value_parser(["none", "subspecies", "species", "genus", "family", "order", "class", "phylum", "kingdom", "superkingdom"])
                     .default_value("none")
                     .help("Choose a rank to display with the results. All ranks up to the given rank are displayed.")
             )
@@ -295,14 +320,12 @@ async fn main() -> Result<()> {
                 Arg::new("expression")
                     .short('e')
                     .long("expression")
-                    .takes_value(true)
                     .required(false)
                     .help("Use an expression to filter results server-side.")
             )
             .arg(
                 Arg::new("tax-rank")
                     .long("tax-rank")
-                    .takes_value(true)
                     .required(false)
                     .help("The taxonomic rank to return the results at.")
             )
@@ -313,80 +336,94 @@ async fn main() -> Result<()> {
                     .conflicts_with("descendents")
                     .help("Displays lineage information. I.e. from this node in the tree go back and give all the nodes to the root. Conflicts with descendents."),
             )
+            // flags
             .arg(
                 Arg::new("assembly-assembly")
                     .short('a')
                     .long("assembly")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print assembly data (span & level)"),
             )
             .arg(
                 Arg::new("assembly-karyotype")
                     .short('k')
                     .long("karyotype")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print karyotype data (chromosome number only)."),
             )
             .arg(
                 Arg::new("assembly-contig")
                     .short('c')
                     .long("contig")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print contig data (count, l50, n50)."),
             )
             .arg(
                 Arg::new("assembly-scaffold")
                     .short('s')
                     .long("scaffold")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print scaffold data (count, l50, n50)."),
             )
             .arg(
                 Arg::new("assembly-gene-count")
                     .short('g')
                     .long("gene-count")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print gene count data (gene count, non-coding gene count)."),
             )
             .arg(
                 Arg::new("assembly-busco")
                     .short('b')
                     .long("busco")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print BUSCO data (BUSCO completeness, lineage, and string)."),
             )
             .arg(
                 Arg::new("assembly-btk")
                     .long("btk")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print BlobToolKit data (no-hit, target)."),
             )
             .arg(
                 Arg::new("descendents")
                     .short('d')
                     .long("descendents")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Get information for all descendents of a common ancestor."),
             )
             .arg(
                 Arg::new("include-estimates")
                     .short('i')
                     .long("include-estimates")
+                    .action(clap::ArgAction::SetTrue)
                     .conflicts_with("raw")
                     .help("Include ancestral estimates. Omitting this flag includes only direct estimates from a taxon. Cannot be used with --raw.")
             )
             .arg(
                 Arg::new("print-expression")
                     .long("print-expression")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print all variables in GoaT currently, with their associated variants.\nUseful for construction of expressions.")
             )
             .arg(
                 Arg::new("progress-bar")
                     .long("progress-bar")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Add a progress bar to large queries, to estimate time left.")
             )
             .arg(
                 Arg::new("url")
                     .short('u')
                     .long("url")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print the underlying GoaT API URL(s). Useful for debugging."),
             )
             .arg(
                 Arg::new("goat-ui-url")
                     .short('U')
                     .long("goat-ui-url")
+                    .action(clap::ArgAction::SetTrue)
                     .help("Print the underlying GoaT UI URL(s). View on the browser!"),
             )
     };
@@ -398,7 +435,6 @@ async fn main() -> Result<()> {
         .version(crate_version!())
         .propagate_version(true)
         .arg_required_else_help(true)
-        .global_setting(AppSettings::DeriveDisplayOrder)
         .author("Max Brown, Richard Challis, Sujai Kumar, Cibele Sotero-Caio <goat@genomehubs.org>")
         .about("Genomes on a Tree. Query metadata across the tree of life.\n\nFor a tutorial on usage, visit: https://github.com/genomehubs/goat-cli/wiki\nVisit the GoaT website here: https://goat.genomehubs.org/")
         // using a taxon index
@@ -419,7 +455,6 @@ async fn main() -> Result<()> {
                                 Arg::new("taxon")
                                     .short('t')
                                     .long("taxon")
-                                    .takes_value(true)
                                     .required_unless_present("file")
                                     .help("The taxon to search. An NCBI taxon ID, or the name of a taxon at any rank."),
                             )
@@ -427,14 +462,15 @@ async fn main() -> Result<()> {
                                 Arg::new("file")
                                     .short('f')
                                     .long("file")
-                                    .takes_value(true)
+                                    .value_parser(value_parser!(PathBuf))
                                     .required_unless_present_any(["taxon"])
-                                    .help(taxon_file_or_lookup_help),
+                                    .help(taxon_file_or_lookup_help.clone()),
                             )
                             .arg(
                                 Arg::new("url")
                                     .short('u')
                                     .long("url")
+                                    .action(clap::ArgAction::SetTrue)
                                     .help("Print lookup URL.")
                             )
                             .arg(
@@ -442,6 +478,7 @@ async fn main() -> Result<()> {
                                     .short('s')
                                     .long("size")
                                     .default_value("10")
+                                    .value_parser(value_parser!(u64))
                                     .help("The number of results to return."),
                             )
                     )
@@ -452,7 +489,6 @@ async fn main() -> Result<()> {
                                 Arg::new("taxon")
                                     .short('t')
                                     .long("taxon")
-                                    .takes_value(true)
                                     .required_unless_present("file")
                                     .help("The taxon to return a newick of. Multiple taxa will return the joint tree."),
                             )
@@ -460,6 +496,7 @@ async fn main() -> Result<()> {
                                 Arg::new("url")
                                     .short('u')
                                     .long("url")
+                                    .action(clap::ArgAction::SetTrue)
                                     .help("Print report URL.")
                             )
                             .arg(
@@ -467,12 +504,13 @@ async fn main() -> Result<()> {
                                     .short('r')
                                     .long("rank")
                                     .default_value("species")
-                                    .possible_values(&["species", "genus", "family", "order"])
+                                    .value_parser(["species", "genus", "family", "order"])
                                     .help("The rank of the results to return."),
                             )
                             .arg(
                                 Arg::new("progress-bar")
                                     .long("progress-bar")
+                                    .action(clap::ArgAction::SetTrue)
                                     .help("Add a progress bar to large queries, to estimate time left.")
                             ),
                     )
@@ -483,7 +521,6 @@ async fn main() -> Result<()> {
                                 Arg::new("taxon")
                                     .short('t')
                                     .long("taxon")
-                                    .takes_value(true)
                                     .required_unless_present("file")
                                     .help("The taxon to return a histogram of. Multiple taxa will return the joint histogram."),
                             )
@@ -491,12 +528,14 @@ async fn main() -> Result<()> {
                                 Arg::new("url")
                                     .short('u')
                                     .long("url")
+                                    .action(clap::ArgAction::SetTrue)
                                     .help("Print report URL.")
                             )
                             .arg(
                                 Arg::new("no-descendents")
                                     .short('n')
                                     .long("no-descendents")
+                                    .action(clap::ArgAction::SetTrue)
                                     .help("If a taxon is supplied, do not return values for its descendents (i.e. a tax_name() call).")
                             )
                             .arg(
@@ -504,29 +543,35 @@ async fn main() -> Result<()> {
                                     .short('r')
                                     .long("rank")
                                     .default_value("species")
-                                    .possible_values(&["species", "genus", "family", "order"])
+                                    .value_parser(["species", "genus", "family", "order"])
                                     .help("The number of results to return."),
                             )
                             .arg(
                                 Arg::new("x-variable")
                                     .short('x')
                                     .long("x-variable")
-                                    .takes_value(true)
                                     .required(true)
                                     .help("The name of the x variable."),
+                            )
+                            .arg(
+                                Arg::new("size")
+                                    .short('s')
+                                    .long("size")
+                                    .default_value("10")
+                                    .value_parser(value_parser!(usize))
+                                    .help("The number of category levels to return."),
                             )
                             .arg(
                                 Arg::new("x-opts")
                                     .short('o')
                                     .long("opts")
-                                    .takes_value(true)
                                     .required(false)
                                     .help("The options for the variable axis. A comma separated string of options in the order:
 \t1. minimum value
 \t2. maximum value
 \t3. tick count
 \t4. scale (linear, sqrt, log10, log2, log, proportion, or ordinal)
-\t5. axis title\n"),
+\t5. axis title\nE.g. ',,20' is 20 bins. '1,10,5' is start at 1, end at 10, with 5 bins."),
                             )
                     )
                     .subcommand(
@@ -536,7 +581,6 @@ async fn main() -> Result<()> {
                                 Arg::new("taxon")
                                     .short('t')
                                     .long("taxon")
-                                    .takes_value(true)
                                     .required_unless_present("file")
                                     .help("The taxon to return a categorical histogram of. Multiple taxa will return the joint histogram."),
                             )
@@ -544,12 +588,14 @@ async fn main() -> Result<()> {
                                 Arg::new("url")
                                     .short('u')
                                     .long("url")
+                                    .action(clap::ArgAction::SetTrue)
                                     .help("Print report URL.")
                             )
                             .arg(
                                 Arg::new("no-descendents")
                                     .short('n')
                                     .long("no-descendents")
+                                    .action(clap::ArgAction::SetTrue)
                                     .help("If a taxon is supplied, do not return values for its descendents (i.e. a tax_name() call).")
                             )
                             .arg(
@@ -557,14 +603,13 @@ async fn main() -> Result<()> {
                                     .short('r')
                                     .long("rank")
                                     .default_value("species")
-                                    .possible_values(&["species", "genus", "family", "order"])
+                                    .value_parser(["species", "genus", "family", "order"])
                                     .help("The rank of the results to return."),
                             )
                             .arg(
                                 Arg::new("x-variable")
                                     .short('x')
                                     .long("x-variable")
-                                    .takes_value(true)
                                     .required(true)
                                     .help("The name of the x variable."),
                             )
@@ -572,7 +617,6 @@ async fn main() -> Result<()> {
                                 Arg::new("category")
                                     .short('c')
                                     .long("category")
-                                    .takes_value(true)
                                     .required(true)
                                     .help("The category with which to group the histogram over."),
                             )
@@ -581,13 +625,13 @@ async fn main() -> Result<()> {
                                     .short('s')
                                     .long("size")
                                     .default_value("10")
+                                    .value_parser(value_parser!(usize))
                                     .help("The number of category levels to return."),
                             )
                             .arg(
                                 Arg::new("x-opts")
                                     .short('o')
                                     .long("opts")
-                                    .takes_value(true)
                                     .required(false)
                                     .help("The options for the variable axis. A comma separated string of options in the order:
 \t1. minimum value
@@ -598,7 +642,6 @@ async fn main() -> Result<()> {
                             )
                     )
             )
-        // alright, so what subcommands go here?
         .subcommand(
             Command::new("assembly")
                     .arg_required_else_help(true)
@@ -616,7 +659,6 @@ async fn main() -> Result<()> {
                                     Arg::new("taxon")
                                         .short('t')
                                         .long("taxon")
-                                        .takes_value(true)
                                         .required_unless_present("file")
                                         .help("The taxon to search. An NCBI taxon ID, or the name of a taxon at any rank."),
                                 )
@@ -624,7 +666,7 @@ async fn main() -> Result<()> {
                                     Arg::new("file")
                                         .short('f')
                                         .long("file")
-                                        .takes_value(true)
+                                        .value_parser(value_parser!(PathBuf))
                                         .required_unless_present_any(["taxon"])
                                         .help(taxon_file_or_lookup_help),
                                 )
@@ -632,6 +674,7 @@ async fn main() -> Result<()> {
                                     Arg::new("url")
                                         .short('u')
                                         .long("url")
+                                        .action(clap::ArgAction::SetTrue)
                                         .help("Print lookup URL.")
                                 )
                                 .arg(
@@ -639,6 +682,7 @@ async fn main() -> Result<()> {
                                         .short('s')
                                         .long("size")
                                         .default_value("10")
+                                        .value_parser(value_parser!(u64))
                                         .help("The number of results to return."),
                                 )
                     )
@@ -648,51 +692,51 @@ async fn main() -> Result<()> {
     // nested matching on subcommands
     match matches.subcommand() {
         // outer == taxon/assembly
-        Some(("taxon", matches)) => match matches.subcommand() {
+        Some(("taxon", taxon_matches)) => match taxon_matches.subcommand() {
             // inner are all the taxon matches here.
-            Some(("search", matches)) => {
-                let progress_bar = matches.is_present("progress-bar");
-                let unique_ids = generate_unique_strings(matches, IndexType::Taxon)?;
+            Some(("search", taxon_search_matches)) => {
+                let progress_bar = *taxon_search_matches.get_one::<bool>("progress-bar").expect("cli default false");
+                let unique_ids = generate_unique_strings(taxon_search_matches, IndexType::Taxon)?;
 
                 match progress_bar {
                     true => {
                         try_join!(
-                            search::search(&matches, unique_ids.clone(), IndexType::Taxon),
-                            progress::progress_bar(&matches, "search", unique_ids, IndexType::Taxon)
+                            search::search(taxon_search_matches, unique_ids.clone(), IndexType::Taxon),
+                            progress::progress_bar(taxon_search_matches, "search", unique_ids, IndexType::Taxon)
                         )?;
                     }
                     false => {
-                        let _ = search::search(&matches, unique_ids, IndexType::Taxon).await?;
+                        search::search(taxon_search_matches, unique_ids, IndexType::Taxon).await?;
                     }
                 }
             }
-            Some(("count", matches)) => {
-                let unique_ids = generate_unique_strings(matches, IndexType::Taxon)?;
-                count::count(&matches, true, false, unique_ids, IndexType::Taxon).await?;
+            Some(("count", taxon_count_matches)) => {
+                let unique_ids = generate_unique_strings(taxon_count_matches, IndexType::Taxon)?;
+                count::count(taxon_count_matches, true, false, unique_ids, IndexType::Taxon).await?;
             }
-            Some(("lookup", matches)) => {
-                lookup::lookup(&matches, true, IndexType::Taxon).await?;
+            Some(("lookup", taxon_lookup_matches)) => {
+                lookup::lookup(taxon_lookup_matches, true, IndexType::Taxon).await?;
             }
-            Some(("hist", matches)) => {
-                let unique_ids = generate_unique_strings(matches, IndexType::Taxon)?;
-                report::fetch::fetch_report(matches, unique_ids, ReportType::Histogram).await?;
+            Some(("hist", taxon_hist_matches)) => {
+                let unique_ids = generate_unique_strings(taxon_hist_matches, IndexType::Taxon)?;
+                report::fetch::fetch_report(taxon_hist_matches, unique_ids, ReportType::Histogram).await?;
             }
-            Some(("cat-hist", matches)) => {
-                let unique_ids = generate_unique_strings(matches, IndexType::Taxon)?;
-                report::fetch::fetch_report(matches, unique_ids, ReportType::CategoricalHistogram).await?;
+            Some(("cat-hist", taxon_cat_hist_matches)) => {
+                let unique_ids = generate_unique_strings(taxon_cat_hist_matches, IndexType::Taxon)?;
+                report::fetch::fetch_report(taxon_cat_hist_matches, unique_ids, ReportType::CategoricalHistogram).await?;
             }
-            Some(("newick", matches)) => {
-                let progress_bar = matches.is_present("progress-bar");
-                let unique_ids = generate_unique_strings(matches, IndexType::Taxon)?;
+            Some(("newick", taxon_newick_matches)) => {
+                let progress_bar = *taxon_newick_matches.get_one::<bool>("progress-bar").expect("cli detault false");
+                let unique_ids = generate_unique_strings(taxon_newick_matches, IndexType::Taxon)?;
 
                 match progress_bar {
                     true => {
                         try_join!(
-                            report::fetch::fetch_report(matches, unique_ids.clone(), ReportType::Newick),
-                            progress::progress_bar(matches, "newick", unique_ids, IndexType::Taxon)
+                            report::fetch::fetch_report(taxon_newick_matches, unique_ids.clone(), ReportType::Newick),
+                            progress::progress_bar(taxon_newick_matches, "newick", unique_ids, IndexType::Taxon)
                         )?;
                     }
-                    false => report::fetch::fetch_report(matches, unique_ids, ReportType::Newick).await?,
+                    false => report::fetch::fetch_report(taxon_newick_matches, unique_ids, ReportType::Newick).await?,
                 }
             }
             _ => {
@@ -700,30 +744,30 @@ async fn main() -> Result<()> {
             }
         },
         // and now assembly
-        Some(("assembly", matches)) => match matches.subcommand() {
+        Some(("assembly", assembly_matches)) => match assembly_matches.subcommand() {
             // and the three implemented subcommands currently.
-            Some(("search", matches)) => {
-                let progress_bar = matches.is_present("progress-bar");
-                let unique_ids = generate_unique_strings(matches, IndexType::Assembly)?;
+            Some(("search", assembly_search_matches)) => {
+                let progress_bar = *assembly_search_matches.get_one::<bool>("progress-bar").expect("cli detault false");
+                let unique_ids = generate_unique_strings(assembly_search_matches, IndexType::Assembly)?;
 
                 match progress_bar {
                     true => {
                         try_join!(
-                            search::search(&matches, unique_ids.clone(), IndexType::Assembly),
-                            progress::progress_bar(&matches, "search", unique_ids, IndexType::Assembly)
+                            search::search(assembly_search_matches, unique_ids.clone(), IndexType::Assembly),
+                            progress::progress_bar(assembly_search_matches, "search", unique_ids, IndexType::Assembly)
                         )?;
                     }
                     false => {
-                        let _ = search::search(&matches, unique_ids, IndexType::Assembly).await?;
+                        search::search(assembly_search_matches, unique_ids, IndexType::Assembly).await?;
                     }
                 }
             }
-            Some(("count", matches)) => {
-                let unique_ids = generate_unique_strings(matches, IndexType::Assembly)?;
-                count::count(&matches, true, false, unique_ids, IndexType::Assembly).await?;
+            Some(("count", assembly_count_matches)) => {
+                let unique_ids = generate_unique_strings(assembly_count_matches, IndexType::Assembly)?;
+                count::count(assembly_count_matches, true, false, unique_ids, IndexType::Assembly).await?;
             }
-            Some(("lookup", matches)) => {
-                lookup::lookup(&matches, true, IndexType::Assembly).await?;
+            Some(("lookup", assembly_lookup_matches)) => {
+                lookup::lookup(assembly_lookup_matches, true, IndexType::Assembly).await?;
             }
             _ => unreachable!(),
         },

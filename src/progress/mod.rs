@@ -36,7 +36,7 @@ pub async fn progress_bar(
         // as newick only supports single url calls right now.
         // this is really bad coding...
         "newick" => (0u64, vec!["init".to_string()], vec!["init".to_string()]),
-        other => cli_matches::process_cli_args(matches, other, unique_ids.clone(), index_type.clone())?,
+        other => cli_matches::process_cli_args(matches, other, unique_ids.clone(), index_type)?,
     };
 
     ensure!(
@@ -62,8 +62,8 @@ pub async fn progress_bar(
 
     // add the query ID's to a vec
     let mut query_id_vec = Vec::new();
-    for i in 0..concurrent_requests {
-        let query_id = format!("{}progress?queryId=goat_cli_{}", *GOAT_URL, unique_ids[i]);
+    for i in unique_ids.iter().take(concurrent_requests) {
+        let query_id = format!("{}progress?queryId=goat_cli_{}", *GOAT_URL, i);
         query_id_vec.push(query_id);
     }
 
@@ -97,23 +97,12 @@ pub async fn progress_bar(
                             let v: Value = serde_json::from_str(&body)?;
 
                             match &v["progress"] {
-                                Value::Null => Ok(None),
-                                Value::Bool(_b) => Ok(None),
-                                Value::Number(_n) => Ok(None),
-                                Value::String(_s) => Ok(None),
-                                Value::Array(_a) => Ok(None),
                                 Value::Object(_o) => {
-                                    let progress_total = match v["progress"]["total"].as_u64() {
-                                        Some(p) => Some(p),
-                                        None => None,
-                                    };
-                                    let progress_x = match v["progress"]["x"].as_u64() {
-                                        Some(p) => Some(p),
-                                        None => None,
-                                    };
-
+                                    let progress_total = v["progress"]["total"].as_u64();
+                                    let progress_x = v["progress"]["x"].as_u64();
                                     Ok(Some((progress_x, progress_total)))
                                 }
+                                _ => Ok(None),
                             }
                         }
                         Err(_) => bail!("ERROR reading {}", path),

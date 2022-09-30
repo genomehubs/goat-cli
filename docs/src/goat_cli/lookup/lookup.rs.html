@@ -308,11 +308,8 @@
 <span id="308">308</span>
 <span id="309">309</span>
 <span id="310">310</span>
-<span id="311">311</span>
-<span id="312">312</span>
-<span id="313">313</span>
-<span id="314">314</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils::utils</span>::{
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::path::PathBuf</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils::utils</span>::{
     <span class="ident">lines_from_file</span>, <span class="ident">parse_comma_separated</span>, <span class="ident">some_kind_of_uppercase_first_letter</span>,
 };
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">IndexType</span>, <span class="ident">GOAT_URL</span>, <span class="ident">TAXONOMY</span>, <span class="ident">UPPER_CLI_FILE_LIMIT</span>};
@@ -338,7 +335,7 @@
         <span class="comment">// add the base</span>
         <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">GOAT_URL</span>;
         <span class="comment">// add lookup</span>
-        <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="string">&quot;lookup?&quot;</span>;
+        <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="string">&quot;lookup?&quot;</span>;
         <span class="comment">// add the search term</span>
         <span class="kw">let</span> <span class="ident">search_term</span> <span class="op">=</span> <span class="macro">format!</span>(<span class="string">&quot;searchTerm={}&quot;</span>, <span class="self">self</span>.<span class="ident">search</span>);
         <span class="ident">url</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">search_term</span>;
@@ -363,11 +360,10 @@
     <span class="doccomment">/// Constructor which takes the CLI args and returns</span>
     <span class="doccomment">/// `Self`.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">matches</span>: <span class="kw-2">&amp;</span><span class="ident">clap::ArgMatches</span>, <span class="ident">index_type</span>: <span class="ident">IndexType</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">tax_name_op</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;taxon&quot;</span>);
-        <span class="kw">let</span> <span class="ident">filename_op</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;file&quot;</span>);
+        <span class="kw">let</span> <span class="ident">tax_name_op</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">get_one</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>(<span class="string">&quot;taxon&quot;</span>);
+        <span class="kw">let</span> <span class="ident">filename_op</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">get_one</span>::<span class="op">&lt;</span><span class="ident">PathBuf</span><span class="op">&gt;</span>(<span class="string">&quot;file&quot;</span>);
         <span class="comment">// safe to unwrap, as default is defined.</span>
-        <span class="kw">let</span> <span class="ident">no_hits</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;size&quot;</span>).<span class="ident">unwrap</span>();
-        <span class="kw">let</span> <span class="ident">no_hits</span> <span class="op">=</span> <span class="ident">no_hits</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>().<span class="ident">unwrap_or</span>(<span class="number">10</span>);
+        <span class="kw">let</span> <span class="ident">no_hits</span> <span class="op">=</span> <span class="kw-2">*</span><span class="ident">matches</span>.<span class="ident">get_one</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>(<span class="string">&quot;size&quot;</span>).<span class="ident">expect</span>(<span class="string">&quot;cli default = 10&quot;</span>);
 
         <span class="kw">let</span> <span class="ident">tax_name_vector</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>;
         <span class="kw">match</span> <span class="ident">tax_name_op</span> {
@@ -429,9 +425,9 @@
     <span class="comment">// remove last comma</span>
     <span class="kw">if</span> <span class="ident">suggestion_str</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="number">2</span> {
         <span class="ident">suggestion_str</span>.<span class="ident">drain</span>(<span class="ident">suggestion_str</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="number">2</span>..);
-        <span class="prelude-val">Ok</span>(<span class="macro">eprintln!</span>(<span class="string">&quot;Did you mean: {}?&quot;</span>, <span class="ident">suggestion_str</span>))
+        <span class="macro">bail!</span>(<span class="string">&quot;Did you mean: {}?&quot;</span>, <span class="ident">suggestion_str</span>)
     } <span class="kw">else</span> {
-        <span class="prelude-val">Ok</span>(<span class="macro">eprintln!</span>(<span class="string">&quot;There are no results.&quot;</span>))
+        <span class="macro">bail!</span>(<span class="string">&quot;There are no results.&quot;</span>)
     }
 }
 
@@ -500,7 +496,7 @@
                                     <span class="prelude-val">None</span> =&gt; <span class="macro">vec!</span>[],
                                 };
                                 <span class="comment">// zip these vectors together</span>
-                                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">zipped_taxon_vectors</span> <span class="op">=</span>
+                                <span class="kw">let</span> <span class="ident">zipped_taxon_vectors</span> <span class="op">=</span>
                                     <span class="ident">taxon_ids</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="ident">taxon_ranks</span>.<span class="ident">iter</span>()).<span class="ident">zip</span>(<span class="ident">n</span>.<span class="ident">iter</span>());
 
                                 <span class="comment">// this may not be the best way to print</span>
@@ -508,9 +504,7 @@
                                 <span class="comment">// however, each result string should be small.</span>
                                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">whole_res_string</span> <span class="op">=</span> <span class="ident">String::new</span>();
 
-                                <span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(((<span class="ident">taxon_id</span>, <span class="ident">taxon_rank</span>), <span class="ident">taxon_ranks</span>)) <span class="op">=</span>
-                                    <span class="ident">zipped_taxon_vectors</span>.<span class="ident">next</span>()
-                                {
+                                <span class="kw">for</span> ((<span class="ident">taxon_id</span>, <span class="ident">taxon_rank</span>), <span class="ident">taxon_ranks</span>) <span class="kw">in</span> <span class="ident">zipped_taxon_vectors</span> {
                                     <span class="kw">for</span> <span class="ident">el</span> <span class="kw">in</span> <span class="ident">taxon_ranks</span> {
                                         <span class="kw">let</span> <span class="ident">row</span> <span class="op">=</span> <span class="macro">format!</span>(
                                             <span class="string">&quot;{}\t{}\t{}\t{}\t{}\n&quot;</span>,
@@ -523,12 +517,12 @@
                                 <span class="ident">whole_res_string</span>.<span class="ident">pop</span>();
                                 <span class="prelude-val">Ok</span>(<span class="macro">println!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">whole_res_string</span>))
                             }
-                            <span class="prelude-val">None</span> =&gt; <span class="prelude-val">Ok</span>(<span class="macro">eprintln!</span>(<span class="string">&quot;There were no taxon names.&quot;</span>)),
+                            <span class="prelude-val">None</span> =&gt; <span class="macro">bail!</span>(<span class="string">&quot;There were no taxon names.&quot;</span>),
                         }
                     }
                 }
             }
-            <span class="prelude-val">None</span> =&gt; <span class="prelude-val">Ok</span>(<span class="macro">eprintln!</span>(<span class="string">&quot;No results.&quot;</span>)),
+            <span class="prelude-val">None</span> =&gt; <span class="macro">bail!</span>(<span class="string">&quot;No results.&quot;</span>),
         }
     }
 }
@@ -585,16 +579,14 @@
                                     <span class="prelude-val">None</span> =&gt; <span class="macro">vec!</span>[],
                                 };
                                 <span class="comment">// zip these vectors together</span>
-                                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">zipped_taxon_vectors</span> <span class="op">=</span> <span class="ident">taxon_ids</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="ident">n</span>.<span class="ident">iter</span>());
+                                <span class="kw">let</span> <span class="ident">zipped_taxon_vectors</span> <span class="op">=</span> <span class="ident">taxon_ids</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="ident">n</span>.<span class="ident">iter</span>());
 
                                 <span class="comment">// this may not be the best way to print</span>
                                 <span class="comment">// as everything has to be loaded into mem</span>
                                 <span class="comment">// however, each result string should be small.</span>
                                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">whole_res_string</span> <span class="op">=</span> <span class="ident">String::new</span>();
 
-                                <span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="ident">taxon_id</span>, <span class="ident">taxon_ranks</span>)) <span class="op">=</span>
-                                    <span class="ident">zipped_taxon_vectors</span>.<span class="ident">next</span>()
-                                {
+                                <span class="kw">for</span> (<span class="ident">taxon_id</span>, <span class="ident">taxon_ranks</span>) <span class="kw">in</span> <span class="ident">zipped_taxon_vectors</span> {
                                     <span class="kw">for</span> <span class="ident">el</span> <span class="kw">in</span> <span class="ident">taxon_ranks</span> {
                                         <span class="kw">let</span> <span class="ident">row</span> <span class="op">=</span> <span class="macro">format!</span>(
                                             <span class="string">&quot;{}\t{}\t{}\t{}\n&quot;</span>,
@@ -607,12 +599,12 @@
                                 <span class="ident">whole_res_string</span>.<span class="ident">pop</span>();
                                 <span class="prelude-val">Ok</span>(<span class="macro">println!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">whole_res_string</span>))
                             }
-                            <span class="prelude-val">None</span> =&gt; <span class="prelude-val">Ok</span>(<span class="macro">eprintln!</span>(<span class="string">&quot;There were no taxon names.&quot;</span>)),
+                            <span class="prelude-val">None</span> =&gt; <span class="macro">bail!</span>(<span class="string">&quot;There were no taxon names.&quot;</span>),
                         }
                     }
                 }
             }
-            <span class="prelude-val">None</span> =&gt; <span class="prelude-val">Ok</span>(<span class="macro">eprintln!</span>(<span class="string">&quot;No results.&quot;</span>)),
+            <span class="prelude-val">None</span> =&gt; <span class="macro">bail!</span>(<span class="string">&quot;No results.&quot;</span>),
         }
     }
 }

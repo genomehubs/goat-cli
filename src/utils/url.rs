@@ -322,7 +322,7 @@ impl FieldBuilder {
         // remove the last three chars == '&2C'
         field_string.drain(field_string.len() - 3..);
         // check for blanks
-        let any_true = data.iter().map(|e| e.0).any(|e| e == true);
+        let any_true = data.iter().map(|e| e.0).any(|e| e);
         if !any_true {
             // remove everything
             field_string.drain(..);
@@ -336,7 +336,7 @@ impl FieldBuilder {
 /// which are then used as GET requests.
 pub fn make_goat_urls(
     api: &str,
-    taxids: &Vec<String>,
+    taxids: &[String],
     goat_url: &str,
     tax_tree: &str,
     include_estimates: bool,
@@ -344,7 +344,7 @@ pub fn make_goat_urls(
     summarise_values_by: &str,
     result: &str,
     taxonomy: &str,
-    size: &str,
+    size: u64,
     ranks: &str,
     fields: FieldBuilder,
     variables: Option<&str>,
@@ -369,21 +369,18 @@ pub fn make_goat_urls(
     };
     let names = format_names(fields.taxon_names);
 
-    let tidy_data: &str;
-
-    match fields.taxon_tidy {
-        true => tidy_data = "&tidyData=true",
-        false => tidy_data = "",
-    }
+    let tidy_data: &str = match fields.taxon_tidy {
+        true => "&tidyData=true",
+        false => "",
+    };
 
     // enumeration of the taxa will be 0 -> n,
     // corresponding to alphabetical order of taxa
-    for (el, chars) in taxids.iter().zip(unique_ids.iter()) {
+    for (taxon, chars) in taxids.iter().zip(unique_ids.iter()) {
         let query_id = format!("&queryId=goat_cli_{}", chars);
         let url = format!(
         // hardcode tidy data for now.
-        "{goat_url}{api}?query=tax_{tax_tree}%28{taxon}%29{tax_rank}{expression}&includeEstimates={include_estimates}&includeRawValues={include_raw_values}&summaryValues={summarise_values_by}&result={result}&taxonomy={taxonomy}&size={size}{rank_string}{fields_string}{tidy_data}{names}{query_id}",
-        goat_url = goat_url, api = api, tax_tree = tax_tree, taxon = el, tax_rank = tax_rank, expression = expression, include_estimates = include_estimates, include_raw_values = include_raw_values, summarise_values_by = summarise_values_by, result = result, taxonomy = taxonomy, size = size, rank_string = rank_string, fields_string = fields_string, tidy_data = tidy_data, names = names, query_id = query_id
+        "{goat_url}{api}?query=tax_{tax_tree}%28{taxon}%29{tax_rank}{expression}&includeEstimates={include_estimates}&includeRawValues={include_raw_values}&summaryValues={summarise_values_by}&result={result}&taxonomy={taxonomy}&size={size}{rank_string}{fields_string}{tidy_data}{names}{query_id}"
     );
         res.push(url);
     }

@@ -1,7 +1,7 @@
 use std::{
     fs::File,
     io::{BufRead, BufReader},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 use crate::{
@@ -21,18 +21,23 @@ pub fn generate_unique_strings(
     matches: &clap::ArgMatches,
     index_type: IndexType,
 ) -> Result<Vec<String>> {
-    let tax_name_op = matches.value_of("taxon");
-    let filename_op = matches.value_of("file");
+    let tax_name_op = matches.get_one::<String>("taxon");
+    let filename_op = matches.get_one::<PathBuf>("file");
     // print expression table
     // got to include this here, otherwise we error.
-    let print_expression = matches.is_present("print-expression");
+    // reports don't include this.
+    let print_expression = matches.get_one::<bool>("print-expression");
 
-    if print_expression {
-        match index_type {
-            IndexType::Taxon => expression::print_variable_data(&*GOAT_TAXON_VARIABLE_DATA),
-            IndexType::Assembly => expression::print_variable_data(&*GOAT_ASSEMBLY_VARIABLE_DATA),
+    if let Some(p) = print_expression {
+        if *p {
+            match index_type {
+                IndexType::Taxon => expression::print_variable_data(&*GOAT_TAXON_VARIABLE_DATA),
+                IndexType::Assembly => {
+                    expression::print_variable_data(&*GOAT_ASSEMBLY_VARIABLE_DATA)
+                }
+            }
+            std::process::exit(0);
         }
-        std::process::exit(0);
     }
 
     let url_vector: Vec<String>;
@@ -40,7 +45,7 @@ pub fn generate_unique_strings(
     match tax_name_op {
         Some(s) => {
             // catch empty string hanging here.
-            if s == "" {
+            if s.is_empty() {
                 bail!("Empty string found, please specify a taxon.");
             }
             url_vector = parse_comma_separated(s);
@@ -79,16 +84,15 @@ pub fn lines_from_file(filename: impl AsRef<Path>) -> Result<Vec<String>> {
     let buf_res: Result<Vec<String>> = buf
         .lines()
         .map(|l| {
-            let x = l.with_context(|| {
+            l.with_context(|| {
                 format!(
                     "Error in mapping buf_lines from {:?}",
                     filename.as_ref().as_os_str()
                 )
-            });
-            x
+            })
         })
         .collect();
-    Ok(buf_res?)
+    buf_res
 }
 
 // taxids should be comma separated
@@ -98,19 +102,19 @@ pub fn lines_from_file(filename: impl AsRef<Path>) -> Result<Vec<String>> {
 /// Parse a comma separated string and return each of the elements
 /// stripped of whitespace in a vector.
 pub fn parse_comma_separated(taxids: &str) -> Vec<String> {
-    let res: Vec<&str> = taxids.split(",").collect();
+    let res: Vec<&str> = taxids.split(',').collect();
 
     let mut res2 = Vec::new();
     for mut str in res {
         // sort the rights
-        while str.ends_with(" ") {
+        while str.ends_with(' ') {
             let len = str.len();
             let new_len = len.saturating_sub(" ".len());
             str = &str[..new_len];
         }
         // sort the lefts
         let mut index = 0;
-        while str.starts_with(" ") {
+        while str.starts_with(' ') {
             index += 1;
             str = &str[index..];
         }
@@ -118,7 +122,7 @@ pub fn parse_comma_separated(taxids: &str) -> Vec<String> {
         // so we can parse things like:
         // `-v"assembly_level"`, where there is
         // no space between the `-v` and `assembly_level`
-        let replaced = str.replace("\"", "").replace("'", "");
+        let replaced = str.replace('\"', "").replace('\'', "");
 
         res2.push(replaced);
     }
@@ -141,13 +145,11 @@ pub fn get_rank_vector(r: &str) -> Vec<String> {
         "kingdom".to_string(),
         "superkingdom".to_string(),
     ];
-    let position_selected = ranks.iter().position(|e| e == &r);
-    let updated_ranks = match position_selected {
+    let position_selected = ranks.iter().position(|e| e == r);
+    match position_selected {
         Some(p) => ranks[p..].to_vec(),
         None => vec!["".to_string()],
-    };
-
-    updated_ranks
+    }
 }
 
 /// If multiple taxa are queried at once, headers will return for every new taxon.
@@ -161,7 +163,7 @@ pub fn format_tsv_output(awaited_fetches: Vec<Result<String, anyhow::Error>>) ->
             Ok(ref e) => e,
             Err(e) => bail!("{}", e),
         };
-        headers.push(tsv.split("\n").next());
+        headers.push(tsv.split('\n').next());
     }
 
     // mainly a guard - but Rich I think fixed this so shouldn't need to be done.
@@ -186,7 +188,7 @@ pub fn format_tsv_output(awaited_fetches: Vec<Result<String, anyhow::Error>>) ->
             Err(e) => bail!("{}", e),
         };
 
-        let tsv_iter = tsv.split("\n");
+        let tsv_iter = tsv.split('\n');
         for row in tsv_iter.skip(1) {
             println!("{}", row)
         }
@@ -218,7 +220,7 @@ pub fn pretty_print_usize(i: usize) -> String {
         }
         s.insert(0, val);
     }
-    format!("{}", s)
+    s.to_string()
 }
 
 /// A function to replace certain combinations of characters

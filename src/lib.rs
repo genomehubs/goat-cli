@@ -49,7 +49,6 @@ lazy_static! {
 ///
 /// Each tuple variant can store their respective
 /// [`BTreeMap`] databases.
-
 #[derive(Clone, Copy, Debug)]
 pub enum IndexType {
     /// Taxon search index. The historical main
@@ -70,10 +69,11 @@ impl fmt::Display for IndexType {
     }
 }
 
-/// The type of result to return.
-///
-/// This is true for both `taxon` and
-/// `assembly` indexes?
+/// The type of result to return in GoaT.
+/// 
+/// Tax tree is a descendents call to the API,
+/// tax name is a single species, and tax lineage
+/// tracks back up the tree.
 #[derive(Default, Clone, Copy)]
 pub enum TaxType {
     /// tax_tree() returns a node and all

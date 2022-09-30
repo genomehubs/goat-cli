@@ -84,7 +84,6 @@
 <span id="84">84</span>
 <span id="85">85</span>
 <span id="86">86</span>
-<span id="87">87</span>
 </pre><pre class="rust"><code><span class="doccomment">//!</span>
 <span class="doccomment">//! Invoked by calling:</span>
 <span class="doccomment">//! `goat-cli count &lt;args&gt;`</span>
@@ -149,7 +148,7 @@
                 <span class="macro">println!</span>(<span class="string">&quot;{}\t{}&quot;</span>, <span class="ident">el2</span>, <span class="ident">count</span>);
                 <span class="ident">outer_count</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">*</span><span class="ident">count</span>;
             }
-            <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">outer_count</span>));
+            <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">outer_count</span>))
         }
         <span class="bool-val">false</span> =&gt; {
             <span class="comment">// need</span>
@@ -161,14 +160,13 @@
                     <span class="prelude-val">Ok</span>(<span class="ident">e</span>) =&gt; <span class="ident">e</span>,
                     <span class="prelude-val">Err</span>(<span class="ident">e</span>) =&gt; <span class="macro">bail!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">e</span>),
                 };
-                <span class="kw">if</span> <span class="ident">print_warning</span> {
-                    <span class="kw">if</span> <span class="ident">size_int</span> <span class="op">&lt;</span> <span class="kw-2">*</span><span class="ident">count</span> {
-                        <span class="macro">eprintln!</span>(<span class="string">&quot;For search query {}, size specified ({}) was less than the number of results returned, ({}).&quot;</span>, <span class="ident">el2</span>, <span class="ident">size_int</span>, <span class="ident">count</span>)
-                    }
+                <span class="kw">if</span> <span class="ident">print_warning</span> <span class="op">&amp;&amp;</span> <span class="ident">size_int</span> <span class="op">&lt;</span> <span class="kw-2">*</span><span class="ident">count</span> {
+                    <span class="macro">eprintln!</span>(<span class="string">&quot;For search query {}, size specified ({}) was less than the number of results returned, ({}).&quot;</span>, <span class="ident">el2</span>, <span class="ident">size_int</span>, <span class="ident">count</span>)
                 }
                 <span class="ident">outer_count</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">*</span><span class="ident">count</span>;
             }
-            <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">outer_count</span>));
+
+            <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">outer_count</span>))
         }
     }
 }

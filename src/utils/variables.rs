@@ -57,7 +57,7 @@ impl<'a> Variables<'a> {
 
         let mut parsed_string = String::new();
 
-        let split_vec = parse_comma_separated(&self.variables);
+        let split_vec = parse_comma_separated(self.variables);
         // check that all the strings in split_vec are real
         let var_vec_check = reference_data
             .iter()

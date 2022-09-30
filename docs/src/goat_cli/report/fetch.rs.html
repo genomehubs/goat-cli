@@ -78,7 +78,7 @@
     <span class="kw">let</span> <span class="ident">report</span> <span class="op">=</span> <span class="ident">Report::new</span>(<span class="ident">matches</span>, <span class="ident">report_type</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">url</span> <span class="op">=</span> <span class="ident">report</span>.<span class="ident">make_url</span>(<span class="ident">unique_ids</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">let</span> <span class="ident">print_url</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;url&quot;</span>);
+    <span class="kw">let</span> <span class="ident">print_url</span> <span class="op">=</span> <span class="kw-2">*</span><span class="ident">matches</span>.<span class="ident">get_one</span>::<span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>(<span class="string">&quot;url&quot;</span>).<span class="ident">expect</span>(<span class="string">&quot;cli default false&quot;</span>);
     <span class="kw">if</span> <span class="ident">print_url</span> {
         <span class="macro">println!</span>(<span class="string">&quot;GoaT lookup API URL:\t{}&quot;</span>, <span class="ident">url</span>);
         <span class="ident">std::process::exit</span>(<span class="number">0</span>);

@@ -22,8 +22,8 @@ use lookup::{AssemblyCollector, Collector, Lookups, TaxonCollector};
 pub async fn lookup(matches: &clap::ArgMatches, cli: bool, index_type: IndexType) -> Result<()> {
     let lookups = Lookups::new(matches, index_type)?;
     let url_vector_api = lookups.make_urls();
-    let print_url = matches.is_present("url");
-    let size = matches.value_of("size").unwrap();
+    let print_url = *matches.get_one::<bool>("url").expect("cli default false");
+    let size = *matches.get_one::<u64>("size").expect("cli default = 10");
 
     if print_url {
         for (index, (url, _)) in url_vector_api.iter().enumerate() {
@@ -50,7 +50,7 @@ pub async fn lookup(matches: &clap::ArgMatches, cli: bool, index_type: IndexType
                     let request_size_op = &v["status"]["hits"].as_u64();
                     match request_size_op {
                         Some(s) => {
-                            if size.parse::<u64>()? < *s {
+                            if size < *s {
                                 eprintln!(
                                 "For seach query {}, size specified ({}) was less than the number of results returned, ({}).",
                                 search_query, size, s
@@ -133,34 +133,31 @@ fn process_taxon_results(
 
     let results_array = v["results"].as_array();
     // unwrap safely here
-    match results_array {
-        Some(arr) => {
-            for el in arr {
-                let taxon_id = el["result"]["taxon_id"].as_str();
-                let taxon_rank = el["result"]["taxon_rank"].as_str();
-                let taxon_names_array_op = el["result"]["taxon_names"].as_array();
+    if let Some(arr) = results_array {
+        for el in arr {
+            let taxon_id = el["result"]["taxon_id"].as_str();
+            let taxon_rank = el["result"]["taxon_rank"].as_str();
+            let taxon_names_array_op = el["result"]["taxon_names"].as_array();
 
-                let taxon_names_array = match taxon_names_array_op {
-                    Some(vec) => {
-                        let mut collect_names = Vec::new();
-                        for el in vec.into_iter() {
-                            let key = el["name"].as_str().unwrap_or("-");
-                            let value = el["class"].as_str().unwrap_or("-");
-                            // let source = el["source"].as_str().unwrap_or("-");
-                            collect_names.push((key.to_string(), value.to_string()));
-                        }
-                        Some(collect_names)
+            let taxon_names_array = match taxon_names_array_op {
+                Some(vec) => {
+                    let mut collect_names = Vec::new();
+                    for el in vec.iter() {
+                        let key = el["name"].as_str().unwrap_or("-");
+                        let value = el["class"].as_str().unwrap_or("-");
+                        // let source = el["source"].as_str().unwrap_or("-");
+                        collect_names.push((key.to_string(), value.to_string()));
                     }
-                    None => None,
-                };
+                    Some(collect_names)
+                }
+                None => None,
+            };
 
-                // gather results into the vecs
-                taxon_id_vec.push(taxon_id);
-                taxon_rank_vec.push(taxon_rank);
-                taxon_names_array_vec.push(taxon_names_array);
-            }
+            // gather results into the vecs
+            taxon_id_vec.push(taxon_id);
+            taxon_rank_vec.push(taxon_rank);
+            taxon_names_array_vec.push(taxon_names_array);
         }
-        None => {}
     }
 
     // Vec<Option<&str>> -> Vec<Option<String>>
@@ -168,7 +165,7 @@ fn process_taxon_results(
     let taxon_rank = taxon_rank_vec.iter().map(|e| e.map(String::from)).collect();
 
     Ok(TaxonCollector {
-        search: Some(search_query.to_string()),
+        search: Some(search_query),
         suggestions: suggestions_text,
         taxon_id,
         taxon_names: taxon_names_array_vec,
@@ -189,39 +186,36 @@ fn process_assembly_results(
 
     let results_array = v["results"].as_array();
     // unwrap safely here
-    match results_array {
-        Some(arr) => {
-            for el in arr {
-                let taxon_id = el["result"]["taxon_id"].as_str();
-                let identifiers_array_op = el["result"]["identifiers"].as_array();
+    if let Some(arr) = results_array {
+        for el in arr {
+            let taxon_id = el["result"]["taxon_id"].as_str();
+            let identifiers_array_op = el["result"]["identifiers"].as_array();
 
-                let identifiers_array = match identifiers_array_op {
-                    Some(vec) => {
-                        let mut collect_names = Vec::new();
-                        for el in vec.into_iter() {
-                            let key = el["identifier"].as_str().unwrap_or("-");
-                            let value = el["class"].as_str().unwrap_or("-");
-                            // let source = el["source"].as_str().unwrap_or("-");
-                            collect_names.push((key.to_string(), value.to_string()));
-                        }
-                        Some(collect_names)
+            let identifiers_array = match identifiers_array_op {
+                Some(vec) => {
+                    let mut collect_names = Vec::new();
+                    for el in vec.iter() {
+                        let key = el["identifier"].as_str().unwrap_or("-");
+                        let value = el["class"].as_str().unwrap_or("-");
+                        // let source = el["source"].as_str().unwrap_or("-");
+                        collect_names.push((key.to_string(), value.to_string()));
                     }
-                    None => None,
-                };
+                    Some(collect_names)
+                }
+                None => None,
+            };
 
-                // gather results into the vecs
-                taxon_id_vec.push(taxon_id);
-                identifiers_array_vec.push(identifiers_array);
-            }
+            // gather results into the vecs
+            taxon_id_vec.push(taxon_id);
+            identifiers_array_vec.push(identifiers_array);
         }
-        None => {}
     }
 
     // Vec<Option<&str>> -> Vec<Option<String>>
     let taxon_id = taxon_id_vec.iter().map(|e| e.map(String::from)).collect();
 
     Ok(AssemblyCollector {
-        search: Some(search_query.to_string()),
+        search: Some(search_query),
         suggestions: suggestions_text,
         taxon_id,
         identifiers: identifiers_array_vec,

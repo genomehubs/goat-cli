@@ -62,7 +62,7 @@ pub async fn count(
                 println!("{}\t{}", el2, count);
                 outer_count += *count;
             }
-            return Ok(Some(outer_count));
+            Ok(Some(outer_count))
         }
         false => {
             // need
@@ -74,14 +74,13 @@ pub async fn count(
                     Ok(e) => e,
                     Err(e) => bail!("{}", e),
                 };
-                if print_warning {
-                    if size_int < *count {
-                        eprintln!("For search query {}, size specified ({}) was less than the number of results returned, ({}).", el2, size_int, count)
-                    }
+                if print_warning && size_int < *count {
+                    eprintln!("For search query {}, size specified ({}) was less than the number of results returned, ({}).", el2, size_int, count)
                 }
                 outer_count += *count;
             }
-            return Ok(Some(outer_count));
+
+            Ok(Some(outer_count))
         }
     }
 }

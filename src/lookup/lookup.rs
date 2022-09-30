@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use crate::utils::utils::{
     lines_from_file, parse_comma_separated, some_kind_of_uppercase_first_letter,
 };
@@ -24,7 +25,7 @@ impl Lookup {
         // add the base
         url += &GOAT_URL;
         // add lookup
-        url += &"lookup?";
+        url += "lookup?";
         // add the search term
         let search_term = format!("searchTerm={}", self.search);
         url += &search_term;
@@ -49,11 +50,10 @@ impl Lookups {
     /// Constructor which takes the CLI args and returns
     /// `Self`.
     pub fn new(matches: &clap::ArgMatches, index_type: IndexType) -> Result<Self> {
-        let tax_name_op = matches.value_of("taxon");
-        let filename_op = matches.value_of("file");
+        let tax_name_op = matches.get_one::<String>("taxon");
+        let filename_op = matches.get_one::<PathBuf>("file");
         // safe to unwrap, as default is defined.
-        let no_hits = matches.value_of("size").unwrap();
-        let no_hits = no_hits.parse::<u64>().unwrap_or(10);
+        let no_hits = *matches.get_one::<u64>("size").expect("cli default = 10");
 
         let tax_name_vector: Vec<String>;
         match tax_name_op {
@@ -115,9 +115,9 @@ fn format_suggestion_string(suggestions: &Vec<Option<String>>) -> Result<()> {
     // remove last comma
     if suggestion_str.len() > 2 {
         suggestion_str.drain(suggestion_str.len() - 2..);
-        Ok(eprintln!("Did you mean: {}?", suggestion_str))
+        bail!("Did you mean: {}?", suggestion_str)
     } else {
-        Ok(eprintln!("There are no results."))
+        bail!("There are no results.")
     }
 }
 
@@ -186,7 +186,7 @@ impl TaxonCollector {
                                     None => vec![],
                                 };
                                 // zip these vectors together
-                                let mut zipped_taxon_vectors =
+                                let zipped_taxon_vectors =
                                     taxon_ids.iter().zip(taxon_ranks.iter()).zip(n.iter());
 
                                 // this may not be the best way to print
@@ -194,9 +194,7 @@ impl TaxonCollector {
                                 // however, each result string should be small.
                                 let mut whole_res_string = String::new();
 
-                                while let Some(((taxon_id, taxon_rank), taxon_ranks)) =
-                                    zipped_taxon_vectors.next()
-                                {
+                                for ((taxon_id, taxon_rank), taxon_ranks) in zipped_taxon_vectors {
                                     for el in taxon_ranks {
                                         let row = format!(
                                             "{}\t{}\t{}\t{}\t{}\n",
@@ -209,12 +207,12 @@ impl TaxonCollector {
                                 whole_res_string.pop();
                                 Ok(println!("{}", whole_res_string))
                             }
-                            None => Ok(eprintln!("There were no taxon names.")),
+                            None => bail!("There were no taxon names."),
                         }
                     }
                 }
             }
-            None => Ok(eprintln!("No results.")),
+            None => bail!("No results."),
         }
     }
 }
@@ -271,16 +269,14 @@ impl AssemblyCollector {
                                     None => vec![],
                                 };
                                 // zip these vectors together
-                                let mut zipped_taxon_vectors = taxon_ids.iter().zip(n.iter());
+                                let zipped_taxon_vectors = taxon_ids.iter().zip(n.iter());
 
                                 // this may not be the best way to print
                                 // as everything has to be loaded into mem
                                 // however, each result string should be small.
                                 let mut whole_res_string = String::new();
 
-                                while let Some((taxon_id, taxon_ranks)) =
-                                    zipped_taxon_vectors.next()
-                                {
+                                for (taxon_id, taxon_ranks) in zipped_taxon_vectors {
                                     for el in taxon_ranks {
                                         let row = format!(
                                             "{}\t{}\t{}\t{}\n",
@@ -293,12 +289,12 @@ impl AssemblyCollector {
                                 whole_res_string.pop();
                                 Ok(println!("{}", whole_res_string))
                             }
-                            None => Ok(eprintln!("There were no taxon names.")),
+                            None => bail!("There were no taxon names."),
                         }
                     }
                 }
             }
-            None => Ok(eprintln!("No results.")),
+            None => bail!("No results."),
         }
     }
 }
