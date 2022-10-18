@@ -53,7 +53,7 @@ pub struct Opts {
 
 impl Opts {
     /// The scale types that are possible in GoaT reports (I think).
-    pub const SCALE_TYPES: [&str; 7] = [
+    pub const SCALE_TYPES: [&'static str; 7] = [
         "linear",
         "sqrt",
         "log10",
