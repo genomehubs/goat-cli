@@ -60,9 +60,11 @@ pub fn process_cli_args(
     let filename_op = matches.get_one::<PathBuf>("file");
     let result = index_type.to_string();
     let summarise_values_by = "count";
+    // add in exclusion of missing and ancestral values by default, but allow the user
+    // to toggle this on the command line
+    let exclude = *matches.get_one::<bool>("exclude").unwrap_or(&false);
 
     // command line args unique to taxon
-
     let taxon_include_raw_values = *matches.get_one::<bool>("taxon-raw").unwrap_or(&false);
     let taxon_tidy = match taxon_include_raw_values {
         true => true,
@@ -212,6 +214,7 @@ pub fn process_cli_args(
         // check again whether to include
         // raw values in `assembly` index.
         taxon_include_raw_values,
+        exclude,
         summarise_values_by,
         &result,
         &*TAXONOMY,

@@ -330,6 +330,46 @@ impl FieldBuilder {
 
         field_string
     }
+
+    /// An implementation of exculding values returned if they are missing or ancestral values inferred by GoaT.
+    fn generate_exculde_flags(&self) -> String {
+        const ANCESTRAL: &str = "&excludeAncestral";
+        const MISSING: &str = "&excludeMissing";
+        const OPEN_ANGLE_BRACE: &str = "%5B";
+        const CLOSE_ANGLE_BRACE: &str = "%5D";
+
+        let data = self.to_vec_tuples();
+        let mut exclusion_string = String::new();
+
+        let mut exclude_index: i32 = 0;
+        for (field_present, field_vec) in data.iter() {
+            match field_present {
+                true => {
+                    for field in field_vec {
+                        // e.g. &excludeAncestral%5B0%5D=assembly_span
+                        // add ancestral
+                        exclusion_string += ANCESTRAL;
+                        exclusion_string += OPEN_ANGLE_BRACE;
+                        exclusion_string += &exclude_index.to_string();
+                        exclusion_string += CLOSE_ANGLE_BRACE;
+                        exclusion_string += &format!("={field}");
+
+                        // add missing
+                        exclusion_string += MISSING;
+                        exclusion_string += OPEN_ANGLE_BRACE;
+                        exclusion_string += &exclude_index.to_string();
+                        exclusion_string += CLOSE_ANGLE_BRACE;
+                        exclusion_string += &format!("={field}");
+
+                        exclude_index += 1;
+                    }
+                }
+                false => continue,
+            }
+        }
+
+        exclusion_string
+    }
 }
 
 /// The function which creats the GoaT API URLs
@@ -341,6 +381,7 @@ pub fn make_goat_urls(
     tax_tree: &str,
     include_estimates: bool,
     include_raw_values: bool,
+    exclude: bool,
     summarise_values_by: &str,
     result: &str,
     taxonomy: &str,
@@ -357,9 +398,10 @@ pub fn make_goat_urls(
 
     // make the rank string
     let rank_string = format_rank(ranks);
-    // make the fields string
-    // either from hand coded variables by the user
-    // or from flag switches
+    // due to variables being created independently of the fields/FieldBuilder
+    // this code is a lot less nice than it could be.
+    // FIXME: this means that if you supply both a variable string and some flags, only the variable string will be
+    // considered.
     let fields_string = match variables {
         Some(v) => match index_type {
             IndexType::Taxon => Variables::new(v).parse(&*GOAT_TAXON_VARIABLE_DATA)?,
@@ -367,6 +409,19 @@ pub fn make_goat_urls(
         },
         None => fields.build_fields_string(),
     };
+
+    let exclude_missing_or_ancestral = if exclude {
+        match variables {
+            Some(v) => match index_type {
+                IndexType::Taxon => Variables::new(v).parse_exclude(&*GOAT_TAXON_VARIABLE_DATA)?,
+                IndexType::Assembly => Variables::new(v).parse_exclude(&*GOAT_ASSEMBLY_VARIABLE_DATA)?,
+            },
+            None => fields.generate_exculde_flags(),
+        }
+    } else {
+        "".into()
+    };
+
     let names = format_names(fields.taxon_names);
 
     let tidy_data: &str = match fields.taxon_tidy {
@@ -380,7 +435,7 @@ pub fn make_goat_urls(
         let query_id = format!("&queryId=goat_cli_{}", chars);
         let url = format!(
         // hardcode tidy data for now.
-        "{goat_url}{api}?query=tax_{tax_tree}%28{taxon}%29{tax_rank}{expression}&includeEstimates={include_estimates}&includeRawValues={include_raw_values}&summaryValues={summarise_values_by}&result={result}&taxonomy={taxonomy}&size={size}{rank_string}{fields_string}{tidy_data}{names}{query_id}"
+        "{goat_url}{api}?query=tax_{tax_tree}%28{taxon}%29{tax_rank}{expression}&includeEstimates={include_estimates}&includeRawValues={include_raw_values}&summaryValues={summarise_values_by}&result={result}&taxonomy={taxonomy}&size={size}{rank_string}{fields_string}{tidy_data}{names}{query_id}{exclude_missing_or_ancestral}"
     );
         res.push(url);
     }

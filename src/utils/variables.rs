@@ -89,4 +89,58 @@ impl<'a> Variables<'a> {
 
         Ok(parsed_string)
     }
+
+    /// Parse
+    pub fn parse_exclude(
+        &self,
+        reference_data: &BTreeMap<&'static str, Variable<'static>>,
+    ) -> Result<String> {
+        const ANCESTRAL: &str = "&excludeAncestral";
+        const MISSING: &str = "&excludeMissing";
+        const OPEN_ANGLE_BRACE: &str = "%5B";
+        const CLOSE_ANGLE_BRACE: &str = "%5D";
+
+        let mut exclusion_string = String::new();
+
+        let split_vec = parse_comma_separated(self.variables);
+        // check that all the strings in split_vec are real
+        let var_vec_check = reference_data
+            .iter()
+            .map(|(e, _)| e.to_string())
+            .collect::<Vec<String>>();
+
+        for variable in &split_vec {
+            // only if we find something which does not match...
+            if !var_vec_check.contains(variable) {
+                let var_vec_mean = did_you_mean(&var_vec_check, variable);
+                if let Some(value) = var_vec_mean {
+                    bail!(
+                        "In your variable (`-v`) you typed \"{}\" - did you mean \"{}\"?",
+                        variable,
+                        value
+                    )
+                }
+            }
+        }
+
+        let mut exclude_index = 0;
+        for field in split_vec {
+            exclusion_string += ANCESTRAL;
+            exclusion_string += OPEN_ANGLE_BRACE;
+            exclusion_string += &exclude_index.to_string();
+            exclusion_string += CLOSE_ANGLE_BRACE;
+            exclusion_string += &format!("={field}");
+
+            // add missing
+            exclusion_string += MISSING;
+            exclusion_string += OPEN_ANGLE_BRACE;
+            exclusion_string += &exclude_index.to_string();
+            exclusion_string += CLOSE_ANGLE_BRACE;
+            exclusion_string += &format!("={field}");
+
+            exclude_index += 1;
+        }
+
+        Ok(exclusion_string)
+    }
 }
