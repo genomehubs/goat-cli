@@ -939,6 +939,60 @@
             "sequence": 30,
             "processed_type": "float"
         },
+        "btk_nohit": {
+            "group": "taxon",
+            "name": "btk_nohit",
+            "description": "Sequences with no hits in the reference database",
+            "display_group": "assembly",
+            "display_level": 2,
+            "display_name": "BTK no hit",
+            "source": "BlobToolKit",
+            "source_url_stub": "https://blobtoolkit.genomehubs.org/view/dataset/",
+            "synonym": "nohit",
+            "type": "1dp",
+            "units": "%",
+            "sequence": 27,
+            "bins": {
+                "count": 10,
+                "max": 100,
+                "min": 0,
+                "scale": "linear"
+            },
+            "key": "btk_nohit",
+            "summary": [
+                "primary",
+                "min"
+            ],
+            "traverse": false,
+            "processed_type": "float"
+        },
+        "btk_target": {
+            "group": "taxon",
+            "name": "btk_target",
+            "description": "Hits matching target",
+            "display_group": "assembly",
+            "display_level": 2,
+            "display_name": "BTK_target",
+            "source": "BlobToolKit",
+            "source_url_stub": "https://blobtoolkit.genomehubs.org/view/dataset/",
+            "synonym": "target",
+            "type": "1dp",
+            "units": "%",
+            "sequence": 28,
+            "bins": {
+                "count": 10,
+                "max": 100,
+                "min": 0,
+                "scale": "linear"
+            },
+            "key": "btk_target",
+            "summary": [
+                "primary",
+                "max"
+            ],
+            "traverse": false,
+            "processed_type": "float"
+        },
         "busco_completeness": {
             "group": "taxon",
             "name": "busco_completeness",
@@ -950,7 +1004,7 @@
             "source_url_stub": "https://blobtoolkit.genomehubs.org/view/dataset/",
             "type": "1dp",
             "units": "%",
-            "sequence": 27,
+            "sequence": 29,
             "bins": {
                 "count": 10,
                 "max": 100,
@@ -972,7 +1026,7 @@
             "source": "BlobToolKit",
             "source_url_stub": "https://blobtoolkit.genomehubs.org/view/dataset/",
             "type": "keyword",
-            "sequence": 28,
+            "sequence": 30,
             "key": "busco_lineage",
             "summary": "list",
             "traverse": false,
@@ -988,7 +1042,7 @@
             "source": "BlobToolKit",
             "source_url_stub": "https://blobtoolkit.genomehubs.org/view/dataset/",
             "type": "keyword",
-            "sequence": 29,
+            "sequence": 31,
             "key": "busco_string",
             "summary": "list",
             "traverse": false,
@@ -1050,52 +1104,6 @@
                 "min"
             ],
             "traverse": false,
-            "processed_type": "float"
-        },
-        "nohit": {
-            "group": "taxon",
-            "name": "nohit",
-            "description": "Sequences with no hits in the reference database",
-            "display_group": "assembly",
-            "display_level": 2,
-            "display_name": "No hit",
-            "source": "BlobToolKit",
-            "source_url_stub": "https://blobtoolkit.genomehubs.org/view/dataset/",
-            "type": "1dp",
-            "units": "%",
-            "sequence": 30,
-            "bins": {
-                "count": 10,
-                "max": 100,
-                "min": 0,
-                "scale": "linear"
-            },
-            "key": "nohit",
-            "summary": "median",
-            "traverse": "median",
-            "processed_type": "float"
-        },
-        "target": {
-            "group": "taxon",
-            "name": "target",
-            "description": "Hits matching target",
-            "display_group": "assembly",
-            "display_level": 2,
-            "display_name": "Target",
-            "source": "BlobToolKit",
-            "source_url_stub": "https://blobtoolkit.genomehubs.org/view/dataset/",
-            "type": "1dp",
-            "units": "%",
-            "sequence": 31,
-            "bins": {
-                "count": 10,
-                "max": 100,
-                "min": 0,
-                "scale": "linear"
-            },
-            "key": "target",
-            "summary": "median",
-            "traverse": "median",
             "processed_type": "float"
         },
         "odb10_lineage": {
@@ -2012,6 +2020,6 @@
         }
     },
     "hub": "goat",
-    "release": "2022.10.17",
-    "source": "https://github.com/genomehubs/goat-data"
+    "release": "2022.11.07",
+    "source": "https://github.com/genomehubs/goat-data/tree/2022.11.07"
 }

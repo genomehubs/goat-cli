@@ -413,6 +413,36 @@
             "sequence": 23,
             "processed_type": "float"
         },
+        "btk_nohit": {
+            "group": "assembly",
+            "name": "btk_nohit",
+            "display_group": "btk",
+            "source": "BlobToolKit",
+            "source_url_stub": "https://blobtoolkit.genomehubs.org/view/dataset/",
+            "description": "Sequences with no hits in the reference database",
+            "display_level": 2,
+            "display_name": "BTK no hit",
+            "synonym": "nohit",
+            "type": "1dp",
+            "units": "%",
+            "sequence": 27,
+            "processed_type": "float"
+        },
+        "btk_target": {
+            "group": "assembly",
+            "name": "btk_target",
+            "display_group": "btk",
+            "source": "BlobToolKit",
+            "source_url_stub": "https://blobtoolkit.genomehubs.org/view/dataset/",
+            "description": "Hits matching target",
+            "display_level": 2,
+            "display_name": "BTK_target",
+            "synonym": "target",
+            "type": "1dp",
+            "units": "%",
+            "sequence": 28,
+            "processed_type": "float"
+        },
         "busco_completeness": {
             "group": "assembly",
             "name": "busco_completeness",
@@ -424,7 +454,7 @@
             "display_name": "BUSCO completeness",
             "type": "1dp",
             "units": "%",
-            "sequence": 27,
+            "sequence": 29,
             "processed_type": "float"
         },
         "busco_lineage": {
@@ -437,7 +467,7 @@
             "display_level": 2,
             "display_name": "BUSCO lineage",
             "type": "keyword",
-            "sequence": 28,
+            "sequence": 30,
             "processed_type": "keyword"
         },
         "busco_string": {
@@ -450,36 +480,8 @@
             "display_level": 2,
             "display_name": "BUSCO string",
             "type": "keyword",
-            "sequence": 29,
-            "processed_type": "keyword"
-        },
-        "nohit": {
-            "group": "assembly",
-            "name": "nohit",
-            "display_group": "btk",
-            "source": "BlobToolKit",
-            "source_url_stub": "https://blobtoolkit.genomehubs.org/view/dataset/",
-            "description": "Sequences with no hits in the reference database",
-            "display_level": 2,
-            "display_name": "No hit",
-            "type": "1dp",
-            "units": "%",
-            "sequence": 30,
-            "processed_type": "float"
-        },
-        "target": {
-            "group": "assembly",
-            "name": "target",
-            "display_group": "btk",
-            "source": "BlobToolKit",
-            "source_url_stub": "https://blobtoolkit.genomehubs.org/view/dataset/",
-            "description": "Hits matching target",
-            "display_level": 2,
-            "display_name": "Target",
-            "type": "1dp",
-            "units": "%",
             "sequence": 31,
-            "processed_type": "float"
+            "processed_type": "keyword"
         },
         "gc_percent": {
             "group": "assembly",
@@ -527,6 +529,6 @@
     },
     "identifiers": {},
     "hub": "goat",
-    "release": "2022.10.17",
-    "source": "https://github.com/genomehubs/goat-data"
+    "release": "2022.11.07",
+    "source": "https://github.com/genomehubs/goat-data/tree/2022.11.07"
 }
