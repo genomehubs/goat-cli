@@ -64,8 +64,9 @@ impl Opts {
     ];
     /// Try and parse a string of options into the CLI.
     ///
-    /// e.g. 1,10 () =>
-    ///     
+    /// "1,10":
+    ///
+    /// ```rust
     /// Opts {
     ///     min: Some(1),
     ///     max: Some(10),
@@ -73,8 +74,11 @@ impl Opts {
     ///     scale: None,
     ///     axis_title: None        
     /// }
+    /// ```
     ///
-    /// ,,20 (20 x axis ticks)
+    /// ",,20":
+    ///
+    /// ```rust
     /// Opts {
     ///     min: None,
     ///     max: None,
@@ -82,7 +86,7 @@ impl Opts {
     ///     scale: None,
     ///     axis_title: None        
     /// }
-    /// TODO: test this
+    /// ```
     pub fn try_from_string(cli_opts: &str) -> Result<Self> {
         let mut tokens: Vec<Option<_>> = cli_opts
             .split(',')
