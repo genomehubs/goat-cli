@@ -76,7 +76,7 @@ pub async fn progress_bar(
             .template(&format!(
                 "{{prefix:.bold}}▕{{bar:57.{}}}▏{{pos}}/{{len}} {{wide_msg}}",
                 bar_style.1
-            ))
+            ))?
             .progress_chars(bar_style.0),
     );
     bar.set_prefix("Fetching from GoaT: ");
