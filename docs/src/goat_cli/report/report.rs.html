@@ -429,6 +429,10 @@
 <span id="429">429</span>
 <span id="430">430</span>
 <span id="431">431</span>
+<span id="432">432</span>
+<span id="433">433</span>
+<span id="434">434</span>
+<span id="435">435</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils::variable_data</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils</span>::{<span class="ident">tax_ranks::TaxRanks</span>, <span class="ident">utils</span>, <span class="ident">variables::Variables</span>};
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">TaxType</span>, <span class="ident">GOAT_URL</span>, <span class="ident">TAXONOMY</span>};
@@ -484,7 +488,7 @@
 
 <span class="kw">impl</span> <span class="ident">Opts</span> {
     <span class="doccomment">/// The scale types that are possible in GoaT reports (I think).</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">SCALE_TYPES</span>: [<span class="kw-2">&amp;</span><span class="ident">str</span>; <span class="number">7</span>] <span class="op">=</span> [
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">SCALE_TYPES</span>: [<span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span>; <span class="number">7</span>] <span class="op">=</span> [
         <span class="string">&quot;linear&quot;</span>,
         <span class="string">&quot;sqrt&quot;</span>,
         <span class="string">&quot;log10&quot;</span>,
@@ -495,8 +499,9 @@
     ];
     <span class="doccomment">/// Try and parse a string of options into the CLI.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// e.g. 1,10 () =&gt;</span>
-    <span class="doccomment">///     </span>
+    <span class="doccomment">/// &quot;1,10&quot;:</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// ```rust</span>
     <span class="doccomment">/// Opts {</span>
     <span class="doccomment">///     min: Some(1),</span>
     <span class="doccomment">///     max: Some(10),</span>
@@ -504,8 +509,11 @@
     <span class="doccomment">///     scale: None,</span>
     <span class="doccomment">///     axis_title: None        </span>
     <span class="doccomment">/// }</span>
+    <span class="doccomment">/// ```</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// ,,20 (20 x axis ticks)</span>
+    <span class="doccomment">/// &quot;,,20&quot;:</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// ```rust</span>
     <span class="doccomment">/// Opts {</span>
     <span class="doccomment">///     min: None,</span>
     <span class="doccomment">///     max: None,</span>
@@ -513,7 +521,7 @@
     <span class="doccomment">///     scale: None,</span>
     <span class="doccomment">///     axis_title: None        </span>
     <span class="doccomment">/// }</span>
-    <span class="doccomment">/// TODO: test this</span>
+    <span class="doccomment">/// ```</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">try_from_string</span>(<span class="ident">cli_opts</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">tokens</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">cli_opts</span>
             .<span class="ident">split</span>(<span class="string">&#39;,&#39;</span>)

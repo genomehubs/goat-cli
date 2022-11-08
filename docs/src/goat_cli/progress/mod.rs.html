@@ -229,7 +229,7 @@
             .<span class="ident">template</span>(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
                 <span class="string">&quot;{{prefix:.bold}}▕{{bar:57.{}}}▏{{pos}}/{{len}} {{wide_msg}}&quot;</span>,
                 <span class="ident">bar_style</span>.<span class="number">1</span>
-            ))
+            ))<span class="question-mark">?</span>
             .<span class="ident">progress_chars</span>(<span class="ident">bar_style</span>.<span class="number">0</span>),
     );
     <span class="ident">bar</span>.<span class="ident">set_prefix</span>(<span class="string">&quot;Fetching from GoaT: &quot;</span>);
