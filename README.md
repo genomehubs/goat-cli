@@ -1,7 +1,8 @@
 [![GitHub Downloads](https://img.shields.io/github/downloads/genomehubs/goat-cli/total.svg?style=social&logo=github&label=Download)](https://github.com/genomehubs/goat-cli/releases/)
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/goat/badges/downloads.svg)](https://anaconda.org/bioconda/goat)
-[![Anaconda-Server Badge](https://anaconda.org/bioconda/goat/badges/installer/conda.svg)](https://conda.anaconda.org/bioconda)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/goat/badges/version.svg)](https://anaconda.org/bioconda/goat)
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/goat/badges/platforms.svg)](https://anaconda.org/bioconda/goat)
+![Crates.io](https://img.shields.io/crates/d/goat-cli?label=crates.io&style=flat-square)
 
 <p align="center">
     <img width="300" height="365" src="./goat-cli-mbing-code.png">
