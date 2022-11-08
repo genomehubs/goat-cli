@@ -90,7 +90,8 @@ impl<'a> Variables<'a> {
         Ok(parsed_string)
     }
 
-    /// Parse
+    /// Parse a variable name into a string which will be entered in the final URL
+    /// to exclude missing and ancestral taxa.
     pub fn parse_exclude(
         &self,
         reference_data: &BTreeMap<&'static str, Variable<'static>>,
