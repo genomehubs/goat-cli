@@ -4,7 +4,7 @@ use crate::utils::utils::{did_you_mean, switch_string_to_url_encoding};
 use anyhow::{bail, ensure, Result};
 use regex::{CaptureMatches, Captures, Regex};
 use std::{collections::BTreeMap, fmt};
-use tabled::{object::Rows, Footer, Header, MaxWidth, Modify, Table, Tabled};
+use tabled::{object::Rows, Panel, Width, Modify, Table, Tabled};
 
 /// Serialize GoaT variables into their types.
 ///
@@ -146,19 +146,15 @@ pub fn print_variable_data(data: &BTreeMap<&'static str, Variable<'static>>) {
     let footer_data = TaxRanks::init();
 
     let table_string = Table::new(&table_data)
-        .with(Header(
-            "Variable names in GoaT, with functional operator annotation.",
-        ))
-        // wrap the text!
-        .with(Footer(format!("NCBI taxon ranks:\n\n{}", footer_data)))
+        .with(Panel::footer(format!("NCBI taxon ranks:\n\n{}", footer_data)))
         .with(
             Modify::new(Rows::new(1..table_data.len() - 1))
-                .with(MaxWidth::wrapping(30).keep_words()),
+                .with(Width::wrap(30).keep_words()),
         )
         // 4 rows
         .with(
             Modify::new(Rows::new(table_data.len()..))
-                .with(MaxWidth::wrapping(30 * 4).keep_words()),
+                .with(Width::wrap(30 * 4).keep_words()),
         )
         .to_string();
 
