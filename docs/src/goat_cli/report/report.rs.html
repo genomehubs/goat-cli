@@ -433,6 +433,8 @@
 <span id="433">433</span>
 <span id="434">434</span>
 <span id="435">435</span>
+<span id="436">436</span>
+<span id="437">437</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils::variable_data</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils</span>::{<span class="ident">tax_ranks::TaxRanks</span>, <span class="ident">utils</span>, <span class="ident">variables::Variables</span>};
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">TaxType</span>, <span class="ident">GOAT_URL</span>, <span class="ident">TAXONOMY</span>};
@@ -864,7 +866,9 @@
 
                 <span class="prelude-val">Ok</span>(<span class="ident">url</span>)
             }
-            <span class="ident">ReportType::Scatterplot</span> =&gt; <span class="macro">todo!</span>(),
+            <span class="ident">ReportType::Scatterplot</span> =&gt; {
+                <span class="macro">bail!</span>(<span class="string">&quot;Scatter plots are not yet implemented; please check back in the future!&quot;</span>)
+            }
         }
     }
 }

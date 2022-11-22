@@ -429,7 +429,9 @@ impl Report {
 
                 Ok(url)
             }
-            ReportType::Scatterplot => todo!(),
+            ReportType::Scatterplot => {
+                bail!("Scatter plots are not yet implemented; please check back in the future!")
+            }
         }
     }
 }
