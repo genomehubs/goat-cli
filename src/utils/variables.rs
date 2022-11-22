@@ -124,8 +124,7 @@ impl<'a> Variables<'a> {
             }
         }
 
-        let mut exclude_index = 0;
-        for field in split_vec {
+        for (exclude_index, field) in split_vec.into_iter().enumerate() {
             exclusion_string += ANCESTRAL;
             exclusion_string += OPEN_ANGLE_BRACE;
             exclusion_string += &exclude_index.to_string();
@@ -139,7 +138,6 @@ impl<'a> Variables<'a> {
             exclusion_string += CLOSE_ANGLE_BRACE;
             exclusion_string += &format!("={field}");
 
-            exclude_index += 1;
         }
 
         Ok(exclusion_string)

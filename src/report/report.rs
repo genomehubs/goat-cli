@@ -146,7 +146,7 @@ impl Opts {
                 // bail if the scale isn't one we recognise
                 if !Self::SCALE_TYPES
                     .iter()
-                    .any(|e| **e == opts.scale.clone().unwrap_or("".into()))
+                    .any(|e| **e == opts.scale.clone().unwrap_or_else(|| "".into()))
                 {
                     bail!("Did not recognise scale type supplied. The options are linear, sqrt, log10, log2, log, proportion, or ordinal.")
                 }
@@ -159,7 +159,7 @@ impl Opts {
                 // bail if the scale isn't one we recognise
                 if !Self::SCALE_TYPES
                     .iter()
-                    .any(|e| **e == opts.scale.clone().unwrap_or("".into()))
+                    .any(|e| **e == opts.scale.clone().unwrap_or_else(|| "".into()))
                 {
                     bail!("Did not recognise scale type supplied. The options are linear, sqrt, log10, log2, log, proportion, or ordinal.")
                 }
@@ -249,7 +249,7 @@ impl Report {
             .get_one::<String>("taxon")
             .expect("cli requires input");
         // TODO: could also take from file
-        report.search = utils::parse_comma_separated(&search);
+        report.search = utils::parse_comma_separated(search);
 
         // safe to unwrap, as default is defined.
         report.rank = matches
