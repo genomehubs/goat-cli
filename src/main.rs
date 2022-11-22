@@ -82,7 +82,7 @@ async fn main() -> Result<()> {
                     .short('x')
                     .long("exclude")
                     .action(SetTrue)
-                    .help("Include all missing and ancestral values, so that a returned table may contain indirect (missing/ancestral) measures. By default, if multiple variables are requested, a row is only returned if all the variables have a direct value. Will only take effect if one or more variables are specified.")
+                    .help("Exclude all missing and ancestral values, so that a returned table may contain only direct measures (excluding missing/ancestral). If multiple variables are requested, a row is only returned if all the variables have a direct value. Will only take effect if one or more variables are specified.")
             )
             // display level 1
             .arg(
@@ -348,7 +348,7 @@ async fn main() -> Result<()> {
                     .short('x')
                     .long("exclude")
                     .action(SetTrue)
-                    .help("Include all missing and ancestral values, so that a returned table may contain indirect (missing/ancestral) measures. By default, if multiple variables are requested, a row is only returned if all the variables have a direct value. Will only take effect if one or more variables are specified.")
+                    .help("Exclude all missing and ancestral values, so that a returned table may contain only direct measures (excluding missing/ancestral). If multiple variables are requested, a row is only returned if all the variables have a direct value. Will only take effect if one or more variables are specified.")
             )
             // flags
             .arg(
