@@ -27,7 +27,7 @@ pub enum ReportType {
 }
 
 impl fmt::Display for ReportType {
-    /// Implement [`Display`] for [`ReportType`] so we can
+    /// Implement [`fmt::Display`] for [`ReportType`] so we can
     /// use `.to_string()` method.
     ///
     /// Only tree is different for newick, otherwise, use table.
@@ -173,7 +173,7 @@ impl Opts {
 }
 
 impl fmt::Display for Opts {
-    /// Implement [`Display`] for [`Opts`] so we can
+    /// Implement [`fmt::Display`] for [`Opts`] so we can
     /// use `.to_string()` method.
     ///
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -235,7 +235,7 @@ pub struct Report {
 }
 
 impl Report {
-    /// Constructor function for [`Record`].
+    /// Constructor function for [`Report`].
     pub fn new(matches: &clap::ArgMatches, report_type: ReportType) -> Result<Self> {
         // create the default struct
         let mut report: Report = Report {

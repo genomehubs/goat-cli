@@ -48,7 +48,7 @@ lazy_static! {
 /// and assembly. Others exist, e.g. feature/sample.
 ///
 /// Each tuple variant can store their respective
-/// [`BTreeMap`] databases.
+/// [`std::collections::BTreeMap`] databases.
 #[derive(Clone, Copy, Debug)]
 pub enum IndexType {
     /// Taxon search index. The historical main
@@ -59,7 +59,7 @@ pub enum IndexType {
 }
 
 impl fmt::Display for IndexType {
-    /// Implement [`Display`] for [`IndexType`] so we can
+    /// Implement [`fmt::Display`] for [`IndexType`] so we can
     /// use `.to_string()` method.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -70,7 +70,7 @@ impl fmt::Display for IndexType {
 }
 
 /// The type of result to return in GoaT.
-/// 
+///
 /// Tax tree is a descendents call to the API,
 /// tax name is a single species, and tax lineage
 /// tracks back up the tree.
@@ -90,7 +90,7 @@ pub enum TaxType {
 }
 
 impl fmt::Display for TaxType {
-    /// Implement [`Display`] for [`TaxType`] so we can
+    /// Implement [`fmt::Display`] for [`TaxType`] so we can
     /// use `.to_string()` method.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

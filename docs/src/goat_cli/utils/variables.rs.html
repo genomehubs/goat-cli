@@ -143,8 +143,6 @@
 <span id="143">143</span>
 <span id="144">144</span>
 <span id="145">145</span>
-<span id="146">146</span>
-<span id="147">147</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils</span>::{
     <span class="ident">expression::Variable</span>,
     <span class="ident">utils</span>::{<span class="ident">did_you_mean</span>, <span class="ident">parse_comma_separated</span>},
@@ -271,8 +269,7 @@
             }
         }
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">exclude_index</span> <span class="op">=</span> <span class="number">0</span>;
-        <span class="kw">for</span> <span class="ident">field</span> <span class="kw">in</span> <span class="ident">split_vec</span> {
+        <span class="kw">for</span> (<span class="ident">exclude_index</span>, <span class="ident">field</span>) <span class="kw">in</span> <span class="ident">split_vec</span>.<span class="ident">into_iter</span>().<span class="ident">enumerate</span>() {
             <span class="ident">exclusion_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">ANCESTRAL</span>;
             <span class="ident">exclusion_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">OPEN_ANGLE_BRACE</span>;
             <span class="ident">exclusion_string</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">exclude_index</span>.<span class="ident">to_string</span>();
@@ -286,7 +283,6 @@
             <span class="ident">exclusion_string</span> <span class="op">+</span><span class="op">=</span> <span class="ident">CLOSE_ANGLE_BRACE</span>;
             <span class="ident">exclusion_string</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;={field}&quot;</span>);
 
-            <span class="ident">exclude_index</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
         }
 
         <span class="prelude-val">Ok</span>(<span class="ident">exclusion_string</span>)

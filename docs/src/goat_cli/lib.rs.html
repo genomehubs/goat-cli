@@ -150,7 +150,7 @@
 <span class="doccomment">/// and assembly. Others exist, e.g. feature/sample.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// Each tuple variant can store their respective</span>
-<span class="doccomment">/// [`BTreeMap`] databases.</span>
+<span class="doccomment">/// [`std::collections::BTreeMap`] databases.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">IndexType</span> {
     <span class="doccomment">/// Taxon search index. The historical main</span>
@@ -161,7 +161,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">fmt::Display</span> <span class="kw">for</span> <span class="ident">IndexType</span> {
-    <span class="doccomment">/// Implement [`Display`] for [`IndexType`] so we can</span>
+    <span class="doccomment">/// Implement [`fmt::Display`] for [`IndexType`] so we can</span>
     <span class="doccomment">/// use `.to_string()` method.</span>
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) -&gt; <span class="ident">fmt::Result</span> {
         <span class="kw">match</span> <span class="self">self</span> {
@@ -172,7 +172,7 @@
 }
 
 <span class="doccomment">/// The type of result to return in GoaT.</span>
-<span class="doccomment">/// </span>
+<span class="doccomment">///</span>
 <span class="doccomment">/// Tax tree is a descendents call to the API,</span>
 <span class="doccomment">/// tax name is a single species, and tax lineage</span>
 <span class="doccomment">/// tracks back up the tree.</span>
@@ -192,7 +192,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">fmt::Display</span> <span class="kw">for</span> <span class="ident">TaxType</span> {
-    <span class="doccomment">/// Implement [`Display`] for [`TaxType`] so we can</span>
+    <span class="doccomment">/// Implement [`fmt::Display`] for [`TaxType`] so we can</span>
     <span class="doccomment">/// use `.to_string()` method.</span>
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) -&gt; <span class="ident">fmt::Result</span> {
         <span class="kw">match</span> <span class="self">self</span> {
