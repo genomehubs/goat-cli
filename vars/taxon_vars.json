@@ -3,6 +3,313 @@
         "success": true
     },
     "fields": {
+        "c_value": {
+            "group": "taxon",
+            "name": "c_value",
+            "bins": {
+                "min": -2.5,
+                "max": 2.5,
+                "count": 10,
+                "scale": "log10"
+            },
+            "constraint": {
+                "max": 200,
+                "min": 0.001
+            },
+            "description": "1C value",
+            "display_level": 1,
+            "display_name": "C value",
+            "display_group": "genome_size",
+            "summary": [
+                "primary",
+                "median",
+                "min",
+                "max"
+            ],
+            "traverse": "mean",
+            "traverse_direction": "both",
+            "type": "half_float",
+            "units": "pgDNA",
+            "sequence": 26,
+            "processed_type": "float"
+        },
+        "c_value_method": {
+            "group": "taxon",
+            "name": "c_value_method",
+            "constraint": {
+                "enum": [
+                    "biochemical analysis",
+                    "bulk fluorometric assay",
+                    "complete genome sequencing",
+                    "feulgen densitometry",
+                    "feulgen image analysis densitometry",
+                    "flow cytometry",
+                    "flow karyotyping",
+                    "fluorescence fading analysis",
+                    "gallocyanin chrom alum densitometry",
+                    "methyl green densitometry",
+                    "not specified",
+                    "static cell fluorometry",
+                    "ultraviolet microscopy",
+                    "unknown",
+                    "biochemical analysis",
+                    "feulgen image analysis densitometry",
+                    "flow cytometry",
+                    "feulgen densitometry",
+                    "feulgen densitometry & flow cytometry",
+                    "microdensitometry",
+                    "pulse field gel electrophoresis",
+                    "reassociation kinetics",
+                    "whole genome sequencing"
+                ]
+            },
+            "description": "C value estimation method",
+            "display_level": 2,
+            "display_name": "C value method",
+            "display_group": "genome_size",
+            "summary": "list",
+            "translate": {
+                "bca": "Biochemical Analysis",
+                "bfa": "Bulk Fluorometric Assay",
+                "cs": "Complete Genome Sequencing",
+                "fd": "Feulgen Densitometry",
+                "fia": "Feulgen Image Analysis Densitometry",
+                "fcm": "Flow Cytometry",
+                "fk": "Flow karyotyping",
+                "ffa": "Fluorescence Fading Analysis",
+                "gcd": "Gallocyanin Chrom Alum Densitometry",
+                "mgd": "Methyl Green Densitometry",
+                "ns": "Not Specified",
+                "scf": "Static Cell Fluorometry",
+                "uvm": "Ultraviolet Microscopy",
+                "un": "Unknown",
+                "ch": "Biochemical Analysis",
+                "cia": "Feulgen Image Analysis Densitometry",
+                "fc:?": "Flow Cytometry",
+                "fc:dapi": "Flow Cytometry",
+                "fc:eb": "Flow Cytometry",
+                "fc:eb & o": "Flow Cytometry",
+                "fc:hoechst": "Flow Cytometry",
+                "fc:mi": "Flow Cytometry",
+                "fc:pi": "Flow Cytometry",
+                "fc:pi & eb": "Flow Cytometry",
+                "fc:sybr": "Flow Cytometry",
+                "fe": "Feulgen Densitometry",
+                "fe & fc:eb": "Feulgen Densitometry & Flow Cytometry",
+                "fe & fc:pi": "Feulgen Densitometry & Flow Cytometry",
+                "m:dapi": "Microdensitometry",
+                "m:h": "Microdensitometry",
+                "m:pi": "Microdensitometry",
+                "pfge": "Pulse field gel electrophoresis",
+                "rk": "Reassociation kinetics",
+                "wgs": "Whole genome sequencing"
+            },
+            "traverse": false,
+            "type": "keyword",
+            "sequence": 27,
+            "processed_type": "keyword"
+        },
+        "c_value_cell_type": {
+            "group": "taxon",
+            "name": "c_value_cell_type",
+            "constraint": {
+                "enum": [
+                    "antennae",
+                    "antennal gland",
+                    "blood cells",
+                    "brain",
+                    "buccal epithelium",
+                    "coelomocytes",
+                    "corneal epithelium",
+                    "digestive gland",
+                    "dorsal fin clip",
+                    "egg",
+                    "embyro",
+                    "epidermis",
+                    "exopodite",
+                    "fibroblasts",
+                    "fin clips",
+                    "germarium",
+                    "gills",
+                    "haemocytes",
+                    "heart cells",
+                    "individual chromosomes",
+                    "intestine",
+                    "kidney cells",
+                    "legs",
+                    "leukocytes",
+                    "liver",
+                    "lung (culture)",
+                    "mantle",
+                    "midgut",
+                    "muscle cells",
+                    "ne",
+                    "not specified",
+                    "oocytes",
+                    "ovaries",
+                    "pancreas",
+                    "pharynx",
+                    "polypide cells in suspension",
+                    "red blood cells",
+                    "retinal cells",
+                    "salivary gland",
+                    "somatic cells",
+                    "sperm",
+                    "spleen",
+                    "tentacles",
+                    "testes",
+                    "thymus",
+                    "tissue culture",
+                    "various",
+                    "ventral hypodermal chord",
+                    "whole body",
+                    "whole body squash"
+                ]
+            },
+            "description": "Cell type",
+            "display_level": 2,
+            "display_name": "C value cell type",
+            "display_group": "genome_size",
+            "summary": "list",
+            "translate": {
+                "an": "Antennae",
+                "ag": "Antennal gland",
+                "bl": "Blood cells",
+                "br": "Brain",
+                "be": "Buccal epithelium",
+                "c": "Coelomocytes",
+                "ce": "Corneal epithelium",
+                "dg": "Digestive gland",
+                "e": "Egg",
+                "em": "Embyro",
+                "ep": "Epidermis",
+                "exp": "Exopodite",
+                "fb": "Fibroblasts",
+                "fc": "Fin clips",
+                "gm": "Germarium",
+                "g": "Gills",
+                "he": "Haemocytes",
+                "hc": "Heart cells",
+                "ic": "Individual chromosomes",
+                "int": "Intestine",
+                "kc": "Kidney cells",
+                "l": "Legs",
+                "lk": "Leukocytes",
+                "lv": "Liver",
+                "lg": "Lung (culture)",
+                "mt": "Mantle",
+                "mg": "Midgut",
+                "mc": "Muscle cells",
+                "neurons": "NE",
+                "ns": "Not specified",
+                "oc": "Oocytes",
+                "ov": "Ovaries",
+                "p": "Pancreas",
+                "ph": "Pharynx",
+                "ppc": "Polypide cells in suspension",
+                "rbc": "Red blood cells",
+                "rc": "Retinal cells",
+                "sg": "Salivary gland",
+                "sc": "Somatic cells",
+                "s": "Sperm",
+                "sp": "Spleen",
+                "tn": "Tentacles",
+                "ts": "Testes",
+                "th": "Thymus",
+                "tc": "Tissue Culture",
+                "v": "Various",
+                "vhc": "Ventral hypodermal chord",
+                "wb": "Whole body",
+                "sq": "Whole body squash"
+            },
+            "traverse": false,
+            "type": "keyword",
+            "sequence": 28,
+            "processed_type": "keyword"
+        },
+        "genome_size": {
+            "group": "taxon",
+            "name": "genome_size",
+            "bins": {
+                "min": 6,
+                "max": 11,
+                "count": 10,
+                "scale": "log10"
+            },
+            "constraint": {
+                "min": 1000000
+            },
+            "description": "Genome size",
+            "display_name": "Genome size",
+            "display_level": 1,
+            "display_group": "genome_size",
+            "summary": [
+                "primary",
+                "median",
+                "min",
+                "max"
+            ],
+            "traverse": "median",
+            "traverse_direction": "both",
+            "type": "long",
+            "units": "bases",
+            "sequence": 29,
+            "processed_type": "float"
+        },
+        "genome_size_kmer": {
+            "group": "taxon",
+            "name": "genome_size_kmer",
+            "bins": {
+                "min": 6,
+                "max": 11,
+                "count": 10,
+                "scale": "log10"
+            },
+            "constraint": {
+                "min": 1000000
+            },
+            "description": "Genome size estimate from kmers",
+            "display_level": 1,
+            "display_name": "Genome size kmer",
+            "display_group": "genome_size",
+            "summary": [
+                "primary",
+                "median",
+                "min",
+                "max"
+            ],
+            "type": "long",
+            "units": "bases",
+            "sequence": 30,
+            "processed_type": "float"
+        },
+        "genome_size_draft": {
+            "group": "taxon",
+            "name": "genome_size_draft",
+            "bins": {
+                "min": 6,
+                "max": 11,
+                "count": 10,
+                "scale": "log10"
+            },
+            "constraint": {
+                "min": 1000000
+            },
+            "description": "Genome size estimate from draft assembly",
+            "display_level": 1,
+            "display_name": "Genome size draft",
+            "display_group": "genome_size",
+            "summary": [
+                "primary",
+                "median",
+                "min",
+                "max"
+            ],
+            "type": "long",
+            "units": "bases",
+            "sequence": 31,
+            "processed_type": "float"
+        },
         "assembly_level": {
             "group": "taxon",
             "name": "assembly_level",
@@ -186,7 +493,7 @@
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
             "type": "long",
             "units": "bases",
-            "sequence": 20,
+            "sequence": 21,
             "summary": [
                 "primary",
                 "max",
@@ -286,7 +593,7 @@
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/nuccore/",
             "type": "2dp",
             "units": "%",
-            "sequence": 24,
+            "sequence": 25,
             "bins": {
                 "count": 10,
                 "max": 100,
@@ -340,7 +647,7 @@
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/nuccore/",
             "type": "2dp",
             "units": "%",
-            "sequence": 24,
+            "sequence": 25,
             "bins": {
                 "count": 10,
                 "max": 100,
@@ -380,7 +687,7 @@
             "traverse": "median_high",
             "traverse_direction": "both",
             "type": "short",
-            "sequence": 31,
+            "sequence": 32,
             "processed_type": "float"
         },
         "haploid_number": {
@@ -409,7 +716,7 @@
             "traverse": "median_high",
             "traverse_direction": "both",
             "type": "short",
-            "sequence": 32,
+            "sequence": 33,
             "processed_type": "float"
         },
         "sex_determination": {
@@ -423,7 +730,7 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 33,
+            "sequence": 34,
             "processed_type": "keyword"
         },
         "ploidy": {
@@ -452,7 +759,7 @@
             "traverse": "median_high",
             "traverse_direction": "both",
             "type": "short",
-            "sequence": 34,
+            "sequence": 35,
             "processed_type": "float"
         },
         "echabs92": {
@@ -473,7 +780,7 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 36,
+            "sequence": 37,
             "processed_type": "keyword"
         },
         "habreg_2017": {
@@ -493,7 +800,7 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 37,
+            "sequence": 38,
             "processed_type": "keyword"
         },
         "marhabreg-2017": {
@@ -512,7 +819,7 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 38,
+            "sequence": 39,
             "processed_type": "keyword"
         },
         "waca_1981": {
@@ -532,7 +839,7 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 39,
+            "sequence": 40,
             "processed_type": "keyword"
         },
         "isb_wildlife_act_1976": {
@@ -552,7 +859,7 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 40,
+            "sequence": 41,
             "processed_type": "keyword"
         },
         "protection_of_badgers_act_1992": {
@@ -571,7 +878,7 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 41,
+            "sequence": 42,
             "processed_type": "keyword"
         },
         "sample_sex": {
@@ -629,315 +936,8 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 35,
+            "sequence": 36,
             "processed_type": "keyword"
-        },
-        "c_value": {
-            "group": "taxon",
-            "name": "c_value",
-            "bins": {
-                "min": -2.5,
-                "max": 2.5,
-                "count": 10,
-                "scale": "log10"
-            },
-            "constraint": {
-                "max": 200,
-                "min": 0.001
-            },
-            "description": "1C value",
-            "display_level": 1,
-            "display_name": "C value",
-            "display_group": "genome_size",
-            "summary": [
-                "primary",
-                "median",
-                "min",
-                "max"
-            ],
-            "traverse": "mean",
-            "traverse_direction": "both",
-            "type": "half_float",
-            "units": "pgDNA",
-            "sequence": 25,
-            "processed_type": "float"
-        },
-        "c_value_method": {
-            "group": "taxon",
-            "name": "c_value_method",
-            "constraint": {
-                "enum": [
-                    "biochemical analysis",
-                    "bulk fluorometric assay",
-                    "complete genome sequencing",
-                    "feulgen densitometry",
-                    "feulgen image analysis densitometry",
-                    "flow cytometry",
-                    "flow karyotyping",
-                    "fluorescence fading analysis",
-                    "gallocyanin chrom alum densitometry",
-                    "methyl green densitometry",
-                    "not specified",
-                    "static cell fluorometry",
-                    "ultraviolet microscopy",
-                    "unknown",
-                    "biochemical analysis",
-                    "feulgen image analysis densitometry",
-                    "flow cytometry",
-                    "feulgen densitometry",
-                    "feulgen densitometry & flow cytometry",
-                    "microdensitometry",
-                    "pulse field gel electrophoresis",
-                    "reassociation kinetics",
-                    "whole genome sequencing"
-                ]
-            },
-            "description": "C value estimation method",
-            "display_level": 2,
-            "display_name": "C value method",
-            "display_group": "genome_size",
-            "summary": "list",
-            "translate": {
-                "bca": "Biochemical Analysis",
-                "bfa": "Bulk Fluorometric Assay",
-                "cs": "Complete Genome Sequencing",
-                "fd": "Feulgen Densitometry",
-                "fia": "Feulgen Image Analysis Densitometry",
-                "fcm": "Flow Cytometry",
-                "fk": "Flow karyotyping",
-                "ffa": "Fluorescence Fading Analysis",
-                "gcd": "Gallocyanin Chrom Alum Densitometry",
-                "mgd": "Methyl Green Densitometry",
-                "ns": "Not Specified",
-                "scf": "Static Cell Fluorometry",
-                "uvm": "Ultraviolet Microscopy",
-                "un": "Unknown",
-                "ch": "Biochemical Analysis",
-                "cia": "Feulgen Image Analysis Densitometry",
-                "fc:?": "Flow Cytometry",
-                "fc:dapi": "Flow Cytometry",
-                "fc:eb": "Flow Cytometry",
-                "fc:eb & o": "Flow Cytometry",
-                "fc:hoechst": "Flow Cytometry",
-                "fc:mi": "Flow Cytometry",
-                "fc:pi": "Flow Cytometry",
-                "fc:pi & eb": "Flow Cytometry",
-                "fc:sybr": "Flow Cytometry",
-                "fe": "Feulgen Densitometry",
-                "fe & fc:eb": "Feulgen Densitometry & Flow Cytometry",
-                "fe & fc:pi": "Feulgen Densitometry & Flow Cytometry",
-                "m:dapi": "Microdensitometry",
-                "m:h": "Microdensitometry",
-                "m:pi": "Microdensitometry",
-                "pfge": "Pulse field gel electrophoresis",
-                "rk": "Reassociation kinetics",
-                "wgs": "Whole genome sequencing"
-            },
-            "traverse": false,
-            "type": "keyword",
-            "sequence": 26,
-            "processed_type": "keyword"
-        },
-        "c_value_cell_type": {
-            "group": "taxon",
-            "name": "c_value_cell_type",
-            "constraint": {
-                "enum": [
-                    "antennae",
-                    "antennal gland",
-                    "blood cells",
-                    "brain",
-                    "buccal epithelium",
-                    "coelomocytes",
-                    "corneal epithelium",
-                    "digestive gland",
-                    "dorsal fin clip",
-                    "egg",
-                    "embyro",
-                    "epidermis",
-                    "exopodite",
-                    "fibroblasts",
-                    "fin clips",
-                    "germarium",
-                    "gills",
-                    "haemocytes",
-                    "heart cells",
-                    "individual chromosomes",
-                    "intestine",
-                    "kidney cells",
-                    "legs",
-                    "leukocytes",
-                    "liver",
-                    "lung (culture)",
-                    "mantle",
-                    "midgut",
-                    "muscle cells",
-                    "ne",
-                    "not specified",
-                    "oocytes",
-                    "ovaries",
-                    "pancreas",
-                    "pharynx",
-                    "polypide cells in suspension",
-                    "red blood cells",
-                    "retinal cells",
-                    "salivary gland",
-                    "somatic cells",
-                    "sperm",
-                    "spleen",
-                    "tentacles",
-                    "testes",
-                    "thymus",
-                    "tissue culture",
-                    "various",
-                    "ventral hypodermal chord",
-                    "whole body",
-                    "whole body squash"
-                ]
-            },
-            "description": "Cell type",
-            "display_level": 2,
-            "display_name": "C value cell type",
-            "display_group": "genome_size",
-            "summary": "list",
-            "translate": {
-                "an": "Antennae",
-                "ag": "Antennal gland",
-                "bl": "Blood cells",
-                "br": "Brain",
-                "be": "Buccal epithelium",
-                "c": "Coelomocytes",
-                "ce": "Corneal epithelium",
-                "dg": "Digestive gland",
-                "e": "Egg",
-                "em": "Embyro",
-                "ep": "Epidermis",
-                "exp": "Exopodite",
-                "fb": "Fibroblasts",
-                "fc": "Fin clips",
-                "gm": "Germarium",
-                "g": "Gills",
-                "he": "Haemocytes",
-                "hc": "Heart cells",
-                "ic": "Individual chromosomes",
-                "int": "Intestine",
-                "kc": "Kidney cells",
-                "l": "Legs",
-                "lk": "Leukocytes",
-                "lv": "Liver",
-                "lg": "Lung (culture)",
-                "mt": "Mantle",
-                "mg": "Midgut",
-                "mc": "Muscle cells",
-                "neurons": "NE",
-                "ns": "Not specified",
-                "oc": "Oocytes",
-                "ov": "Ovaries",
-                "p": "Pancreas",
-                "ph": "Pharynx",
-                "ppc": "Polypide cells in suspension",
-                "rbc": "Red blood cells",
-                "rc": "Retinal cells",
-                "sg": "Salivary gland",
-                "sc": "Somatic cells",
-                "s": "Sperm",
-                "sp": "Spleen",
-                "tn": "Tentacles",
-                "ts": "Testes",
-                "th": "Thymus",
-                "tc": "Tissue Culture",
-                "v": "Various",
-                "vhc": "Ventral hypodermal chord",
-                "wb": "Whole body",
-                "sq": "Whole body squash"
-            },
-            "traverse": false,
-            "type": "keyword",
-            "sequence": 27,
-            "processed_type": "keyword"
-        },
-        "genome_size": {
-            "group": "taxon",
-            "name": "genome_size",
-            "bins": {
-                "min": 6,
-                "max": 11,
-                "count": 10,
-                "scale": "log10"
-            },
-            "constraint": {
-                "min": 1000000
-            },
-            "description": "Genome size",
-            "display_name": "Genome size",
-            "display_level": 1,
-            "display_group": "genome_size",
-            "summary": [
-                "primary",
-                "median",
-                "min",
-                "max"
-            ],
-            "traverse": "median",
-            "traverse_direction": "both",
-            "type": "long",
-            "units": "bases",
-            "sequence": 28,
-            "processed_type": "float"
-        },
-        "genome_size_kmer": {
-            "group": "taxon",
-            "name": "genome_size_kmer",
-            "bins": {
-                "min": 6,
-                "max": 11,
-                "count": 10,
-                "scale": "log10"
-            },
-            "constraint": {
-                "min": 1000000
-            },
-            "description": "Genome size estimate from kmers",
-            "display_level": 1,
-            "display_name": "Genome size kmer",
-            "display_group": "genome_size",
-            "summary": [
-                "primary",
-                "median",
-                "min",
-                "max"
-            ],
-            "type": "long",
-            "units": "bases",
-            "sequence": 29,
-            "processed_type": "float"
-        },
-        "genome_size_draft": {
-            "group": "taxon",
-            "name": "genome_size_draft",
-            "bins": {
-                "min": 6,
-                "max": 11,
-                "count": 10,
-                "scale": "log10"
-            },
-            "constraint": {
-                "min": 1000000
-            },
-            "description": "Genome size estimate from draft assembly",
-            "display_level": 1,
-            "display_name": "Genome size draft",
-            "display_group": "genome_size",
-            "summary": [
-                "primary",
-                "median",
-                "min",
-                "max"
-            ],
-            "type": "long",
-            "units": "bases",
-            "sequence": 30,
-            "processed_type": "float"
         },
         "btk_nohit": {
             "group": "taxon",
@@ -951,7 +951,7 @@
             "synonym": "nohit",
             "type": "1dp",
             "units": "%",
-            "sequence": 27,
+            "sequence": 28,
             "bins": {
                 "count": 10,
                 "max": 100,
@@ -978,7 +978,7 @@
             "synonym": "target",
             "type": "1dp",
             "units": "%",
-            "sequence": 28,
+            "sequence": 29,
             "bins": {
                 "count": 10,
                 "max": 100,
@@ -1004,7 +1004,7 @@
             "source_url_stub": "https://blobtoolkit.genomehubs.org/view/dataset/",
             "type": "1dp",
             "units": "%",
-            "sequence": 29,
+            "sequence": 30,
             "bins": {
                 "count": 10,
                 "max": 100,
@@ -1026,7 +1026,7 @@
             "source": "BlobToolKit",
             "source_url_stub": "https://blobtoolkit.genomehubs.org/view/dataset/",
             "type": "keyword",
-            "sequence": 30,
+            "sequence": 31,
             "key": "busco_lineage",
             "summary": "list",
             "traverse": false,
@@ -1042,7 +1042,7 @@
             "source": "BlobToolKit",
             "source_url_stub": "https://blobtoolkit.genomehubs.org/view/dataset/",
             "type": "keyword",
-            "sequence": 31,
+            "sequence": 32,
             "key": "busco_string",
             "summary": "list",
             "traverse": false,
@@ -1061,7 +1061,7 @@
             "display_level": 1,
             "type": "1dp",
             "units": "%",
-            "sequence": 24,
+            "sequence": 25,
             "description": "GC percent",
             "display_name": "GC percent",
             "bins": {
@@ -1089,7 +1089,7 @@
             "display_level": 2,
             "type": "1dp",
             "units": "%",
-            "sequence": 25,
+            "sequence": 26,
             "description": "N percent",
             "display_name": "N percent",
             "bins": {
@@ -1190,7 +1190,7 @@
             "summary": "list",
             "traverse": false,
             "traverse_direction": "none",
-            "sequence": 42,
+            "sequence": 43,
             "processed_type": "keyword"
         },
         "sample_collected": {
@@ -1202,7 +1202,7 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 43,
+            "sequence": 44,
             "processed_type": "keyword"
         },
         "sample_collected_by": {
@@ -1232,7 +1232,7 @@
                     "vien"
                 ]
             },
-            "sequence": 44,
+            "sequence": 45,
             "processed_type": "keyword"
         },
         "sample_acquired": {
@@ -1244,7 +1244,7 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 45,
+            "sequence": 46,
             "processed_type": "keyword"
         },
         "in_progress": {
@@ -1256,7 +1256,7 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 46,
+            "sequence": 47,
             "processed_type": "keyword"
         },
         "insdc_open": {
@@ -1268,7 +1268,7 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 47,
+            "sequence": 48,
             "processed_type": "keyword"
         },
         "published": {
@@ -1280,7 +1280,7 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 48,
+            "sequence": 49,
             "processed_type": "keyword"
         },
         "sequencing_status": {
@@ -1301,7 +1301,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 49,
+            "sequence": 50,
             "processed_type": "ordered_keyword"
         },
         "sequencing_status_ag100pest": {
@@ -1322,7 +1322,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 50,
+            "sequence": 51,
             "processed_type": "ordered_keyword"
         },
         "sequencing_status_asg": {
@@ -1343,7 +1343,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 51,
+            "sequence": 52,
             "processed_type": "ordered_keyword"
         },
         "sequencing_status_b10k": {
@@ -1364,7 +1364,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 52,
+            "sequence": 53,
             "processed_type": "ordered_keyword"
         },
         "sequencing_status_canbp": {
@@ -1385,7 +1385,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 53,
+            "sequence": 54,
             "processed_type": "ordered_keyword"
         },
         "sequencing_status_cbp": {
@@ -1406,7 +1406,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 54,
+            "sequence": 55,
             "processed_type": "ordered_keyword"
         },
         "sequencing_status_ccgp": {
@@ -1427,7 +1427,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 55,
+            "sequence": 56,
             "processed_type": "ordered_keyword"
         },
         "sequencing_status_cfgp": {
@@ -1448,7 +1448,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 56,
+            "sequence": 57,
             "processed_type": "ordered_keyword"
         },
         "sequencing_status_dtol": {
@@ -1469,7 +1469,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 57,
+            "sequence": 58,
             "processed_type": "ordered_keyword"
         },
         "sequencing_status_ebpn": {
@@ -1490,7 +1490,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 58,
+            "sequence": 59,
             "processed_type": "ordered_keyword"
         },
         "sequencing_status_endemixit": {
@@ -1511,7 +1511,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 59,
+            "sequence": 60,
             "processed_type": "ordered_keyword"
         },
         "sequencing_status_erga": {
@@ -1532,7 +1532,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 60,
+            "sequence": 61,
             "processed_type": "ordered_keyword"
         },
         "sequencing_status_eurofish": {
@@ -1553,7 +1553,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 61,
+            "sequence": 62,
             "processed_type": "ordered_keyword"
         },
         "sequencing_status_gaga": {
@@ -1574,7 +1574,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 62,
+            "sequence": 63,
             "processed_type": "ordered_keyword"
         },
         "sequencing_status_giga": {
@@ -1595,7 +1595,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 63,
+            "sequence": 64,
             "processed_type": "ordered_keyword"
         },
         "sequencing_status_ilebp": {
@@ -1616,7 +1616,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 64,
+            "sequence": 65,
             "processed_type": "ordered_keyword"
         },
         "sequencing_status_metainvert": {
@@ -1637,7 +1637,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 65,
+            "sequence": 66,
             "processed_type": "ordered_keyword"
         },
         "sequencing_status_pgp": {
@@ -1658,7 +1658,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 66,
+            "sequence": 67,
             "processed_type": "ordered_keyword"
         },
         "sequencing_status_squalomix": {
@@ -1679,7 +1679,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 67,
+            "sequence": 68,
             "processed_type": "ordered_keyword"
         },
         "sequencing_status_vgp": {
@@ -1700,7 +1700,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 68,
+            "sequence": 69,
             "processed_type": "ordered_keyword"
         },
         "sequencing_status_zoonomia": {
@@ -1721,7 +1721,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 69,
+            "sequence": 70,
             "processed_type": "ordered_keyword"
         },
         "sequencing_status_omg": {
@@ -1742,7 +1742,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 70,
+            "sequence": 71,
             "processed_type": "ordered_keyword"
         },
         "sequencing_status_arg": {
@@ -1763,7 +1763,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 71,
+            "sequence": 72,
             "processed_type": "ordered_keyword"
         },
         "sequencing_status_agi": {
@@ -1784,7 +1784,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 72,
+            "sequence": 73,
             "processed_type": "ordered_keyword"
         },
         "sequencing_status_tsi": {
@@ -1805,7 +1805,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 73,
+            "sequence": 74,
             "processed_type": "ordered_keyword"
         },
         "sequencing_status_gap": {
@@ -1826,7 +1826,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 74,
+            "sequence": 75,
             "processed_type": "ordered_keyword"
         },
         "sequencing_status_gbr": {
@@ -1847,7 +1847,7 @@
             "traverse": "enum",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 75,
+            "sequence": 76,
             "processed_type": "ordered_keyword"
         },
         "long_list": {
@@ -1891,7 +1891,7 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 76,
+            "sequence": 77,
             "processed_type": "keyword"
         },
         "other_priority": {
@@ -1935,7 +1935,7 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 77,
+            "sequence": 78,
             "processed_type": "keyword"
         },
         "family_representative": {
@@ -1979,7 +1979,7 @@
             "traverse": "list",
             "traverse_direction": "up",
             "type": "keyword",
-            "sequence": 78,
+            "sequence": 79,
             "processed_type": "keyword"
         },
         "sequencing_status_ebp": {
@@ -1994,7 +1994,7 @@
             "translate": {
                 "prjna533106": "insdc_open"
             },
-            "sequence": 79
+            "sequence": 80
         }
     },
     "identifiers": {
@@ -2020,6 +2020,6 @@
         }
     },
     "hub": "goat",
-    "release": "2022.11.07",
-    "source": "https://github.com/genomehubs/goat-data/tree/2022.11.07"
+    "release": "2022.11.22",
+    "source": "https://github.com/genomehubs/goat-data/tree/2022.11.22"
 }

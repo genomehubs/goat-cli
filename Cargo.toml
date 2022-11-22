@@ -1,6 +1,6 @@
 [package]
 name = "goat-cli"
-version = "0.2.4"
+version = "0.2.5"
 authors = [
     "Max Brown <euphrasiamax@gmail.com>",
     "Rich Challis <goat@genomehubs.org>",

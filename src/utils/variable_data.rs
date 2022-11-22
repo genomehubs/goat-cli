@@ -20,6 +20,12 @@ lazy_static! {
     /// `/vars` directory.
     pub static ref GOAT_TAXON_VARIABLE_DATA: BTreeMap<&'static str, Variable<'static>> = collection!(
         // automated input start taxon
+		"c_value" => Variable { display_name: "C value", type_of: TypeOf::HalfFloat, functions: Function::Some(vec!["min", "max"]) },
+		"c_value_method" => Variable { display_name: "C value method", type_of: TypeOf::Keyword(vec!["biochemical analysis", "bulk fluorometric assay", "complete genome sequencing", "feulgen densitometry", "feulgen image analysis densitometry", "flow cytometry", "flow karyotyping", "fluorescence fading analysis", "gallocyanin chrom alum densitometry", "methyl green densitometry", "not specified", "static cell fluorometry", "ultraviolet microscopy", "unknown", "biochemical analysis", "feulgen image analysis densitometry", "flow cytometry", "feulgen densitometry", "feulgen densitometry & flow cytometry", "microdensitometry", "pulse field gel electrophoresis", "reassociation kinetics", "whole genome sequencing"]), functions: Function::None },
+		"c_value_cell_type" => Variable { display_name: "C value cell type", type_of: TypeOf::Keyword(vec!["antennae", "antennal gland", "blood cells", "brain", "buccal epithelium", "coelomocytes", "corneal epithelium", "digestive gland", "dorsal fin clip", "egg", "embyro", "epidermis", "exopodite", "fibroblasts", "fin clips", "germarium", "gills", "haemocytes", "heart cells", "individual chromosomes", "intestine", "kidney cells", "legs", "leukocytes", "liver", "lung (culture)", "mantle", "midgut", "muscle cells", "ne", "not specified", "oocytes", "ovaries", "pancreas", "pharynx", "polypide cells in suspension", "red blood cells", "retinal cells", "salivary gland", "somatic cells", "sperm", "spleen", "tentacles", "testes", "thymus", "tissue culture", "various", "ventral hypodermal chord", "whole body", "whole body squash"]), functions: Function::None },
+		"genome_size" => Variable { display_name: "Genome size", type_of: TypeOf::Long, functions: Function::Some(vec!["min", "max"]) },
+		"genome_size_kmer" => Variable { display_name: "Genome size kmer", type_of: TypeOf::Long, functions: Function::Some(vec!["min", "max"]) },
+		"genome_size_draft" => Variable { display_name: "Genome size draft", type_of: TypeOf::Long, functions: Function::Some(vec!["min", "max"]) },
 		"assembly_level" => Variable { display_name: "Assembly level", type_of: TypeOf::Keyword(vec!["complete genome", "chromosome", "scaffold", "contig"]), functions: Function::None },
 		"assembly_span" => Variable { display_name: "Assembly span", type_of: TypeOf::Long, functions: Function::Some(vec!["min", "max"]) },
 		"bioproject" => Variable { display_name: "bioproject", type_of: TypeOf::Keyword(vec![""]), functions: Function::None },
@@ -46,12 +52,6 @@ lazy_static! {
 		"sample_sex" => Variable { display_name: "Sample sex", type_of: TypeOf::Keyword(vec![""]), functions: Function::None },
 		"sample_location" => Variable { display_name: "location", type_of: TypeOf::None, functions: Function::None },
 		"country_list" => Variable { display_name: "Country list", type_of: TypeOf::Keyword(vec!["gb", "ie"]), functions: Function::None },
-		"c_value" => Variable { display_name: "C value", type_of: TypeOf::HalfFloat, functions: Function::Some(vec!["min", "max"]) },
-		"c_value_method" => Variable { display_name: "C value method", type_of: TypeOf::Keyword(vec!["biochemical analysis", "bulk fluorometric assay", "complete genome sequencing", "feulgen densitometry", "feulgen image analysis densitometry", "flow cytometry", "flow karyotyping", "fluorescence fading analysis", "gallocyanin chrom alum densitometry", "methyl green densitometry", "not specified", "static cell fluorometry", "ultraviolet microscopy", "unknown", "biochemical analysis", "feulgen image analysis densitometry", "flow cytometry", "feulgen densitometry", "feulgen densitometry & flow cytometry", "microdensitometry", "pulse field gel electrophoresis", "reassociation kinetics", "whole genome sequencing"]), functions: Function::None },
-		"c_value_cell_type" => Variable { display_name: "C value cell type", type_of: TypeOf::Keyword(vec!["antennae", "antennal gland", "blood cells", "brain", "buccal epithelium", "coelomocytes", "corneal epithelium", "digestive gland", "dorsal fin clip", "egg", "embyro", "epidermis", "exopodite", "fibroblasts", "fin clips", "germarium", "gills", "haemocytes", "heart cells", "individual chromosomes", "intestine", "kidney cells", "legs", "leukocytes", "liver", "lung (culture)", "mantle", "midgut", "muscle cells", "ne", "not specified", "oocytes", "ovaries", "pancreas", "pharynx", "polypide cells in suspension", "red blood cells", "retinal cells", "salivary gland", "somatic cells", "sperm", "spleen", "tentacles", "testes", "thymus", "tissue culture", "various", "ventral hypodermal chord", "whole body", "whole body squash"]), functions: Function::None },
-		"genome_size" => Variable { display_name: "Genome size", type_of: TypeOf::Long, functions: Function::Some(vec!["min", "max"]) },
-		"genome_size_kmer" => Variable { display_name: "Genome size kmer", type_of: TypeOf::Long, functions: Function::Some(vec!["min", "max"]) },
-		"genome_size_draft" => Variable { display_name: "Genome size draft", type_of: TypeOf::Long, functions: Function::Some(vec!["min", "max"]) },
 		"btk_nohit" => Variable { display_name: "BTK no hit", type_of: TypeOf::OneDP, functions: Function::None },
 		"btk_target" => Variable { display_name: "BTK_target", type_of: TypeOf::OneDP, functions: Function::None },
 		"busco_completeness" => Variable { display_name: "BUSCO completeness", type_of: TypeOf::OneDP, functions: Function::None },
@@ -122,6 +122,7 @@ lazy_static! {
 		"isolate" => Variable { display_name: "Isolate", type_of: TypeOf::Keyword(vec![""]), functions: Function::None },
 		"last_updated" => Variable { display_name: "Last updated", type_of: TypeOf::Date, functions: Function::None },
 		"noncoding_gene_count" => Variable { display_name: "Non-coding gene count", type_of: TypeOf::Integer, functions: Function::None },
+		"organelle" => Variable { display_name: "organelle", type_of: TypeOf::None, functions: Function::None },
 		"protein_count" => Variable { display_name: "Protein count", type_of: TypeOf::Integer, functions: Function::None },
 		"pseudogene_count" => Variable { display_name: "Pseudogene count", type_of: TypeOf::Integer, functions: Function::None },
 		"refseq_category" => Variable { display_name: "RefSeq category", type_of: TypeOf::Keyword(vec![""]), functions: Function::None },

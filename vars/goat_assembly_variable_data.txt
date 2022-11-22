@@ -12,6 +12,7 @@
 		"isolate" => Variable { display_name: "Isolate", type_of: TypeOf::Keyword(vec![""]), functions: Function::None },
 		"last_updated" => Variable { display_name: "Last updated", type_of: TypeOf::Date, functions: Function::None },
 		"noncoding_gene_count" => Variable { display_name: "Non-coding gene count", type_of: TypeOf::Integer, functions: Function::None },
+		"organelle" => Variable { display_name: "organelle", type_of: TypeOf::None, functions: Function::None },
 		"protein_count" => Variable { display_name: "Protein count", type_of: TypeOf::Integer, functions: Function::None },
 		"pseudogene_count" => Variable { display_name: "Pseudogene count", type_of: TypeOf::Integer, functions: Function::None },
 		"refseq_category" => Variable { display_name: "RefSeq category", type_of: TypeOf::Keyword(vec![""]), functions: Function::None },
