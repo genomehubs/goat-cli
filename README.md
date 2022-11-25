@@ -2,7 +2,7 @@
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/goat/badges/downloads.svg)](https://anaconda.org/bioconda/goat)
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/goat/badges/version.svg)](https://anaconda.org/bioconda/goat)
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/goat/badges/platforms.svg)](https://anaconda.org/bioconda/goat)
-![Crates.io](https://img.shields.io/crates/d/goat-cli?label=crates.io&style=flat-square)
+[![Crates.io](https://img.shields.io/crates/d/goat-cli?label=crates.io&style=flat-square)](https://crates.io/crates/goat-cli)
 
 <p align="center">
     <img width="300" height="365" src="./goat-cli-mbing-code.png">
