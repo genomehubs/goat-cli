@@ -372,6 +372,27 @@ impl FieldBuilder {
     }
 }
 
+/// Combine the fields URL string generated from the flags on the CLI,
+/// and the variable string on the CLI.
+fn combine_variable_string(v: String, fb: String) -> String {
+    let is_v_empty = v.is_empty();
+    let is_fb_empty = fb.is_empty();
+
+    match (is_v_empty, is_fb_empty) {
+        // both empty, return empty string
+        (true, true) => "".into(),
+        // variables empty, fieldbuilder not
+        (true, false) => fb,
+        // variables not, fieldbuilder empty
+        (false, true) => v,
+        // both contain something
+        (false, false) => {
+            let fb_replaced = fb.replace("&fields=", "%2C");
+            v + &fb_replaced
+        },
+    }
+}
+
 /// The function which creats the GoaT API URLs
 /// which are then used as GET requests.
 pub fn make_goat_urls(
@@ -398,23 +419,33 @@ pub fn make_goat_urls(
 
     // make the rank string
     let rank_string = format_rank(ranks);
-    // due to variables being created independently of the fields/FieldBuilder
-    // this code is a lot less nice than it could be.
-    // FIXME: this means that if you supply both a variable string and some flags, only the variable string will be
-    // considered.
-    let fields_string = match variables {
-        Some(v) => match index_type {
-            IndexType::Taxon => Variables::new(v).parse(&*GOAT_TAXON_VARIABLE_DATA)?,
-            IndexType::Assembly => Variables::new(v).parse(&*GOAT_ASSEMBLY_VARIABLE_DATA)?,
-        },
-        None => fields.build_fields_string(),
+
+    // parse the variables, if they have been given.
+    let variables_field_string = if let Some(variables) = variables {
+        match index_type {
+            IndexType::Taxon => {
+                Variables::new(variables).parse(&*GOAT_TAXON_VARIABLE_DATA)?
+            }
+            IndexType::Assembly => {
+                Variables::new(variables).parse(&*GOAT_ASSEMBLY_VARIABLE_DATA)?
+            }
+        }
+    } else {
+        "".into()
     };
+
+    // parse the fields from the flags
+    let field_builder_string = fields.build_fields_string();
+    // and combine
+    let fields_string = combine_variable_string(variables_field_string , field_builder_string);
 
     let exclude_missing_or_ancestral = if exclude {
         match variables {
             Some(v) => match index_type {
                 IndexType::Taxon => Variables::new(v).parse_exclude(&*GOAT_TAXON_VARIABLE_DATA)?,
-                IndexType::Assembly => Variables::new(v).parse_exclude(&*GOAT_ASSEMBLY_VARIABLE_DATA)?,
+                IndexType::Assembly => {
+                    Variables::new(v).parse_exclude(&*GOAT_ASSEMBLY_VARIABLE_DATA)?
+                }
             },
             None => fields.generate_exculde_flags(),
         }
