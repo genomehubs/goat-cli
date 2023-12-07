@@ -107,6 +107,7 @@ pub fn process_cli_args(
         .get_one::<bool>("taxon-country-list")
         .unwrap_or(&false);
     let taxon_status = *matches.get_one::<bool>("taxon-status").unwrap_or(&false);
+    let taxon_toggle_direct = *matches.get_one::<bool>("toggle-direct").unwrap_or(&false);
 
     // command line args unique to assembly
     let assembly_assembly = *matches
@@ -128,8 +129,8 @@ pub fn process_cli_args(
 
     if print_expression {
         match index_type {
-            IndexType::Taxon => expression::print_variable_data(&*GOAT_TAXON_VARIABLE_DATA),
-            IndexType::Assembly => expression::print_variable_data(&*GOAT_ASSEMBLY_VARIABLE_DATA),
+            IndexType::Taxon => expression::print_variable_data(&GOAT_TAXON_VARIABLE_DATA),
+            IndexType::Assembly => expression::print_variable_data(&GOAT_ASSEMBLY_VARIABLE_DATA),
         }
         std::process::exit(0);
     }
@@ -156,6 +157,7 @@ pub fn process_cli_args(
         taxon_status,
         taxon_target_lists,
         taxon_tidy,
+        taxon_toggle_direct,
         assembly_assembly,
         assembly_karyotype,
         assembly_contig,

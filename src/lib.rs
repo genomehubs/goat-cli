@@ -22,6 +22,9 @@ pub mod search;
 /// used elsewhere.
 pub mod utils;
 
+/// The custom error handling
+pub mod error;
+
 /// The base URL for GoaT.
 const GOAT_URL_BASE: &str = "https://goat.genomehubs.org/api/";
 /// The current version of the GoaT API.

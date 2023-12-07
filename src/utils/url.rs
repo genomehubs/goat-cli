@@ -15,7 +15,7 @@ use anyhow::Result;
 fn format_rank(r: &str) -> String {
     // fixed vector of ranks.
     // "none" by default will return an empty string here.
-    let ranks = vec![
+    let ranks = [
         "subspecies",
         "species",
         "genus",
@@ -52,8 +52,8 @@ fn format_names(flag: bool) -> String {
 pub fn format_expression(exp: &str, index_type: IndexType) -> Result<String> {
     let mut new_exp = CLIexpression::new(exp);
     let parsed_string = match index_type {
-        IndexType::Taxon => new_exp.parse(&*GOAT_TAXON_VARIABLE_DATA)?,
-        IndexType::Assembly => new_exp.parse(&*GOAT_ASSEMBLY_VARIABLE_DATA)?,
+        IndexType::Taxon => new_exp.parse(&GOAT_TAXON_VARIABLE_DATA)?,
+        IndexType::Assembly => new_exp.parse(&GOAT_ASSEMBLY_VARIABLE_DATA)?,
     };
     Ok(parsed_string)
 }
@@ -153,6 +153,9 @@ pub struct FieldBuilder {
     ///
     /// A taxon index flag.
     pub taxon_tidy: bool,
+    /// For each variable, show each of the direct/ancestor/descendent
+    /// as separate columns
+    pub taxon_toggle_direct: bool,
     /// Assembly span and level.
     ///
     /// An assembly index flag.
@@ -301,6 +304,7 @@ impl FieldBuilder {
     pub fn build_fields_string(&self) -> String {
         const BASE: &str = "&fields=";
         const DELIMITER: &str = "%2C";
+        const COLON: &str = "%3A";
 
         // build the little data base
         let data = self.to_vec_tuples();
@@ -312,8 +316,28 @@ impl FieldBuilder {
         for (field_present, field_vec) in data.iter() {
             match field_present {
                 true => {
-                    field_string += &field_vec.join(DELIMITER);
-                    field_string += DELIMITER;
+                    // a loop here is easier
+                    for field in field_vec {
+                        field_string += field;
+                        field_string += DELIMITER;
+                        // if we have this toggle, add the extra columns
+                        if self.taxon_toggle_direct {
+                            // first add direct
+                            field_string += field;
+                            field_string += COLON;
+                            field_string += "direct";
+                            // now we need to push two more
+                            field_string += DELIMITER;
+                            field_string += field;
+                            field_string += COLON;
+                            field_string += "ancestor";
+                            field_string += DELIMITER;
+                            field_string += field;
+                            field_string += COLON;
+                            field_string += "descendant";
+                            field_string += DELIMITER;
+                        }
+                    }
                 }
                 false => continue,
             }
@@ -389,7 +413,7 @@ fn combine_variable_string(v: String, fb: String) -> String {
         (false, false) => {
             let fb_replaced = fb.replace("&fields=", "%2C");
             v + &fb_replaced
-        },
+        }
     }
 }
 
@@ -423,12 +447,8 @@ pub fn make_goat_urls(
     // parse the variables, if they have been given.
     let variables_field_string = if let Some(variables) = variables {
         match index_type {
-            IndexType::Taxon => {
-                Variables::new(variables).parse(&*GOAT_TAXON_VARIABLE_DATA)?
-            }
-            IndexType::Assembly => {
-                Variables::new(variables).parse(&*GOAT_ASSEMBLY_VARIABLE_DATA)?
-            }
+            IndexType::Taxon => Variables::new(variables).parse(&GOAT_TAXON_VARIABLE_DATA)?,
+            IndexType::Assembly => Variables::new(variables).parse(&GOAT_ASSEMBLY_VARIABLE_DATA)?,
         }
     } else {
         "".into()
@@ -437,7 +457,7 @@ pub fn make_goat_urls(
     // parse the fields from the flags
     let field_builder_string = fields.build_fields_string();
     // and combine
-    let fields_string = combine_variable_string(variables_field_string , field_builder_string);
+    let fields_string = combine_variable_string(variables_field_string, field_builder_string);
 
     let exclude_missing_or_ancestral = if exclude {
         match variables {

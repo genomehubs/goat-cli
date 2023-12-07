@@ -31,9 +31,9 @@ pub fn generate_unique_strings(
     if let Some(p) = print_expression {
         if *p {
             match index_type {
-                IndexType::Taxon => expression::print_variable_data(&*GOAT_TAXON_VARIABLE_DATA),
+                IndexType::Taxon => expression::print_variable_data(&GOAT_TAXON_VARIABLE_DATA),
                 IndexType::Assembly => {
-                    expression::print_variable_data(&*GOAT_ASSEMBLY_VARIABLE_DATA)
+                    expression::print_variable_data(&GOAT_ASSEMBLY_VARIABLE_DATA)
                 }
             }
             std::process::exit(0);
@@ -122,7 +122,7 @@ pub fn parse_comma_separated(taxids: &str) -> Vec<String> {
         // so we can parse things like:
         // `-v"assembly_level"`, where there is
         // no space between the `-v` and `assembly_level`
-        let replaced = str.replace('\"', "").replace('\'', "");
+        let replaced = str.replace(['\"', '\''], "");
 
         res2.push(replaced);
     }

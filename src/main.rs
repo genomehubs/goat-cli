@@ -1,9 +1,5 @@
-// Max Brown
-// Wellcome Sanger Institute: 2022
-
-use std::path::PathBuf;
-
 use anyhow::Result;
+use std::path::PathBuf;
 use clap::{crate_version, Arg, Command, value_parser, ArgAction::SetTrue};
 use futures::try_join;
 
@@ -252,6 +248,12 @@ async fn main() -> Result<()> {
                     .action(SetTrue)
                     .conflicts_with("raw")
                     .help("Include ancestral estimates. Omitting this flag includes only direct estimates from a taxon. Cannot be used with --raw.")
+            )
+            .arg(
+                Arg::new("toggle-direct")
+                    .long("toggle-direct")
+                    .action(SetTrue)
+                    .help("For each variable specified, return additional columns for direct measures, ancestral inferred, and descendent inferred.")
             )
             .arg(
                 Arg::new("print-expression")

@@ -2,7 +2,7 @@
 name = "goat-cli"
 version = "0.2.5"
 authors = [
-    "Max Brown <euphrasiamax@gmail.com>",
+    "Max Brown <max.carter-brown@aru.ac.uk>",
     "Rich Challis <goat@genomehubs.org>",
     "Sujai Kumar <goat@genomehubs.org>",
     "Cibele Sotero-Caio <goat@genomehubs.org>",
@@ -22,7 +22,6 @@ reqwest = "0.11.12"
 tokio = { version = "1.12.0", features = ["full"] }
 lazy_static = "1.4.0"
 serde_json = "1.0"
-anyhow = "1.0"
 futures = "0.3.17"
 again = "0.1"
 async-std = "1.10.0"
@@ -30,3 +29,4 @@ indicatif = "0.17.1"
 regex = "1.5.4"
 tabled = "0.10.0"
 rand = "0.8.5"
+anyhow = "1.0.75"
