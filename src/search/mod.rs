@@ -2,11 +2,11 @@
 //! Invoked by calling:
 //! `goat-cli search <args>`
 
-use anyhow::{bail, Result};
 use futures::StreamExt;
 use reqwest;
 use reqwest::header::ACCEPT;
 
+use crate::error::{Error, ErrorKind, Result};
 use crate::utils::{cli_matches, utils};
 use crate::{count, IndexType};
 
@@ -38,9 +38,9 @@ pub async fn search(
         {
             Ok(resp) => match resp.text().await {
                 Ok(body) => Ok(body),
-                Err(_) => bail!("ERROR reading {}", path),
+                Err(err) => Err(Error::new(ErrorKind::Reqwest(err))),
             },
-            Err(_) => bail!("ERROR downloading {}", path),
+            Err(err) => Err(Error::new(ErrorKind::Reqwest(err))),
         }
     }))
     .buffered(concurrent_requests)

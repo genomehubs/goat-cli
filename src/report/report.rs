@@ -1,7 +1,7 @@
+use crate::error::{Error, ErrorKind, Result};
 use crate::utils::variable_data;
 use crate::utils::{tax_ranks::TaxRanks, utils, variables::Variables};
 use crate::{TaxType, GOAT_URL, TAXONOMY};
-use anyhow::{bail, Context, Result};
 use std::fmt;
 
 // only taxon supported currently.
@@ -113,19 +113,21 @@ impl Opts {
             // the value out
             let int_str = el;
             // bubble up the error here if parsing goes awry
-            let int =
-                match int_str {
-                    Some(e) => Some(e.trim().parse::<i32>().context(
-                        "Could not convert what should be an integer in the options flag.",
-                    )?),
-                    None => None,
-                };
+            let int = match int_str {
+                Some(e) => Some(e.trim().parse::<i32>().map_err(|e| {
+                    let mut error = String::new();
+                    error += &"in parsing x or y options, ";
+                    error += &e.to_string();
+                    Error::new(ErrorKind::Report(error))
+                })?),
+                None => None,
+            };
 
             Ok(int)
         }
 
         match t.len() {
-            0 => bail!("Can't split no tokens in the x or y options."),
+            0 => return Err(Error::new(ErrorKind::Report("no options found".into()))),
             1 => {
                 opts.min = parse_str_to_int(t[0])?;
             }
@@ -148,7 +150,10 @@ impl Opts {
                     .iter()
                     .any(|e| **e == opts.scale.clone().unwrap_or_else(|| "".into()))
                 {
-                    bail!("Did not recognise scale type supplied. The options are linear, sqrt, log10, log2, log, proportion, or ordinal.")
+                    return Err(Error::new(ErrorKind::Report(format!(
+                        "Did not recognise scale type supplied. The options are: {}.",
+                        Self::SCALE_TYPES.join(", ")
+                    ))));
                 }
             }
             5 => {
@@ -161,11 +166,18 @@ impl Opts {
                     .iter()
                     .any(|e| **e == opts.scale.clone().unwrap_or_else(|| "".into()))
                 {
-                    bail!("Did not recognise scale type supplied. The options are linear, sqrt, log10, log2, log, proportion, or ordinal.")
+                    return Err(Error::new(ErrorKind::Report(format!(
+                        "Did not recognise scale type supplied. The options are: {}.",
+                        Self::SCALE_TYPES.join(", ")
+                    ))));
                 }
                 opts.axis_title = t[4].map(|e| e.to_string());
             }
-            _ => bail!("Too many tokens supplied to opts."),
+            _ => {
+                return Err(Error::new(ErrorKind::Report(
+                    "Too many tokens supplied to opts.".into(),
+                )))
+            }
         }
 
         Ok(opts)
@@ -270,15 +282,16 @@ impl Report {
         };
 
         // parse size
-        let size = *matches.get_one::<usize>("size").expect("cli default = 10");
-        report.size = Some(size);
+        let size = matches.get_one::<usize>("size");
+        report.size = size.copied();
 
         // descendents (default) or not?
-        let no_descendents = *matches
-            .get_one::<bool>("no-descendents")
-            .expect("cli default false");
-        if no_descendents {
-            report.taxon_type = TaxType::Name;
+        let no_descendents = matches.get_one::<bool>("no-descendents");
+
+        if let Some(desc) = no_descendents {
+            if *desc {
+                report.taxon_type = TaxType::Name;
+            }
         }
 
         // now the optionals.
@@ -299,28 +312,33 @@ impl Report {
         // category for histogram.
         let category = matches.get_one::<String>("category");
         if let Some(cat) = category {
+            // FIXME: is this correct? Looks a bit wrong
+
             // check this variable against the various lists
-            let parsed_taxon_rank = TaxRanks::parse(&TaxRanks::init(), cat, true);
-            let parsed_category =
-                Variables::new(cat).parse_one(&variable_data::GOAT_TAXON_VARIABLE_DATA);
+            let parsed_taxon_rank = TaxRanks::parse(&TaxRanks::init(), cat, true).ok();
+            let parsed_category = Variables::new(cat)
+                .parse_one(&variable_data::GOAT_TAXON_VARIABLE_DATA)
+                .ok();
 
             match parsed_taxon_rank {
-                Ok(tr) => {
+                Some(tr) => {
                     report.category = Some(tr);
                     // kinda janky but works for now.
                     return Ok(report);
                 }
-                Err(e) => {
+                None => {
                     // propagate this error through
                     match parsed_category {
-                        Ok(pc) => {
+                        Some(pc) => {
                             report.category = Some(pc);
                             return Ok(report);
                         }
-                        Err(e2) => {
+                        None => {
                             // TODO: this is quite a brutally large error, but can't think
                             // right now how to make it nicer.
-                            bail!("In category: {}\n\nOr taxon rank: {}.", e2, e);
+                            return Err(Error::new(ErrorKind::Report(
+                                "neither taxon rank or category specified".into(),
+                            )));
                         }
                     }
                 }
@@ -429,9 +447,9 @@ impl Report {
 
                 Ok(url)
             }
-            ReportType::Scatterplot => {
-                bail!("Scatter plots are not yet implemented; please check back in the future!")
-            }
+            ReportType::Scatterplot => Err(Error::new(ErrorKind::Report(
+                "Scatter plots are not yet implemented; please check back in the future!".into(),
+            ))),
         }
     }
 }

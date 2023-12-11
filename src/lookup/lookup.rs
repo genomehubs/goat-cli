@@ -1,10 +1,9 @@
-use std::path::PathBuf;
+use crate::error::{Error, ErrorKind, Result};
 use crate::utils::utils::{
     lines_from_file, parse_comma_separated, some_kind_of_uppercase_first_letter,
 };
 use crate::{IndexType, GOAT_URL, TAXONOMY, UPPER_CLI_FILE_LIMIT};
-
-use anyhow::{bail, Result};
+use std::path::PathBuf;
 
 /// The lookup struct
 #[derive(Clone, Debug)]
@@ -63,13 +62,17 @@ impl Lookups {
                     tax_name_vector = lines_from_file(s)?;
                     // check length of vector and bail if > 1000
                     if tax_name_vector.len() > *UPPER_CLI_FILE_LIMIT {
-                        bail!(
-                            "Number of taxa specified cannot exceed {}.",
+                        return Err(Error::new(ErrorKind::GenericCli(format!(
+                            "number of taxa specified cannot exceed {}.",
                             *UPPER_CLI_FILE_LIMIT
-                        )
+                        ))));
                     }
                 }
-                None => bail!("One of -f (--file) or -t (--taxon) should be specified."),
+                None => {
+                    return Err(Error::new(ErrorKind::GenericCli(format!(
+                        "one of -f (--file) or -t (--taxon) should be specified."
+                    ))))
+                }
             },
         }
 
@@ -115,9 +118,14 @@ fn format_suggestion_string(suggestions: &Vec<Option<String>>) -> Result<()> {
     // remove last comma
     if suggestion_str.len() > 2 {
         suggestion_str.drain(suggestion_str.len() - 2..);
-        bail!("Did you mean: {}?", suggestion_str)
+        return Err(Error::new(ErrorKind::GenericCli(format!(
+            "did you mean: {}?",
+            suggestion_str
+        ))));
     } else {
-        bail!("There are no results.")
+        return Err(Error::new(ErrorKind::GenericCli(format!(
+            "there are no results."
+        ))));
     }
 }
 
@@ -207,12 +215,16 @@ impl TaxonCollector {
                                 whole_res_string.pop();
                                 Ok(println!("{}", whole_res_string))
                             }
-                            None => bail!("There were no taxon names."),
+                            None => {
+                                return Err(Error::new(ErrorKind::GenericCli(format!(
+                                    "there were no taxon names."
+                                ))))
+                            }
                         }
                     }
                 }
             }
-            None => bail!("No results."),
+            None => return Err(Error::new(ErrorKind::GenericCli(format!("no results.")))),
         }
     }
 }
@@ -289,12 +301,20 @@ impl AssemblyCollector {
                                 whole_res_string.pop();
                                 Ok(println!("{}", whole_res_string))
                             }
-                            None => bail!("There were no taxon names."),
+                            None => {
+                                return Err(Error::new(ErrorKind::GenericCli(format!(
+                                    "there were no taxon names."
+                                ))))
+                            }
                         }
                     }
                 }
             }
-            None => bail!("No results."),
+            None => {
+                return Err(Error::new(ErrorKind::GenericCli(format!(
+                    "there are no results."
+                ))))
+            }
         }
     }
 }
@@ -304,7 +324,7 @@ impl AssemblyCollector {
 /// which I decided against.
 pub enum Collector {
     /// The taxon results.
-    Taxon(Result<TaxonCollector>),
+    Taxon(TaxonCollector),
     /// The assembly results.
-    Assembly(Result<AssemblyCollector>),
+    Assembly(AssemblyCollector),
 }

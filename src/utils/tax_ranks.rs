@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use crate::error::{Error, ErrorKind, Result};
 use std::fmt;
 
 use crate::utils::utils;
@@ -84,11 +84,11 @@ impl<'a> TaxRanks<'a> {
             if self.ranks.contains(&needle) {
                 return Ok(needle.to_string());
             } else {
-                bail!(
+                return Err(Error::new(ErrorKind::TaxRank(format!(
                     "Taxonomic rank \"{}\" is not recognised.\n\nEnter one of: {}",
                     needle,
                     Self::init()
-                );
+                ))));
             }
         }
         // split the string on commas
@@ -103,11 +103,11 @@ impl<'a> TaxRanks<'a> {
             if self.ranks.contains(&&el[..]) {
                 ranks_vec.push(el);
             } else {
-                bail!(
-                    "Taxonomic rank \"{}\" is not recognised.\n\nEnter one of: {}",
+                return Err(Error::new(ErrorKind::TaxRank(format!(
+                    "taxonomic rank \"{}\" is not recognised.\n\nEnter one of: {}",
                     el,
                     Self::init()
-                );
+                ))));
             }
         }
 

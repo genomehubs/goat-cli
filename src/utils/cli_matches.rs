@@ -1,9 +1,9 @@
+use crate::error::{Error, ErrorKind, Result};
 use crate::utils::{
     expression, tax_ranks, url, utils,
     variable_data::{GOAT_ASSEMBLY_VARIABLE_DATA, GOAT_TAXON_VARIABLE_DATA},
 };
 use crate::{IndexType, TaxType, GOAT_URL, TAXONOMY, UPPER_CLI_FILE_LIMIT, UPPER_CLI_SIZE_LIMIT};
-use anyhow::{bail, Result};
 use std::path::PathBuf;
 
 /// Take CLI arguments and parse them. Return a tuple of:
@@ -170,10 +170,10 @@ pub fn process_cli_args(
 
     if size as usize > *UPPER_CLI_SIZE_LIMIT {
         let limit_string = utils::pretty_print_usize(*UPPER_CLI_SIZE_LIMIT);
-        bail!(
-            "Searches with more than {} results are not currently supported.",
+        return Err(Error::new(ErrorKind::GenericCli(format!(
+            "searches with more than {} results are not currently supported.",
             limit_string
-        )
+        ))));
     }
 
     // tree includes all descendents of a node
@@ -181,7 +181,7 @@ pub fn process_cli_args(
         (TaxType::Tree, TaxType::Name) => "tree",
         (TaxType::Name, TaxType::Lineage) => "lineage",
         (TaxType::Name, TaxType::Name) => "name",
-        (_, _) => bail!("If we get here, I've done something wrong in the `TaxType` enum logic. Please file an issue."),
+        (_, _) => return Err(Error::new(ErrorKind::GenericCli("If we get here, I've done something wrong in the `TaxType` enum logic. Please file an issue.".to_string()))),
     };
 
     let url_vector: Vec<String>;
@@ -190,7 +190,9 @@ pub fn process_cli_args(
         Some(s) => {
             // catch empty string hanging here.
             if s.is_empty() {
-                bail!("Empty string found, please specify a taxon.")
+                return Err(Error::new(ErrorKind::GenericCli(format!(
+                    "Empty string found, please specify a taxon."
+                ))));
             }
             url_vector = utils::parse_comma_separated(s)
         }
@@ -200,17 +202,24 @@ pub fn process_cli_args(
                 // check length of vector and bail if > 1000
                 if url_vector.len() > *UPPER_CLI_FILE_LIMIT {
                     let limit_string = utils::pretty_print_usize(*UPPER_CLI_FILE_LIMIT);
-                    bail!("Number of taxa specified cannot exceed {}.", limit_string)
+                    return Err(Error::new(ErrorKind::GenericCli(format!(
+                        "Number of taxa specified cannot exceed {}.",
+                        limit_string
+                    ))));
                 }
             }
-            None => bail!("One of -f (--file) or -t (--taxon) should be specified."),
+            None => {
+                return Err(Error::new(ErrorKind::GenericCli(format!(
+                    "One of -f (--file) or -t (--taxon) should be specified."
+                ))))
+            }
         },
     }
 
     let url_vector_api = url::make_goat_urls(
         api,
         &url_vector,
-        &*GOAT_URL,
+        &GOAT_URL,
         tax_tree,
         include_estimates,
         // check again whether to include
@@ -219,7 +228,7 @@ pub fn process_cli_args(
         exclude,
         summarise_values_by,
         &result,
-        &*TAXONOMY,
+        &TAXONOMY,
         size,
         ranks,
         fields,

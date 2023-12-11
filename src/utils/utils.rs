@@ -4,12 +4,12 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use crate::error::{Error, ErrorKind, Result};
 use crate::{
     utils::expression,
     utils::variable_data::{GOAT_ASSEMBLY_VARIABLE_DATA, GOAT_TAXON_VARIABLE_DATA},
     IndexType, UPPER_CLI_FILE_LIMIT,
 };
-use anyhow::{bail, Context, Result};
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 
@@ -46,7 +46,9 @@ pub fn generate_unique_strings(
         Some(s) => {
             // catch empty string hanging here.
             if s.is_empty() {
-                bail!("Empty string found, please specify a taxon.");
+                return Err(Error::new(ErrorKind::GenericCli(
+                    "Empty string found, please specify a taxon.".to_string(),
+                )));
             }
             url_vector = parse_comma_separated(s);
         }
@@ -56,10 +58,17 @@ pub fn generate_unique_strings(
                 // check length of vector and bail if > 1000
                 if url_vector.len() > *UPPER_CLI_FILE_LIMIT {
                     let limit_string = pretty_print_usize(*UPPER_CLI_FILE_LIMIT);
-                    bail!("Number of taxa specified cannot exceed {}.", limit_string)
+                    return Err(Error::new(ErrorKind::GenericCli(format!(
+                        "Number of taxa specified cannot exceed {}.",
+                        limit_string
+                    ))));
                 }
             }
-            None => bail!("One of -f (--file) or -t (--taxon) should be specified."),
+            None => {
+                return Err(Error::new(ErrorKind::GenericCli(
+                    "One of -f (--file) or -t (--taxon) should be specified.".to_string(),
+                )))
+            }
         },
     }
 
@@ -78,21 +87,10 @@ pub fn generate_unique_strings(
 /// Read NCBI taxon ID's or binomial names of species,
 /// or higher order taxa from a file.
 pub fn lines_from_file(filename: impl AsRef<Path>) -> Result<Vec<String>> {
-    let file = File::open(&filename)
-        .with_context(|| format!("Could not open {:?}", filename.as_ref().as_os_str()))?;
+    let file = File::open(&filename)?;
     let buf = BufReader::new(file);
-    let buf_res: Result<Vec<String>> = buf
-        .lines()
-        .map(|l| {
-            l.with_context(|| {
-                format!(
-                    "Error in mapping buf_lines from {:?}",
-                    filename.as_ref().as_os_str()
-                )
-            })
-        })
-        .collect();
-    buf_res
+    let buf_res = buf.lines().collect::<std::result::Result<Vec<_>, _>>();
+    buf_res.map_err(|e| Error::new(ErrorKind::IO(e)))
 }
 
 // taxids should be comma separated
@@ -154,14 +152,14 @@ pub fn get_rank_vector(r: &str) -> Vec<String> {
 
 /// If multiple taxa are queried at once, headers will return for every new taxon.
 /// We can suppress this by storing the whole return as a string.
-pub fn format_tsv_output(awaited_fetches: Vec<Result<String, anyhow::Error>>) -> Result<()> {
+pub fn format_tsv_output(awaited_fetches: Vec<Result<String>>) -> Result<()> {
     // if there is a single element, return this.
     // is there a way to get all the headers, and compare them...
     let mut headers = Vec::new();
     for el in &awaited_fetches {
         let tsv = match el {
             Ok(ref e) => e,
-            Err(e) => bail!("{}", e),
+            Err(e) => return Err(Error::new(ErrorKind::FormatTSV(e.to_string()))),
         };
         headers.push(tsv.split('\n').next());
     }
@@ -179,13 +177,17 @@ pub fn format_tsv_output(awaited_fetches: Vec<Result<String, anyhow::Error>>) ->
 
     match header {
         Some(h) => println!("{}", h),
-        None => bail!("No header found."),
+        None => {
+            return Err(Error::new(ErrorKind::FormatTSV(
+                "no header found (please report if you get this error!)".to_string(),
+            )))
+        }
     }
 
     for el in awaited_fetches {
         let tsv = match el {
             Ok(ref e) => e,
-            Err(e) => bail!("{}", e),
+            Err(e) => return Err(e),
         };
 
         let tsv_iter = tsv.split('\n');
@@ -240,7 +242,12 @@ pub fn switch_string_to_url_encoding(string: &str) -> Result<&str> {
         ">" => "%3E",
         // ">=" => "%3E%3D",
         ">=" => ">%3D",
-        _ => bail!("Should not reach here."),
+        _ => {
+            // FIXME: probably should have its own error return type
+            return Err(Error::new(ErrorKind::GenericCli(
+                "Should not reach here.".to_string(),
+            )));
+        }
     };
     Ok(res)
 }

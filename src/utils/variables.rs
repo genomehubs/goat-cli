@@ -1,8 +1,8 @@
+use crate::error::{Error, ErrorKind, Result};
 use crate::utils::{
     expression::Variable,
     utils::{did_you_mean, parse_comma_separated},
 };
-use anyhow::{bail, Result};
 use std::collections::BTreeMap;
 
 /// A struct to store the variables
@@ -35,11 +35,10 @@ impl<'a> Variables<'a> {
         if !var_vec_check.contains(&variable.to_string()) {
             let var_vec_mean = did_you_mean(&var_vec_check, variable);
             if let Some(value) = var_vec_mean {
-                bail!(
-                    "In your variable (`-v`) you typed \"{}\" - did you mean \"{}\"?",
-                    variable,
-                    value
-                )
+                return Err(Error::new(ErrorKind::Variable(format!(
+                    "you typed \"{}\" - did you mean \"{}\"?",
+                    variable, value
+                ))));
             }
         }
         Ok(variable.to_string())
@@ -69,11 +68,10 @@ impl<'a> Variables<'a> {
             if !var_vec_check.contains(variable) {
                 let var_vec_mean = did_you_mean(&var_vec_check, variable);
                 if let Some(value) = var_vec_mean {
-                    bail!(
-                        "In your variable (`-v`) you typed \"{}\" - did you mean \"{}\"?",
-                        variable,
-                        value
-                    )
+                    return Err(Error::new(ErrorKind::Variable(format!(
+                        "you typed \"{}\" - did you mean \"{}\"?",
+                        variable, value
+                    ))));
                 }
             }
         }
@@ -115,11 +113,10 @@ impl<'a> Variables<'a> {
             if !var_vec_check.contains(variable) {
                 let var_vec_mean = did_you_mean(&var_vec_check, variable);
                 if let Some(value) = var_vec_mean {
-                    bail!(
-                        "In your variable (`-v`) you typed \"{}\" - did you mean \"{}\"?",
-                        variable,
-                        value
-                    )
+                    return Err(Error::new(ErrorKind::Variable(format!(
+                        "you typed \"{}\" - did you mean \"{}\"?",
+                        variable, value
+                    ))));
                 }
             }
         }
@@ -137,7 +134,6 @@ impl<'a> Variables<'a> {
             exclusion_string += &exclude_index.to_string();
             exclusion_string += CLOSE_ANGLE_BRACE;
             exclusion_string += &format!("={field}");
-
         }
 
         Ok(exclusion_string)

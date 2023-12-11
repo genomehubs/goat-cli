@@ -1,10 +1,10 @@
 use crate::utils::tax_ranks::TaxRanks;
 use crate::utils::utils::{did_you_mean, switch_string_to_url_encoding};
 
-use anyhow::{bail, ensure, Result};
+use crate::error::{Error, ErrorKind, Result};
 use regex::{CaptureMatches, Captures, Regex};
 use std::{collections::BTreeMap, fmt};
-use tabled::{object::Rows, Panel, Width, Modify, Table, Tabled};
+use tabled::{object::Rows, Modify, Panel, Table, Tabled, Width};
 
 /// Serialize GoaT variables into their types.
 ///
@@ -40,36 +40,36 @@ impl<'a> TypeOf<'a> {
         match self {
             TypeOf::Long => match other.parse::<i64>() {
                 Ok(_) => (),
-                Err(_) => bail!(format!("For variable \"{variable}\" in the expression, an input error was found. Pass an integer as a value.")),
+                Err(_) => return Err(Error::new(ErrorKind::Expression(format!("for variable \"{variable}\", an input error was found. Pass an integer as a value.") ))),
             },
             TypeOf::Short => match other.parse::<i16>() {
                 Ok(_) => (),
-                Err(_) => bail!(format!("For variable \"{variable}\" in the expression, an input error was found. Pass an integer as a value.")),
+                Err(_) => return Err(Error::new(ErrorKind::Expression(format!("for variable \"{variable}\", an input error was found. Pass an integer as a value.")))),
             },
             TypeOf::OneDP => match other.parse::<f32>() {
                 Ok(_) => (),
-                Err(_) => bail!(format!("For variable \"{variable}\" in the expression, an input error was found. Pass a float as a value.")),
+                Err(_) => return Err(Error::new(ErrorKind::Expression(format!("for variable \"{variable}\", an input error was found. Pass a float as a value.")))),
             },
             TypeOf::TwoDP => match other.parse::<f32>() {
                 Ok(_) => (),
-                Err(_) => bail!(format!("For variable \"{variable}\" in the expression, an input error was found. Pass a float as a value.")),
+                Err(_) => return Err(Error::new(ErrorKind::Expression(format!("for variable \"{variable}\", an input error was found. Pass a float as a value.")))),
             },
             TypeOf::Integer => match other.parse::<i32>() {
                 Ok(_) => (),
-                Err(_) => bail!(format!("For variable \"{variable}\" in the expression, an input error was found. Pass an integer as a value.")),
+                Err(_) => return Err(Error::new(ErrorKind::Expression(format!("for variable \"{variable}\", an input error was found. Pass an integer as a value.")))),
             },
             // dates should be in a specified format
             // yyyy-mm-dd
             TypeOf::Date => {
                 let tokens = other.split('-').collect::<Vec<_>>();
-                ensure!(
-                    tokens.len() == 1 || tokens.len() == 3,
-                    "Improperly formatted date. Please make sure date is in the format yyyy-mm-dd, or yyyy."
-                )
-            }
+                if tokens.len() == 1 || tokens.len() == 3 {
+                   return Err(Error::new(ErrorKind::Expression("improperly formatted date. Please make sure date is in the format yyyy-mm-dd, or yyyy.".to_string())))
+                    
+                }
+                            }
             TypeOf::HalfFloat => match other.parse::<f32>() {
                 Ok(_) => (),
-                Err(_) => bail!(format!("For variable \"{variable}\" in the expression, an input error was found. Pass a float as a value.")),
+                Err(_) => return Err(Error::new(ErrorKind::Expression(format!("for variable \"{variable}\", an input error was found. Pass a float as a value.")))),
             },
             // keywords handled elsewhere
             TypeOf::Keyword(_) => (),
@@ -146,16 +146,13 @@ pub fn print_variable_data(data: &BTreeMap<&'static str, Variable<'static>>) {
     let footer_data = TaxRanks::init();
 
     let table_string = Table::new(&table_data)
-        .with(Panel::footer(format!("NCBI taxon ranks:\n\n{}", footer_data)))
-        .with(
-            Modify::new(Rows::new(1..table_data.len() - 1))
-                .with(Width::wrap(30).keep_words()),
-        )
+        .with(Panel::footer(format!(
+            "NCBI taxon ranks:\n\n{}",
+            footer_data
+        )))
+        .with(Modify::new(Rows::new(1..table_data.len() - 1)).with(Width::wrap(30).keep_words()))
         // 4 rows
-        .with(
-            Modify::new(Rows::new(table_data.len()..))
-                .with(Width::wrap(30 * 4).keep_words()),
-        )
+        .with(Modify::new(Rows::new(table_data.len()..)).with(Width::wrap(30 * 4).keep_words()))
         .to_string();
 
     println!("{}", table_string);
@@ -206,25 +203,25 @@ impl<'a> CLIexpression<'a> {
     ) -> Result<String> {
         let expression_length_limit = 100;
         if self.length > expression_length_limit {
-            bail!(
-                "The expression query provided is greater than {} chars.",
+            return Err(Error::new(ErrorKind::Expression(format!(
+                "the query provided is greater than {} chars.",
                 expression_length_limit
-            )
+            ))))
         }
         if self.inner.contains("&&") {
-            bail!("Use AND keyword, not && for expression queries.")
+            return Err(Error::new(ErrorKind::Expression(format!("use AND keyword, not && for queries."))))
         }
         if self.inner.contains(" contains") {
-            bail!("Using the \"contains\" keyword is not yet supported.")
+            return Err(Error::new(ErrorKind::Expression(format!("using the \"contains\" keyword is not yet supported."))))
         }
         if self.inner.contains("||") || self.inner.contains("OR") {
-            bail!("OR (or ||) keyword is not supported.")
+            return Err(Error::new(ErrorKind::Expression(format!("OR (or ||) keyword is not supported. Commas between categories operate like the OR keyword."))))
         }
         if self.inner.contains("tax_name")
             || self.inner.contains("tax_tree")
             || self.inner.contains("tax_lineage")
         {
-            bail!("Set tax_name through -t <taxon_name>, tax_tree by -d flag, and tax_lineage by -l flag.")
+            return Err(Error::new(ErrorKind::Expression(format!("set tax_name through -t <taxon_name>, tax_tree by -d flag, and tax_lineage by -l flag."))))
         }
         let split_vec = &self.split();
         let exp_vec = &split_vec.expression;
@@ -237,7 +234,7 @@ impl<'a> CLIexpression<'a> {
         // precedence here matters
         let re = Regex::new(r"!=|<=|<|==|=|>=|>").unwrap();
         if !re.is_match(self.inner) {
-            bail!("No operators were found in the expression.")
+            return Err(Error::new(ErrorKind::Expression(format!("no operators were found in the expression."))))
         }
 
         // must always start with a space and AND
@@ -294,12 +291,6 @@ impl<'a> CLIexpression<'a> {
                 };
             }
 
-            // check this vector is length 3 or 1
-            ensure!(
-                    curr_el_vec.len() == 3 || curr_el_vec.len() == 1,
-                    "Split vector on single expression is invalid - length = {}. Are the input variables or operands correct?",
-                    curr_el_vec.len()
-                );
             match curr_el_vec.len() {
                 3 => {
                     // trim strings
@@ -333,11 +324,11 @@ impl<'a> CLIexpression<'a> {
                         let var_vec_mean = did_you_mean(&combined_checks, variable);
 
                         if let Some(value) = var_vec_mean {
-                            bail!(
-                                "In your expression (LHS) you typed \"{}\" - did you mean \"{}\"?",
+                            return Err(Error::new(ErrorKind::Expression(format!(
+                                "in LHS you typed \"{}\" - did you mean \"{}\"?",
                                 variable,
                                 value
-                            )
+                            ))))
                         }
                     }
 
@@ -382,7 +373,7 @@ impl<'a> CLIexpression<'a> {
 
                                 if let Some(value) = did_you_mean_str {
                                     if value != *val {
-                                        bail!("In your expression (RHS) you typed \"{}\" - did you mean \"{}\"?", val, value)
+                                        return Err(Error::new(ErrorKind::Expression(format!("in (RHS you typed \"{}\" - did you mean \"{}\"?", val, value))))
                                     }
                                 }
                             }
@@ -433,7 +424,7 @@ impl<'a> CLIexpression<'a> {
                     }
                 }
                 1 => (),
-                _ => unreachable!(),
+                _ => return Err(Error::new(ErrorKind::Expression("are the input variables or operands correct?".to_string())))
             }
 
             index += 1;
@@ -445,7 +436,7 @@ impl<'a> CLIexpression<'a> {
                 Ok(expression)
             }
             false => {
-                bail!("Error in expression format. Expressions must be in the format:\n\t<variable> <operator> <value> AND ...")
+                return Err(Error::new(ErrorKind::Expression(format!("must be in the format: <variable> <operator> <value> AND ..."))))
             }
         }
     }

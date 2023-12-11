@@ -4,7 +4,6 @@
 //! Add with `--progress-bar` in `goat-cli search` and
 //! `goat-cli newick`.
 
-use anyhow::{bail, ensure, Result};
 use async_std::task;
 use futures::StreamExt;
 use indicatif;
@@ -13,6 +12,7 @@ use reqwest::header::ACCEPT;
 use serde_json::Value;
 use std::time::Duration;
 
+use crate::error::{Error, ErrorKind, Result};
 use crate::utils::cli_matches;
 use crate::{count, IndexType};
 use crate::{GOAT_URL, UPPER_CLI_SIZE_LIMIT};
@@ -38,11 +38,6 @@ pub async fn progress_bar(
         "newick" => (0u64, vec!["init".to_string()], vec!["init".to_string()]),
         other => cli_matches::process_cli_args(matches, other, unique_ids.clone(), index_type)?,
     };
-
-    ensure!(
-        unique_ids.len() == url_vector_api.len(),
-        "No reason these lengths should be different."
-    );
 
     let concurrent_requests = url_vector_api.len();
 
@@ -105,9 +100,9 @@ pub async fn progress_bar(
                                 _ => Ok(None),
                             }
                         }
-                        Err(_) => bail!("ERROR reading {}", path),
+                        Err(e) => Err(Error::new(ErrorKind::Reqwest(e))),
                     },
-                    Err(_) => bail!("ERROR downloading {}", path),
+                    Err(e) => Err(Error::new(ErrorKind::Reqwest(e))),
                 }
             }))
             .buffered(concurrent_requests)
@@ -118,11 +113,11 @@ pub async fn progress_bar(
 
         let awaited_fetches = fetches.await;
         // what's going on here?
-        let progress_total: Result<Vec<_>, _> = awaited_fetches.into_iter().collect();
+        let progress_total: std::result::Result<Vec<_>, _> = awaited_fetches.into_iter().collect();
 
         let mut progress_x_total = 0;
         let mut progress_total_total = 0;
-        for el in progress_total.unwrap() {
+        for el in progress_total? {
             let x_tot_tup = match el {
                 Some(t) => t,
                 None => (None, None),

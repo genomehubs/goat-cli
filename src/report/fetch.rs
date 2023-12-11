@@ -1,9 +1,8 @@
-use anyhow::{bail, Result};
+use crate::error::{Error, ErrorKind, Result};
+use crate::report::report::{Report, ReportType};
 use futures::StreamExt;
 use reqwest;
 use reqwest::header::ACCEPT;
-
-use crate::report::report::{Report, ReportType};
 
 /// CLI entry point to get the Newick file from the GoaT API.
 pub async fn fetch_report(
@@ -43,9 +42,9 @@ pub async fn fetch_report(
         match again::retry(|| client.get(&path).header(ACCEPT, header_value).send()).await {
             Ok(resp) => match resp.text().await {
                 Ok(body) => Ok(body),
-                Err(_) => bail!("ERROR reading {}", path),
+                Err(err) => Err(err),
             },
-            Err(_) => bail!("ERROR downloading {}", path),
+            Err(err) => Err(err),
         }
     }))
     .buffered(concurrent_requests)
@@ -57,7 +56,7 @@ pub async fn fetch_report(
 
     match newick {
         Ok(s) => print!("{}", s),
-        Err(e) => bail!("{}", e),
+        Err(e) => return Err(Error::new(ErrorKind::Report(e.to_string()))),
     }
 
     Ok(())

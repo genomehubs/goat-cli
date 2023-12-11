@@ -1,3 +1,4 @@
+use crate::error::Result;
 use crate::{
     utils::{
         expression::CLIexpression,
@@ -6,8 +7,6 @@ use crate::{
     },
     IndexType,
 };
-
-use anyhow::Result;
 
 // format the ranks for the URL.
 
@@ -462,9 +461,9 @@ pub fn make_goat_urls(
     let exclude_missing_or_ancestral = if exclude {
         match variables {
             Some(v) => match index_type {
-                IndexType::Taxon => Variables::new(v).parse_exclude(&*GOAT_TAXON_VARIABLE_DATA)?,
+                IndexType::Taxon => Variables::new(v).parse_exclude(&GOAT_TAXON_VARIABLE_DATA)?,
                 IndexType::Assembly => {
-                    Variables::new(v).parse_exclude(&*GOAT_ASSEMBLY_VARIABLE_DATA)?
+                    Variables::new(v).parse_exclude(&GOAT_ASSEMBLY_VARIABLE_DATA)?
                 }
             },
             None => fields.generate_exculde_flags(),

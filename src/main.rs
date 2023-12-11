@@ -1,4 +1,4 @@
-use anyhow::Result;
+use goat_cli::error::Result;
 use std::path::PathBuf;
 use clap::{crate_version, Arg, Command, value_parser, ArgAction::SetTrue};
 use futures::try_join;
@@ -13,7 +13,16 @@ use goat_cli::{
 };
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() {
+    let result = run().await;
+    match result {
+        Ok(_) => (),
+        // format the errors nicely
+        Err(e) => eprintln!("{}", e),
+    }
+}
+
+async fn run() -> Result<()> {
     // global helps for both assembly/taxon subcommands.
     let upper_file_limit = pretty_print_usize(*UPPER_CLI_FILE_LIMIT);
     let upper_cli_limit = pretty_print_usize(*UPPER_CLI_SIZE_LIMIT);

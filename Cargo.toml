@@ -30,3 +30,4 @@ regex = "1.5.4"
 tabled = "0.10.0"
 rand = "0.8.5"
 anyhow = "1.0.75"
+owo-colors = { version = "3.5.0", features = ["supports-colors"] }

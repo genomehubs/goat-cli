@@ -1,14 +1,9 @@
 //!
 //! Invoked by calling:
 //! `goat-cli taxon/assembly lookup <args>`
-//!
-//! The state of the code here is not great, it's
-//! quite fragmented. Functional, but lacks coherence.
-//!
-//! Probably should be refactored at some point.
 
+use crate::error::{Error, ErrorKind, Result};
 use crate::IndexType;
-use anyhow::{bail, Result};
 use futures::StreamExt;
 use reqwest;
 use reqwest::header::ACCEPT;
@@ -81,9 +76,9 @@ pub async fn lookup(matches: &clap::ArgMatches, cli: bool, index_type: IndexType
                         IndexType::Assembly => Ok(Collector::Assembly(process_assembly_results(v, search_query, suggestions_text))),
                     }
                 }
-                Err(e) => bail!("Error reading {}: {}", path, e),
+                Err(e) => Err(Error::new(ErrorKind::Reqwest(e))),
             },
-            Err(e) => bail!("Error downloading {}: {}", path, e),
+            Err(e) => Err(Error::new(ErrorKind::Reqwest(e))),
         }
     }))
     .buffer_unordered(concurrent_requests)
@@ -96,17 +91,12 @@ pub async fn lookup(matches: &clap::ArgMatches, cli: bool, index_type: IndexType
             Ok(e) => {
                 if cli {
                     match e {
-                        Collector::Taxon(e) => e?.print_result(index)?,
-                        Collector::Assembly(e) => e?.print_result(index)?,
+                        Collector::Taxon(e) => e.print_result(index)?,
+                        Collector::Assembly(e) => e.print_result(index)?,
                     }
-                } else {
-                    // this avenue is for internal use
-                    // where the user could get info about
-                    // bad spelling etc...
-                    bail!("This is not yet implemented.")
                 }
             }
-            Err(_) => bail!("No results found."),
+            Err(e) => return Err(e),
         }
     }
 
@@ -121,7 +111,7 @@ fn process_taxon_results(
     v: Value,
     search_query: String,
     suggestions_text: Option<Vec<Option<String>>>,
-) -> Result<TaxonCollector> {
+) -> TaxonCollector {
     // and the taxon ID
     // we need to iterate over the array of results.
     // potentially look at the scores, and keep those over a certain amount
@@ -164,13 +154,13 @@ fn process_taxon_results(
     let taxon_id = taxon_id_vec.iter().map(|e| e.map(String::from)).collect();
     let taxon_rank = taxon_rank_vec.iter().map(|e| e.map(String::from)).collect();
 
-    Ok(TaxonCollector {
+    TaxonCollector {
         search: Some(search_query),
         suggestions: suggestions_text,
         taxon_id,
         taxon_names: taxon_names_array_vec,
         taxon_rank,
-    })
+    }
 }
 
 /// The assembly counterpart to the above function.
@@ -178,7 +168,7 @@ fn process_assembly_results(
     v: Value,
     search_query: String,
     suggestions_text: Option<Vec<Option<String>>>,
-) -> Result<AssemblyCollector> {
+) -> AssemblyCollector {
     // taxon ID stays the same
     let mut taxon_id_vec = Vec::new();
     // there is no taxon rank
@@ -214,10 +204,10 @@ fn process_assembly_results(
     // Vec<Option<&str>> -> Vec<Option<String>>
     let taxon_id = taxon_id_vec.iter().map(|e| e.map(String::from)).collect();
 
-    Ok(AssemblyCollector {
+    AssemblyCollector {
         search: Some(search_query),
         suggestions: suggestions_text,
         taxon_id,
         identifiers: identifiers_array_vec,
-    })
+    }
 }
