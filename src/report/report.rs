@@ -373,6 +373,7 @@ impl Report {
                 );
                 url += &x_value_source;
                 // default stuff for now
+                url += "&treeThreshold=2000";
                 url += "&includeEstimates=true";
                 url += &format!("&taxonomy={}", &*TAXONOMY);
                 // fix this for now, as only single requests can be submitted
