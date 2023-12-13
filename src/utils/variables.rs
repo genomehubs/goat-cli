@@ -50,9 +50,12 @@ impl<'a> Variables<'a> {
     pub fn parse(
         &self,
         reference_data: &BTreeMap<&'static str, Variable<'static>>,
+        // this is a pretty hacky way of adding this in.
+        taxon_toggle_direct: bool,
     ) -> Result<String> {
-        let base = "&fields=";
-        let delimiter = "%2C";
+        const BASE: &str = "&fields=";
+        const DELIMITER: &str = "%2C";
+        const COLON: &str = "%3A";
 
         let mut parsed_string = String::new();
 
@@ -76,10 +79,27 @@ impl<'a> Variables<'a> {
             }
         }
 
-        parsed_string += base;
+        parsed_string += BASE;
         for el in split_vec {
             parsed_string += &el;
-            parsed_string += delimiter;
+            parsed_string += DELIMITER;
+
+            if taxon_toggle_direct {
+                // first add direct
+                parsed_string += &el;
+                parsed_string += COLON;
+                parsed_string += "direct";
+                // now we need to push two more
+                parsed_string += DELIMITER;
+                parsed_string += &el;
+                parsed_string += COLON;
+                parsed_string += "ancestor";
+                parsed_string += DELIMITER;
+                parsed_string += &el;
+                parsed_string += COLON;
+                parsed_string += "descendant";
+                parsed_string += DELIMITER;
+            }
         }
 
         // should be okay to do an unchecked drain here

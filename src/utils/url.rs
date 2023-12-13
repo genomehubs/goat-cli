@@ -438,16 +438,16 @@ pub fn make_goat_urls(
     unique_ids: Vec<String>,
     index_type: IndexType,
 ) -> Result<Vec<String>> {
-    let mut res = Vec::new();
-
     // make the rank string
     let rank_string = format_rank(ranks);
 
     // parse the variables, if they have been given.
     let variables_field_string = if let Some(variables) = variables {
         match index_type {
-            IndexType::Taxon => Variables::new(variables).parse(&GOAT_TAXON_VARIABLE_DATA)?,
-            IndexType::Assembly => Variables::new(variables).parse(&GOAT_ASSEMBLY_VARIABLE_DATA)?,
+            IndexType::Taxon => Variables::new(variables)
+                .parse(&GOAT_TAXON_VARIABLE_DATA, fields.taxon_toggle_direct)?,
+            IndexType::Assembly => Variables::new(variables)
+                .parse(&GOAT_ASSEMBLY_VARIABLE_DATA, fields.taxon_toggle_direct)?,
         }
     } else {
         "".into()
@@ -481,6 +481,7 @@ pub fn make_goat_urls(
 
     // enumeration of the taxa will be 0 -> n,
     // corresponding to alphabetical order of taxa
+    let mut res = Vec::new();
     for (taxon, chars) in taxids.iter().zip(unique_ids.iter()) {
         let query_id = format!("&queryId=goat_cli_{}", chars);
         let url = format!(

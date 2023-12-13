@@ -245,7 +245,7 @@ pub fn switch_string_to_url_encoding(string: &str) -> Result<&str> {
         _ => {
             // FIXME: probably should have its own error return type
             return Err(Error::new(ErrorKind::GenericCli(
-                "Should not reach here.".to_string(),
+                "should not reach here.".to_string(),
             )));
         }
     };

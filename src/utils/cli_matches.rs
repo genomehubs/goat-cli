@@ -181,7 +181,7 @@ pub fn process_cli_args(
         (TaxType::Tree, TaxType::Name) => "tree",
         (TaxType::Name, TaxType::Lineage) => "lineage",
         (TaxType::Name, TaxType::Name) => "name",
-        (_, _) => return Err(Error::new(ErrorKind::GenericCli("If we get here, I've done something wrong in the `TaxType` enum logic. Please file an issue.".to_string()))),
+        (_, _) => return Err(Error::new(ErrorKind::GenericCli("if we get here, I've done something wrong in the `TaxType` enum logic. Please file an issue.".to_string()))),
     };
 
     let url_vector: Vec<String>;
@@ -190,9 +190,9 @@ pub fn process_cli_args(
         Some(s) => {
             // catch empty string hanging here.
             if s.is_empty() {
-                return Err(Error::new(ErrorKind::GenericCli(format!(
-                    "Empty string found, please specify a taxon."
-                ))));
+                return Err(Error::new(ErrorKind::GenericCli(
+                    "empty string found, please specify a taxon.".to_string(),
+                )));
             }
             url_vector = utils::parse_comma_separated(s)
         }
@@ -203,15 +203,15 @@ pub fn process_cli_args(
                 if url_vector.len() > *UPPER_CLI_FILE_LIMIT {
                     let limit_string = utils::pretty_print_usize(*UPPER_CLI_FILE_LIMIT);
                     return Err(Error::new(ErrorKind::GenericCli(format!(
-                        "Number of taxa specified cannot exceed {}.",
+                        "number of taxa specified cannot exceed {}.",
                         limit_string
                     ))));
                 }
             }
             None => {
-                return Err(Error::new(ErrorKind::GenericCli(format!(
-                    "One of -f (--file) or -t (--taxon) should be specified."
-                ))))
+                return Err(Error::new(ErrorKind::GenericCli(
+                    "one of -f (--file) or -t (--taxon) should be specified.".to_string(),
+                )))
             }
         },
     }
