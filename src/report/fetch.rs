@@ -3,6 +3,7 @@ use crate::report::report::{Report, ReportType};
 use futures::StreamExt;
 use reqwest;
 use reqwest::header::ACCEPT;
+use std::io::Write;
 
 /// CLI entry point to get the Newick file from the GoaT API.
 pub async fn fetch_report(
@@ -52,10 +53,13 @@ pub async fn fetch_report(
 
     let awaited_fetches = fetches.await;
 
-    let newick = &awaited_fetches[0];
+    let report = &awaited_fetches[0];
 
-    match newick {
-        Ok(s) => print!("{}", s),
+    match report {
+        Ok(s) => {
+            let mut stdout = std::io::stdout();
+            writeln!(stdout, "{}", s)?;
+        }
         Err(e) => return Err(Error::new(ErrorKind::Report(e.to_string()))),
     }
 
