@@ -24,6 +24,10 @@ pub enum ReportType {
     CategoricalHistogram,
     /// A scatterplot, requiring two variables.
     Scatterplot,
+    /// Arc
+    Arc,
+    /// Sources
+    Sources,
 }
 
 impl fmt::Display for ReportType {
@@ -34,6 +38,7 @@ impl fmt::Display for ReportType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ReportType::Newick => write!(f, "tree"),
+            ReportType::Sources => write!(f, "sources"),
             _ => write!(f, "table"),
         }
     }
@@ -116,7 +121,7 @@ impl Opts {
             let int = match int_str {
                 Some(e) => Some(e.trim().parse::<i32>().map_err(|e| {
                     let mut error = String::new();
-                    error += &"in parsing x or y options, ";
+                    error += "in parsing x or y options, ";
                     error += &e.to_string();
                     Error::new(ErrorKind::Report(error))
                 })?),
@@ -451,6 +456,42 @@ impl Report {
             ReportType::Scatterplot => Err(Error::new(ErrorKind::Report(
                 "Scatter plots are not yet implemented; please check back in the future!".into(),
             ))),
+            ReportType::Arc => todo!(),
+            ReportType::Sources => {
+                Err(Error::new(ErrorKind::Report(
+                    "Sources are not yet implemented; please check back in the future!".into(),
+                )))
+                // https://goat.genomehubs.org/reporturl?
+                // query=tax_tree%2891896%5BOrobanchaceae%5D%29
+                // &includeEstimates=false
+                // &includeRawValues=false
+                // &summaryValues=count
+                // &result=taxon
+                // &taxonomy=ncbi
+                // &size=50
+                // &queryId=goat_cli_du8TOca5YBVF4rL
+                // &report=sources
+
+                // this would work, but it's unimplemented yet
+                // let mut url = String::new();
+                // url += &GOAT_URL;
+                // // it's a taxon report
+                // url += "report?result=taxon";
+                // url += "&includeEstimates=false";
+                // url += "&includeRawValues=false";
+                // // standard taxonomy
+                // url += &format!("&taxonomy={}", &*TAXONOMY);
+                // // it's a source
+                // url += &format!("&report={}", self.report_type);
+                // // taxon type: tax_rank/tax_tree
+                // let taxon_type = self.taxon_type;
+                // // and the taxa
+                // let taxa = self.search.join("%2C");
+                // url += &format!("&query={}%28{}%29", taxon_type, taxa);
+                // // add unique_id?
+
+                // Ok(url)
+            }
         }
     }
 }

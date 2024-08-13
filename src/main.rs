@@ -508,6 +508,31 @@ async fn run() -> Result<()> {
                             )
                     )
                     .subcommand(
+                        Command::new("sources")
+                            .about("Get the sources of data for all taxa input.")
+                            .arg(
+                                Arg::new("taxon")
+                                    .short('t')
+                                    .long("taxon")
+                                    .help("The taxon to return sources for. Multiple taxa will return the sources for all.")
+                            )
+                            .arg(
+                                Arg::new("rank")
+                                    .short('r')
+                                    .long("rank")
+                                    .default_value("species")
+                                    .value_parser(["species", "genus", "family", "order"])
+                                    .help("The rank of the results to return."),
+                            )
+                            .arg(
+                                Arg::new("url")
+                                    .short('u')
+                                    .long("url")
+                                    .action(SetTrue)
+                                    .help("Print report URL.")
+                            )
+                    )
+                    .subcommand(
                         Command::new("newick")
                             .about("Generate a newick tree from input taxa.")
                             .arg(
@@ -808,6 +833,10 @@ async fn run() -> Result<()> {
                         search::search(taxon_search_matches, unique_ids, IndexType::Taxon).await?;
                     }
                 }
+            }
+            Some(("sources", taxon_sources_matches)) => {
+                let unique_ids = generate_unique_strings(taxon_sources_matches, IndexType::Taxon)?;
+                report::fetch::fetch_report(taxon_sources_matches, unique_ids, ReportType::Sources).await?;
             }
             Some(("count", taxon_count_matches)) => {
                 let unique_ids = generate_unique_strings(taxon_count_matches, IndexType::Taxon)?;
