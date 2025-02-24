@@ -4,24 +4,34 @@ use crate::utils::{tax_ranks::TaxRanks, utils, variables::Variables};
 use crate::{TaxType, GOAT_URL, TAXONOMY};
 use std::fmt;
 
-// only taxon supported currently.
-// TODO: think about how to support assembly or
-// other indexes later.
+// Report      | Required             | Optional
+// ------------|----------------------|-------------------------------------------
+// Files       | x                    | checkedFiles
+// Histogram   | x                    | cat, catToX, rank, xOpts
+// Map         | x                    | cat, rank
+// Oxford      | x                    | cat, xOpts, yOpts
+// Scatter     | x, y, rank           | cat, xOpts, yOpts, scatterThreshold
+// Table       | x, y                 | cat, rank, xOpts, yOpts, scatterThreshold
+// Sources     | -                    | -
+// Tree        | x                    | y, cat, xOpts, yOpts, collapseMonotypic, treeThreshold
+// arc         | x, rank              | y
+// xPerRank    | x                    | ranks
+
+// Search related parameters fields, includeEstimates, exclude* and queryId are optional for all reports (except sources where they have no effect).
 
 /// The record type to return.
 ///
 /// Should support all main report types, at least in their
 /// basic forms.
-#[derive(Default, Clone, Copy)]
+#[derive(Default, Clone, Copy, PartialEq, Eq)]
 pub enum ReportType {
+    None,
     /// A Newick text string.
     #[default]
     Newick,
     /// A histogram, which is a single variable
     /// binned.
     Histogram,
-    /// A histogram binned by category.
-    CategoricalHistogram,
     /// A scatterplot, requiring two variables.
     Scatterplot,
     /// Arc
@@ -357,6 +367,9 @@ impl Report {
     /// report.
     pub fn make_url(&self, unique_ids: Vec<String>) -> Result<String> {
         match self.report_type {
+            ReportType::None => Err(Error::new(ErrorKind::Report(
+                "No report type specified.".into(),
+            ))),
             ReportType::Newick => {
                 let mut url = String::new();
                 url += &GOAT_URL;
@@ -385,6 +398,9 @@ impl Report {
                 url += &format!("&queryId=goat_cli_{}", unique_ids[0]);
                 Ok(url)
             }
+            // Report      | Required             | Optional
+            // ------------|----------------------|-------------------------------------------
+            // Histogram   | x                    | cat, catToX, rank, xOpts
             ReportType::Histogram => {
                 let mut url = String::new();
                 // add base URL
@@ -393,36 +409,8 @@ impl Report {
                 url += "report?result=taxon";
                 // default stuff for now
                 // no estimates
-                url += "&includeEstimates=false";
-                // standard taxonomy
-                url += &format!("&taxonomy={}", &*TAXONOMY);
-                // it's a table
-                url += &format!("&report={}", self.report_type);
-                // add the rank from the CLI
-                url += &format!("&rank={}", self.rank);
-                // taxon type: tax_rank/tax_tree
-                let taxon_type = self.taxon_type;
-                // and the taxa
-                let taxa = self.search.join("%2C");
-                // and the variable
-                let variable = self.x.clone().unwrap();
-                url += &format!("&x={}%28{}%29%20AND%20{}", taxon_type, taxa, variable);
-
-                // add x options if any
-                if let Some(xopts) = &self.x_opts {
-                    url += &format!("&xOpts={}", xopts);
-                }
-
-                Ok(url)
-            }
-            ReportType::CategoricalHistogram => {
-                let mut url = String::new();
-                url += &GOAT_URL;
-                // it's a taxon report
-                url += "report?result=taxon";
-                // default stuff for now
-                // no estimates
-                url += "&includeEstimates=false";
+                // not sure whether this should be true or not
+                url += "&includeEstimates=true";
                 // standard taxonomy
                 url += &format!("&taxonomy={}", &*TAXONOMY);
                 // it's a table
@@ -445,7 +433,6 @@ impl Report {
                     cat,
                     self.size.unwrap(),
                 );
-
                 // add x options if any
                 if let Some(xopts) = &self.x_opts {
                     url += &format!("&xOpts={}", xopts);

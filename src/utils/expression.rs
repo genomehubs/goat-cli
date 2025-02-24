@@ -159,6 +159,7 @@ pub fn print_variable_data(data: &BTreeMap<&'static str, Variable<'static>>) {
 }
 
 /// The CLI expression which needs to be parsed.
+#[derive(Debug)]
 pub struct CLIexpression<'a> {
     pub inner: &'a str,
     pub length: usize, // these queries can't be crazy long.
@@ -178,7 +179,6 @@ impl<'a> CLIexpression<'a> {
     /// The initial split on the keyword `AND`.
     fn split(&self) -> Self {
         let mut res_vec = Vec::new();
-        // commands only accept AND? Rich!
         let re = Regex::new("AND").unwrap();
         let splitter = SplitCaptures::new(&re, self.inner);
         for state in splitter {
@@ -197,10 +197,13 @@ impl<'a> CLIexpression<'a> {
 
     /// The main function which parses a [`CLIexpression`]. A bit of a
     /// monster of a function. Might need cleaning up at some point.
+    // FIXME: this function can also be used in reports for the -x
+    // so let's make it more general.
     pub fn parse(
         &mut self,
         reference_data: &BTreeMap<&'static str, Variable<'static>>,
     ) -> Result<String> {
+        // TODO: what's an acceptable limit here?
         let expression_length_limit = 100;
         if self.length > expression_length_limit {
             return Err(Error::new(ErrorKind::Expression(format!(
@@ -208,22 +211,31 @@ impl<'a> CLIexpression<'a> {
                 expression_length_limit
             ))))
         }
+        // we don't use &&
         if self.inner.contains("&&") {
-            return Err(Error::new(ErrorKind::Expression(format!("use AND keyword, not && for queries."))))
+            return Err(Error::new(ErrorKind::Expression("use AND keyword, not && for queries.".to_string())))
         }
+        // we don't use 'contains'
         if self.inner.contains(" contains") {
-            return Err(Error::new(ErrorKind::Expression(format!("using the \"contains\" keyword is not yet supported."))))
+            return Err(Error::new(ErrorKind::Expression("using the \"contains\" keyword is not yet supported.".to_string())))
         }
+        // we don't allow OR
         if self.inner.contains("||") || self.inner.contains("OR") {
-            return Err(Error::new(ErrorKind::Expression(format!("OR (or ||) keyword is not supported. Commas between categories operate like the OR keyword."))))
+            return Err(Error::new(ErrorKind::Expression("OR (or ||) keyword is not supported. Commas between categories operate like the OR keyword.".to_string())))
         }
+        // for the more general expression case, we want to include this
         if self.inner.contains("tax_name")
-            || self.inner.contains("tax_tree")
-            || self.inner.contains("tax_lineage")
-        {
-            return Err(Error::new(ErrorKind::Expression(format!("set tax_name through -t <taxon_name>, tax_tree by -d flag, and tax_lineage by -l flag."))))
+            || self.inner.contains("tax_tree") || self.inner.contains("tax_lineage") {
+            return Err(Error::new(ErrorKind::Expression("set tax_name through -t <taxon_name>, tax_tree by -d flag, and tax_lineage by -l flag.".to_string())))
         }
+        // tax_rank is dealt with elsewhere
+        if self.inner.contains("tax_rank") {
+            return Err(Error::new(ErrorKind::Expression("set tax_rank through --tax-rank <taxon_rank>.".to_string())))
+        }
+        
+        // essentially splitting on AND
         let split_vec = &self.split();
+        eprintln!("split_vec: {:?}", split_vec);
         let exp_vec = &split_vec.expression;
 
         // split the expression vector into parts
@@ -232,12 +244,12 @@ impl<'a> CLIexpression<'a> {
         let mut expression = String::new();
         // regular expression splitter
         // precedence here matters
-        let re = Regex::new(r"!=|<=|<|==|=|>=|>").unwrap();
+        let re = Regex::new(r"=!|!=|<=|<|==|=|>=|>").unwrap();
         if !re.is_match(self.inner) {
-            return Err(Error::new(ErrorKind::Expression(format!("no operators were found in the expression."))))
+            return Err(Error::new(ErrorKind::Expression("no operators were found in the expression.".to_string())))
         }
 
-        // must always start with a space and AND
+        // start with a space and AND
         expression += "%20AND";
         // vector of variables to check against
         let var_vec_check = &reference_data
@@ -246,14 +258,19 @@ impl<'a> CLIexpression<'a> {
             .collect::<Vec<&str>>();
         // we can also create another vector of variables
         // with the appropriate max/min attached.
-        // TODO: this seems like a crazy way of doing this - any better ideas?
-        let var_vec_min_max_check = {
+        let var_vec_functions_check = {
             let mut collector = Vec::new();
             for (goat_var, el) in reference_data {
                 match &el.functions {
-                    Function::None => (),
+                    Function::None => {
+                        // FIXME: this is a horrible hack. Not sure how expressions like this
+                        // fit into the engine at the moment
+                        collector.push(format!("length(long_list)"));
+                    },
                     Function::Some(f) => {
-                        for pos in f {
+                        // FIXME: some functions like 'length' are not yet in the reference data.
+                        // so we can just add them here
+                        for pos in f.iter().chain(["length"].iter()) {
                             let format_pos = format!("{}({})", pos, goat_var);
                             collector.push(format_pos);
                         }
@@ -272,6 +289,7 @@ impl<'a> CLIexpression<'a> {
             }
             // expected to be in format
             // variable <operator> number/enum
+            // OR a plain variable
             let curr_el = exp_vec[index];
 
             let mut curr_el_vec = Vec::new();
@@ -301,7 +319,7 @@ impl<'a> CLIexpression<'a> {
                     let value = &curr_el_vec[2].trim().replace('\"', "").replace('\'', "")[..];
 
                     if !var_vec_check.contains(&variable)
-                        && !var_vec_min_max_check.contains(&variable.to_string())
+                        && !var_vec_functions_check.contains(&variable.to_string())
                     {
                         // ew
                         // just combining the min/max and normal variable vectors
@@ -312,7 +330,7 @@ impl<'a> CLIexpression<'a> {
                             .collect::<Vec<String>>()
                             .iter()
                             .chain(
-                                var_vec_min_max_check
+                                var_vec_functions_check
                                     .iter()
                                     .map(String::from)
                                     .collect::<Vec<String>>()
@@ -334,7 +352,7 @@ impl<'a> CLIexpression<'a> {
 
                     // this panics with min/max.
                     // if min/max present, extract within the parentheses.
-                    let keyword_enums = match var_vec_min_max_check.contains(&variable.to_string())
+                    let keyword_enums = match var_vec_functions_check.contains(&variable.to_string())
                     {
                         true => {
                             // this means we have min/max
@@ -367,6 +385,13 @@ impl<'a> CLIexpression<'a> {
 
                             // now check our keyword enums
                             for val in &value_split_commas {
+                                // if 'val' starts with PRJEB, continue
+                                // as these are project identifiers and there are too many to enumerate.
+                                // or if val is numeric
+                                if val.starts_with("PRJEB") || val.parse::<i64>().is_ok() {
+                                    continue;
+                                }
+                                
                                 let possibilities =
                                     k.iter().map(|e| String::from(*e)).collect::<Vec<_>>();
                                 let did_you_mean_str = did_you_mean(&possibilities, val);
@@ -402,7 +427,7 @@ impl<'a> CLIexpression<'a> {
                             expression += "%20";
                             // end of sub expression
                             // assume there is another expression to follow
-                            expression += "AND%20"
+                            expression += "AND"
                         }
                         t => {
                             // here can we type check input
@@ -419,11 +444,20 @@ impl<'a> CLIexpression<'a> {
                             expression += "%20";
                             // end of sub expression
                             // assume there is another expression to follow
-                            expression += "AND%20"
+                            expression += "AND"
                         }
                     }
                 }
-                1 => (),
+                1 => {
+                    // if this is AND, don't do anything
+                    if curr_el_vec[0].trim() != "AND" {
+                        let variable = &curr_el_vec[0].trim().replace('\"', "").replace('\'', "")[..];
+                        expression += "%20";
+                        expression += &variable;
+                        expression += "%20";
+                        expression += "AND";
+                    }
+                },
                 _ => return Err(Error::new(ErrorKind::Expression("are the input variables or operands correct?".to_string())))
             }
 
@@ -436,7 +470,7 @@ impl<'a> CLIexpression<'a> {
                 Ok(expression)
             }
             false => {
-                return Err(Error::new(ErrorKind::Expression(format!("must be in the format: <variable> <operator> <value> AND ..."))))
+                Err(Error::new(ErrorKind::Expression(format!("must be in the format: <variable> <operator> <value> AND ..."))))
             }
         }
     }
@@ -494,5 +528,88 @@ impl<'r, 't> Iterator for SplitCaptures<'r, 't> {
                 Some(SplitState::Unmatched(unmatched))
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::utils::variable_data::GOAT_TAXON_VARIABLE_DATA;
+
+    use super::*;
+
+    // The tests need to be able to parse:
+    // bioproject=!PRJEB40665 AND long_list=dtol AND ebp_metric_date AND tax_rank(species)
+    // bioproject%3D!PRJEB40665%20AND%20long_list%3Ddtol%20AND%20ebp_metric_date%20AND%20tax_rank%28species%29
+    #[test]
+    fn test_1() {
+        let expression = "bioproject=!PRJEB40665 AND long_list=dtol AND ebp_metric_date AND tax_rank(species)";
+        let mut cli_exp = CLIexpression::new(expression);
+        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
+
+        assert!(result.is_err())
+    }
+
+    #[test]
+    fn test_1_1() {
+        let expression = "bioproject=!PRJEB40665 AND long_list=dtol AND ebp_metric_date AND genome_size > 1000";
+        let mut cli_exp = CLIexpression::new(expression);
+        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
+        
+        assert_eq!(result.unwrap(), "%20AND%20bioproject%20%3D%21%20PRJEB40665%20AND%20long_list%20%3D%20dtol%20AND%20ebp_metric_date%20AND%20genome_size%20%3E%201000");
+    }
+    
+    // long_list=dtol AND length(long_list)>1
+    // long_list%3Ddtol%20AND%20length%28long_list%29>1
+    #[test]
+    fn test_2() {
+        let expression = "long_list=dtol AND length(long_list)>1";
+        let mut cli_exp = CLIexpression::new(expression);
+        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
+        assert_eq!(result.unwrap(), "%20AND%20long_list%20%3D%20dtol%20AND%20length%28long_list%29%20%3E%201");
+    }
+
+    // long_list=dtol AND sequencing_status
+    // long_list%3Ddtol%20AND%20sequencing_status%20AND%20tax_rank(species)
+    #[test]
+    fn test_3() {
+        let expression = "long_list=dtol AND sequencing_status";
+        let mut cli_exp = CLIexpression::new(expression);
+        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
+        assert_eq!(result.unwrap(), "%20AND%20long_list%20%3D%20dtol%20AND%20sequencing_status");
+    }
+
+    // some basic expressions
+    #[test]
+    fn test_4() {
+        let expression = "genome_size > 1000";
+        let mut cli_exp = CLIexpression::new(expression);
+        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
+        assert_eq!(result.unwrap(), "%20AND%20genome_size%20%3E%201000");
+    }
+
+    #[test]
+    fn test_4_1() {
+        // we always pad spaces around operators
+        let expression = "genome_size<1000";
+        let mut cli_exp = CLIexpression::new(expression);
+        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
+        assert_eq!(result.unwrap(), "%20AND%20genome_size%20%3C%201000");
+    }
+
+    #[test]
+    fn test_5() {
+        let expression = "sequencing_status_dtol == published";
+        let mut cli_exp = CLIexpression::new(expression);
+        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
+        assert_eq!(result.unwrap(), "%20AND%20sequencing_status_dtol%20%3D%3D%20published");
+    }
+
+    // and combining expressions
+    #[test]
+    fn test_6() {
+        let expression = "genome_size > 1000 AND sequencing_status_dtol == published";
+        let mut cli_exp = CLIexpression::new(expression);
+        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
+        assert_eq!(result.unwrap(), "%20AND%20genome_size%20%3E%201000%20AND%20sequencing_status_dtol%20%3D%3D%20published");
     }
 }

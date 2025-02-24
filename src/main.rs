@@ -539,6 +539,7 @@ async fn run() -> Result<()> {
                                 Arg::new("taxon")
                                     .short('t')
                                     .long("taxon")
+                                    // FIXME: is a file actually allowed here?
                                     .required_unless_present("file")
                                     .help("The taxon to return a newick of. Multiple taxa will return the joint tree."),
                             )
@@ -622,74 +623,6 @@ async fn run() -> Result<()> {
 \t3. tick count
 \t4. scale (linear, sqrt, log10, log2, log, proportion, or ordinal)
 \t5. axis title\nE.g. ',,20' is 20 bins. '1,10,5' is start at 1, end at 10, with 5 bins."),
-                            )
-                    )
-                    .subcommand(
-                        Command::new("cat-hist")
-                            .about("Generate a categorical histogram report from input taxa.")
-                            .arg(
-                                Arg::new("taxon")
-                                    .short('t')
-                                    .long("taxon")
-                                    .required_unless_present("file")
-                                    .help("The taxon to return a categorical histogram of. Multiple taxa will return the joint histogram."),
-                            )
-                            .arg(
-                                Arg::new("url")
-                                    .short('u')
-                                    .long("url")
-                                    .action(SetTrue)
-                                    .help("Print report URL.")
-                            )
-                            .arg(
-                                Arg::new("no-descendents")
-                                    .short('n')
-                                    .long("no-descendents")
-                                    .action(SetTrue)
-                                    .help("If a taxon is supplied, do not return values for its descendents (i.e. a tax_name() call).")
-                            )
-                            .arg(
-                                Arg::new("rank")
-                                    .short('r')
-                                    .long("rank")
-                                    .default_value("species")
-                                    .value_parser(["species", "genus", "family", "order"])
-                                    .help("The rank of the results to return."),
-                            )
-                            .arg(
-                                Arg::new("x-variable")
-                                    .short('x')
-                                    .long("x-variable")
-                                    .required(true)
-                                    .help("The name of the x variable."),
-                            )
-                            .arg(
-                                Arg::new("category")
-                                    .short('c')
-                                    .long("category")
-                                    .required(true)
-                                    .help("The category with which to group the histogram over."),
-                            )
-                            .arg(
-                                Arg::new("size")
-                                    .short('s')
-                                    .long("size")
-                                    .default_value("10")
-                                    .value_parser(value_parser!(usize))
-                                    .help("The number of category levels to return."),
-                            )
-                            .arg(
-                                Arg::new("x-opts")
-                                    .short('o')
-                                    .long("opts")
-                                    .required(false)
-                                    .help("The options for the variable axis. A comma separated string of options in the order:
-\t1. minimum value
-\t2. maximum value
-\t3. tick count
-\t4. scale (linear, sqrt, log10, log2, log, proportion, or ordinal)
-\t5. axis title\nE.g. ',,20' is 20 bins. '1,10,5' is start at 1, end at 10, with 5 bins.
-"),
                             )
                     )
                     .subcommand(
@@ -848,10 +781,6 @@ async fn run() -> Result<()> {
             Some(("hist", taxon_hist_matches)) => {
                 let unique_ids = generate_unique_strings(taxon_hist_matches, IndexType::Taxon)?;
                 report::fetch::fetch_report(taxon_hist_matches, unique_ids, ReportType::Histogram).await?;
-            }
-            Some(("cat-hist", taxon_cat_hist_matches)) => {
-                let unique_ids = generate_unique_strings(taxon_cat_hist_matches, IndexType::Taxon)?;
-                report::fetch::fetch_report(taxon_cat_hist_matches, unique_ids, ReportType::CategoricalHistogram).await?;
             }
             Some(("scatter", scatter_matches)) => {
                 let unique_ids = generate_unique_strings(scatter_matches, IndexType::Taxon)?;

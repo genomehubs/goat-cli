@@ -230,6 +230,7 @@ pub fn pretty_print_usize(i: usize) -> String {
 /// necessary.
 pub fn switch_string_to_url_encoding(string: &str) -> Result<&str> {
     let res = match string {
+        "=!" => "%3D%21",
         // "!=" => "%21%3D",
         "!=" => "!%3D",
         // "<" => "%3C",
