@@ -544,6 +544,13 @@ async fn run() -> Result<()> {
                                     .help("The taxon to return a newick of. Multiple taxa will return the joint tree."),
                             )
                             .arg(
+                                Arg::new("threshold")
+                                    .long("threshold")
+                                    .value_parser(value_parser!(i32).range(-1..))
+                                    .default_value("2000")
+                                    .help("Threshold for returned number of nodes. -1 disables the parameter.")
+                            )
+                            .arg(
                                 Arg::new("url")
                                     .short('u')
                                     .long("url")

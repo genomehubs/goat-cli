@@ -259,6 +259,8 @@ pub struct Report {
     pub y_opts: Option<Opts>,
     /// The category. Required for CategoricalHistogram.
     pub category: Option<String>,
+    /// The threshold. For Newick.
+    pub threshold: i32,
 }
 
 impl Report {
@@ -285,6 +287,12 @@ impl Report {
             .to_string();
         // taxon type will be by default tax_tree(). change this here
         // for future reference. But will require a flag on the cli.
+
+        // for newick
+        let threshold = matches
+            .get_one::<i32>("threshold")
+            .expect("cli default 2000");
+        report.threshold = *threshold;
 
         // the x string will be just a variable.
         let x_variable = matches.get_one::<String>("x-variable");
@@ -391,7 +399,7 @@ impl Report {
                 );
                 url += &x_value_source;
                 // default stuff for now
-                url += "&treeThreshold=2000";
+                url += &format!("&treeThreshold={}", self.threshold);
                 url += "&includeEstimates=true";
                 url += &format!("&taxonomy={}", &*TAXONOMY);
                 // fix this for now, as only single requests can be submitted

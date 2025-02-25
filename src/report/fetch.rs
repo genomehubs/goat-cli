@@ -45,6 +45,7 @@ pub async fn fetch_report(
                 Ok(body) => Ok(body),
                 Err(err) => Err(err),
             },
+
             Err(err) => Err(err),
         }
     }))
@@ -57,6 +58,15 @@ pub async fn fetch_report(
 
     match report {
         Ok(s) => {
+            // check the length of the string
+            // if it's zero, then we have an error
+            if s.len() == 0 || s == ";" {
+                return Err(Error::new(ErrorKind::Report(
+                    "no data found. If it was a `taxon newick` call, try increasing the threshold."
+                        .to_string(),
+                )));
+            }
+
             let mut stdout = std::io::stdout();
             writeln!(stdout, "{}", s)?;
         }
