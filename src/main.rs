@@ -398,6 +398,12 @@ async fn run() -> Result<()> {
                     .help("Print gene count data (gene count, non-coding gene count)."),
             )
             .arg(
+                Arg::new("assembly-gc-percent")
+                    .long("gc-percent")
+                    .action(SetTrue)
+                    .help("Print GC percent data."),
+            )
+            .arg(
                 Arg::new("assembly-busco")
                     .short('b')
                     .long("busco")

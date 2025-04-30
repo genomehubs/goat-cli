@@ -120,7 +120,9 @@ pub fn process_cli_args(
     let assembly_scaffold = *matches
         .get_one::<bool>("assembly-scaffold")
         .unwrap_or(&false);
-    let assembly_gc = *matches.get_one::<bool>("assembly-gc").unwrap_or(&false);
+    let assembly_gc = *matches
+        .get_one::<bool>("assembly-gc-percent")
+        .unwrap_or(&false);
     let assembly_gene = *matches
         .get_one::<bool>("assembly-gene-count")
         .unwrap_or(&false);

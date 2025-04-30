@@ -4,18 +4,18 @@ use crate::utils::{tax_ranks::TaxRanks, utils, variables::Variables};
 use crate::{TaxType, GOAT_URL, TAXONOMY};
 use std::fmt;
 
-// Report      | Required             | Optional
-// ------------|----------------------|-------------------------------------------
-// Files       | x                    | checkedFiles
-// Histogram   | x                    | cat, catToX, rank, xOpts
-// Map         | x                    | cat, rank
-// Oxford      | x                    | cat, xOpts, yOpts
-// Scatter     | x, y, rank           | cat, xOpts, yOpts, scatterThreshold
-// Table       | x, y                 | cat, rank, xOpts, yOpts, scatterThreshold
-// Sources     | -                    | -
-// Tree        | x                    | y, cat, xOpts, yOpts, collapseMonotypic, treeThreshold
-// arc         | x, rank              | y
-// xPerRank    | x                    | ranks
+// | Implemented | Report        | Required             | Optional
+// --------------|---------------|-------------------------------------------
+//               | Files         | x                    | checkedFiles
+//               | Histogram     | x                    | cat, catToX, rank, xOpts
+//               | Map           | x                    | cat, rank
+//               | Oxford        | x                    | cat, xOpts, yOpts
+// X             | Scatter       | x, y, rank           | cat, xOpts, yOpts, scatterThreshold
+// X             | Table         | x, y                 | cat, rank, xOpts, yOpts, scatterThreshold
+// X             | Sources       | -                    | -
+// X (as newick) | Tree          | x                    | y, cat, xOpts, yOpts, collapseMonotypic, treeThreshold
+// X             | arc           | x, rank              | y
+//               | xPerRank      | x                    | ranks
 
 // Search related parameters fields, includeEstimates, exclude* and queryId are optional for all reports (except sources where they have no effect).
 
