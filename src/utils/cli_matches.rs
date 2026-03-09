@@ -6,6 +6,15 @@ use crate::utils::{
 use crate::{IndexType, TaxType, GOAT_URL, TAXONOMY, UPPER_CLI_FILE_LIMIT, UPPER_CLI_SIZE_LIMIT};
 use std::path::PathBuf;
 
+pub enum CliAction {
+    Continue {
+        size: u64,
+        taxa: Vec<String>,
+        urls: Vec<String>,
+    },
+    PrintedAndExit,
+}
+
 /// Take CLI arguments and parse them. Return a tuple of:
 ///
 /// (the size arg you passed, vector of taxon ID's, vector of URLs, and a vector
@@ -15,7 +24,7 @@ pub fn process_cli_args(
     api: &str,
     unique_ids: Vec<String>,
     index_type: IndexType,
-) -> Result<(u64, Vec<String>, Vec<String>)> {
+) -> Result<CliAction> {
     // command line args same between taxon/assembly
     let print_url = *matches.get_one::<bool>("url").expect("cli defaults false");
     let print_goat_ui_url = *matches
@@ -245,16 +254,18 @@ pub fn process_cli_args(
         for (index, url) in url_vector_api.iter().enumerate() {
             println!("{}.\tGoaT API URL: {}", index, url);
         }
-        std::process::exit(0);
+        return Ok(CliAction::PrintedAndExit);
     } else if print_goat_ui_url {
         for (index, url) in url_vector_api.iter().enumerate() {
-            // remove api/v2/
             let new_url = url.replace("api/v2/", "");
             println!("{}.\tGoaT API URL: {}", index, new_url);
         }
-        std::process::exit(0);
+        return Ok(CliAction::PrintedAndExit);
     }
 
-    // return the url vector
-    Ok((size, url_vector, url_vector_api))
+    Ok(CliAction::Continue {
+        size,
+        taxa: url_vector,
+        urls: url_vector_api,
+    })
 }

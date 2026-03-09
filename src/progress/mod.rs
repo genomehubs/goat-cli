@@ -13,7 +13,7 @@ use serde_json::Value;
 use std::time::Duration;
 
 use crate::error::{Error, ErrorKind, Result};
-use crate::utils::cli_matches;
+use crate::utils::cli_matches::{self, CliAction};
 use crate::{count, IndexType};
 use crate::{GOAT_URL, UPPER_CLI_SIZE_LIMIT};
 
@@ -31,12 +31,14 @@ pub async fn progress_bar(
     // so we are sure the API has recieved and set the queryId
     task::sleep(Duration::from_secs(2)).await;
     // TODO: clean this up.
-    let (size_int, _url_vector, url_vector_api) = match api {
-        // doesn't matter what is in the vecs, they just need to be length 1
-        // as newick only supports single url calls right now.
-        // this is really bad coding...
-        "newick" => (0u64, vec!["init".to_string()], vec!["init".to_string()]),
-        other => cli_matches::process_cli_args(matches, other, unique_ids.clone(), index_type)?,
+    let (size_int, url_vector_api) = match api {
+        "newick" => (0u64, vec!["init".to_string()]),
+        other => {
+            match cli_matches::process_cli_args(matches, other, unique_ids.clone(), index_type)? {
+                CliAction::Continue { size, urls, .. } => (size, urls),
+                CliAction::PrintedAndExit => return Ok(()),
+            }
+        }
     };
 
     let concurrent_requests = url_vector_api.len();

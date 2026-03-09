@@ -7,6 +7,7 @@ use reqwest;
 use reqwest::header::ACCEPT;
 
 use crate::error::{Error, ErrorKind, Result};
+use crate::utils::cli_matches::CliAction;
 use crate::utils::{cli_matches, utils};
 use crate::{count, IndexType};
 
@@ -16,8 +17,12 @@ pub async fn search(
     unique_ids: Vec<String>,
     index_type: IndexType,
 ) -> Result<()> {
-    let (_size_int, _url_vector, url_vector_api) =
-        cli_matches::process_cli_args(matches, "search", unique_ids.clone(), index_type)?;
+    let url_vector_api =
+        match cli_matches::process_cli_args(matches, "search", unique_ids.clone(), index_type)? {
+            CliAction::Continue { urls, .. } => urls,
+            CliAction::PrintedAndExit => return Ok(()),
+        };
+
     let concurrent_requests = url_vector_api.len();
 
     // print count warnings.

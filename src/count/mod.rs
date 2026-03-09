@@ -8,7 +8,7 @@ use reqwest;
 use reqwest::header::ACCEPT;
 use serde_json::Value;
 
-use crate::utils::cli_matches;
+use crate::utils::cli_matches::{self, CliAction};
 use crate::IndexType;
 
 /// `goat-cli count` presents an identical CLI to `goat-cli search` but prints
@@ -21,7 +21,11 @@ pub async fn count(
     index_type: IndexType,
 ) -> Result<Option<u64>> {
     let (size_int, url_vector, url_vector_api) =
-        cli_matches::process_cli_args(matches, "count", unique_ids, index_type)?;
+        match cli_matches::process_cli_args(matches, "count", unique_ids, index_type)? {
+            CliAction::Continue { size, taxa, urls } => (size, taxa, urls),
+            CliAction::PrintedAndExit => return Ok(None),
+        };
+
     let concurrent_requests = url_vector_api.len();
 
     let fetches = futures::stream::iter(url_vector_api.iter().map(|path| async move {

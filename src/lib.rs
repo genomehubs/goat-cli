@@ -7,6 +7,8 @@
 use lazy_static::lazy_static;
 use std::fmt;
 
+/// The cli itself
+pub mod cli;
 /// Query the GoaT count API.
 pub mod count;
 /// Query the GoaT lookup API.
