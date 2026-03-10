@@ -59,14 +59,36 @@ impl<'a> TypeOf<'a> {
                 Err(_) => return Err(Error::new(ErrorKind::Expression(format!("for variable \"{variable}\", an input error was found. Pass an integer as a value.")))),
             },
             // dates should be in a specified format
-            // yyyy-mm-dd
+            // yyyy-mm-dd OR yyyy
             TypeOf::Date => {
                 let tokens = other.split('-').collect::<Vec<_>>();
-                if tokens.len() == 1 || tokens.len() == 3 {
-                   return Err(Error::new(ErrorKind::Expression("improperly formatted date. Please make sure date is in the format yyyy-mm-dd, or yyyy.".to_string())))
-                    
+
+                match tokens.len() {
+                    1 => {
+                        if tokens[0].len() != 4 || !tokens[0].chars().all(|c| c.is_ascii_digit()) {
+                            return Err(Error::new(ErrorKind::Expression(
+                                "improperly formatted date. Please make sure date is in the format yyyy-mm-dd, or yyyy.".to_string(),
+                            )));
+                        }
+                    }
+                    3 => {
+                        let year_ok = tokens[0].len() == 4 && tokens[0].chars().all(|c| c.is_ascii_digit());
+                        let month_ok = tokens[1].len() == 2 && tokens[1].chars().all(|c| c.is_ascii_digit());
+                        let day_ok = tokens[2].len() == 2 && tokens[2].chars().all(|c| c.is_ascii_digit());
+
+                        if !(year_ok && month_ok && day_ok) {
+                            return Err(Error::new(ErrorKind::Expression(
+                                "improperly formatted date. Please make sure date is in the format yyyy-mm-dd, or yyyy.".to_string(),
+                            )));
+                        }
+                    }
+                    _ => {
+                        return Err(Error::new(ErrorKind::Expression(
+                            "improperly formatted date. Please make sure date is in the format yyyy-mm-dd, or yyyy.".to_string(),
+                        )));
+                    }
                 }
-                            }
+            }
             TypeOf::HalfFloat => match other.parse::<f32>() {
                 Ok(_) => (),
                 Err(_) => return Err(Error::new(ErrorKind::Expression(format!("for variable \"{variable}\", an input error was found. Pass a float as a value.")))),
@@ -102,14 +124,14 @@ impl<'a> fmt::Display for TypeOf<'a> {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Operator {
-    EqBang,      // =!
-    NotEq,       // !=
-    Lt,          // <
-    LtEq,        // <=
-    Eq,          // =
-    EqEq,        // ==
-    Gt,          // >
-    GtEq,        // >=
+    EqBang, // =!
+    NotEq,  // !=
+    Lt,     // <
+    LtEq,   // <=
+    Eq,     // =
+    EqEq,   // ==
+    Gt,     // >
+    GtEq,   // >=
 }
 
 impl Operator {
@@ -253,33 +275,41 @@ impl<'a> CLIexpression<'a> {
             return Err(Error::new(ErrorKind::Expression(format!(
                 "the query provided is greater than {} chars.",
                 expression_length_limit
-            ))))
+            ))));
         }
         // we don't use &&
         if self.inner.contains("&&") {
-            return Err(Error::new(ErrorKind::Expression("use AND keyword, not && for queries.".to_string())))
+            return Err(Error::new(ErrorKind::Expression(
+                "use AND keyword, not && for queries.".to_string(),
+            )));
         }
         // we don't use 'contains'
         if self.inner.contains(" contains") {
-            return Err(Error::new(ErrorKind::Expression("using the \"contains\" keyword is not yet supported.".to_string())))
+            return Err(Error::new(ErrorKind::Expression(
+                "using the \"contains\" keyword is not yet supported.".to_string(),
+            )));
         }
         // we don't allow OR
         if self.inner.contains("||") || self.inner.contains("OR") {
-            return Err(Error::new(ErrorKind::Expression("OR (or ||) keyword is not supported. Commas between categories operate like the OR keyword.".to_string())))
+            return Err(Error::new(ErrorKind::Expression("OR (or ||) keyword is not supported. Commas between categories operate like the OR keyword.".to_string())));
         }
         // for the more general expression case, we want to include this
         if self.inner.contains("tax_name")
-            || self.inner.contains("tax_tree") || self.inner.contains("tax_lineage") {
-            return Err(Error::new(ErrorKind::Expression("set tax_name through -t <taxon_name>, tax_tree by -d flag, and tax_lineage by -l flag.".to_string())))
+            || self.inner.contains("tax_tree")
+            || self.inner.contains("tax_lineage")
+        {
+            return Err(Error::new(ErrorKind::Expression("set tax_name through -t <taxon_name>, tax_tree by -d flag, and tax_lineage by -l flag.".to_string())));
         }
         // tax_rank is dealt with elsewhere
         if self.inner.contains("tax_rank") {
-            return Err(Error::new(ErrorKind::Expression("set tax_rank through --tax-rank <taxon_rank>.".to_string())))
+            return Err(Error::new(ErrorKind::Expression(
+                "set tax_rank through --tax-rank <taxon_rank>.".to_string(),
+            )));
         }
-        
+
         // essentially splitting on AND
         let split_vec = &self.split();
-        
+
         let exp_vec = &split_vec.expression;
 
         // split the expression vector into parts
@@ -287,12 +317,14 @@ impl<'a> CLIexpression<'a> {
         let exp_vec_len = exp_vec.len();
         // parse into clauses
         let mut clauses: Vec<String> = Vec::new();
-        
+
         // regular expression splitter
         // precedence here matters
         let re = Regex::new(r"=!|!=|<=|<|==|=|>=|>").unwrap();
         if !re.is_match(self.inner) {
-            return Err(Error::new(ErrorKind::Expression("no operators were found in the expression.".to_string())))
+            return Err(Error::new(ErrorKind::Expression(
+                "no operators were found in the expression.".to_string(),
+            )));
         }
 
         // vector of variables to check against
@@ -310,7 +342,7 @@ impl<'a> CLIexpression<'a> {
                         // FIXME: this is a horrible hack. Not sure how expressions like this
                         // fit into the engine at the moment
                         collector.push(format!("length(long_list)"));
-                    },
+                    }
                     Function::Some(f) => {
                         // FIXME: some functions like 'length' are not yet in the reference data.
                         // so we can just add them here
@@ -390,27 +422,26 @@ impl<'a> CLIexpression<'a> {
                         if let Some(value) = var_vec_mean {
                             return Err(Error::new(ErrorKind::Expression(format!(
                                 "in LHS you typed \"{}\" - did you mean \"{}\"?",
-                                variable,
-                                value
-                            ))))
+                                variable, value
+                            ))));
                         }
                     }
 
                     // this panics with min/max.
                     // if min/max present, extract within the parentheses.
-                    let keyword_enums = match var_vec_functions_check.contains(&variable.to_string())
-                    {
-                        true => {
-                            // this means we have min/max
-                            let re = Regex::new(r"\((.*?)\)").unwrap();
-                            // we guarantee getting here with a variable, so unwrap is fine
-                            // the second unwrap is always guaranteed too?
-                            let extract_var =
-                                re.captures(variable).unwrap().get(1).unwrap().as_str();
-                            &reference_data.get(extract_var).unwrap().type_of
-                        }
-                        false => &reference_data.get(variable).unwrap().type_of,
-                    };
+                    let keyword_enums =
+                        match var_vec_functions_check.contains(&variable.to_string()) {
+                            true => {
+                                // this means we have min/max
+                                let re = Regex::new(r"\((.*?)\)").unwrap();
+                                // we guarantee getting here with a variable, so unwrap is fine
+                                // the second unwrap is always guaranteed too?
+                                let extract_var =
+                                    re.captures(variable).unwrap().get(1).unwrap().as_str();
+                                &reference_data.get(extract_var).unwrap().type_of
+                            }
+                            false => &reference_data.get(variable).unwrap().type_of,
+                        };
 
                     // if there are parentheses - i.e. in min()/max() functions
                     let url_encoded_variable = variable.replace('(', "%28");
@@ -437,14 +468,17 @@ impl<'a> CLIexpression<'a> {
                                 if val.starts_with("PRJEB") || val.parse::<i64>().is_ok() {
                                     continue;
                                 }
-                                
+
                                 let possibilities =
                                     k.iter().map(|e| String::from(*e)).collect::<Vec<_>>();
                                 let did_you_mean_str = did_you_mean(&possibilities, val);
 
                                 if let Some(value) = did_you_mean_str {
                                     if value != *val {
-                                        return Err(Error::new(ErrorKind::Expression(format!("in (RHS you typed \"{}\" - did you mean \"{}\"?", val, value))))
+                                        return Err(Error::new(ErrorKind::Expression(format!(
+                                            "in (RHS you typed \"{}\" - did you mean \"{}\"?",
+                                            val, value
+                                        ))));
                                     }
                                 }
                             }
@@ -478,9 +512,7 @@ impl<'a> CLIexpression<'a> {
                             // build expression
                             let clause = format!(
                                 "{}%20{}%20{}",
-                                url_encoded_variable,
-                                operator_encoded,
-                                value
+                                url_encoded_variable, operator_encoded, value
                             );
                             clauses.push(clause);
                         }
@@ -492,8 +524,12 @@ impl<'a> CLIexpression<'a> {
                         let variable = curr_el_vec[0].trim().replace('\"', "").replace('\'', "");
                         clauses.push(variable);
                     }
-                },
-                _ => return Err(Error::new(ErrorKind::Expression("are the input variables or operands correct?".to_string())))
+                }
+                _ => {
+                    return Err(Error::new(ErrorKind::Expression(
+                        "are the input variables or operands correct?".to_string(),
+                    )))
+                }
             }
 
             index += 1;
@@ -575,7 +611,8 @@ mod tests {
     // bioproject%3D!PRJEB40665%20AND%20long_list%3Ddtol%20AND%20ebp_metric_date%20AND%20tax_rank%28species%29
     #[test]
     fn test_1() {
-        let expression = "bioproject=!PRJEB40665 AND long_list=dtol AND ebp_metric_date AND tax_rank(species)";
+        let expression =
+            "bioproject=!PRJEB40665 AND long_list=dtol AND ebp_metric_date AND tax_rank(species)";
         let mut cli_exp = CLIexpression::new(expression);
         let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
 
@@ -584,13 +621,14 @@ mod tests {
 
     #[test]
     fn test_1_1() {
-        let expression = "bioproject=!PRJEB40665 AND long_list=dtol AND ebp_metric_date AND genome_size > 1000";
+        let expression =
+            "bioproject=!PRJEB40665 AND long_list=dtol AND ebp_metric_date AND genome_size > 1000";
         let mut cli_exp = CLIexpression::new(expression);
         let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
-        
+
         assert_eq!(result.unwrap(), "%20AND%20bioproject%20%3D%21%20PRJEB40665%20AND%20long_list%20%3D%20dtol%20AND%20ebp_metric_date%20AND%20genome_size%20%3E%201000");
     }
-    
+
     // long_list=dtol AND length(long_list)>1
     // long_list%3Ddtol%20AND%20length%28long_list%29>1
     #[test]
@@ -598,7 +636,10 @@ mod tests {
         let expression = "long_list=dtol AND length(long_list)>1";
         let mut cli_exp = CLIexpression::new(expression);
         let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
-        assert_eq!(result.unwrap(), "%20AND%20long_list%20%3D%20dtol%20AND%20length%28long_list%29%20%3E%201");
+        assert_eq!(
+            result.unwrap(),
+            "%20AND%20long_list%20%3D%20dtol%20AND%20length%28long_list%29%20%3E%201"
+        );
     }
 
     // long_list=dtol AND sequencing_status
@@ -608,7 +649,10 @@ mod tests {
         let expression = "long_list=dtol AND sequencing_status";
         let mut cli_exp = CLIexpression::new(expression);
         let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
-        assert_eq!(result.unwrap(), "%20AND%20long_list%20%3D%20dtol%20AND%20sequencing_status");
+        assert_eq!(
+            result.unwrap(),
+            "%20AND%20long_list%20%3D%20dtol%20AND%20sequencing_status"
+        );
     }
 
     // some basic expressions
@@ -634,7 +678,10 @@ mod tests {
         let expression = "sequencing_status_dtol == published";
         let mut cli_exp = CLIexpression::new(expression);
         let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
-        assert_eq!(result.unwrap(), "%20AND%20sequencing_status_dtol%20%3D%3D%20published");
+        assert_eq!(
+            result.unwrap(),
+            "%20AND%20sequencing_status_dtol%20%3D%3D%20published"
+        );
     }
 
     // and combining expressions
@@ -643,7 +690,10 @@ mod tests {
         let expression = "genome_size > 1000 AND sequencing_status_dtol == published";
         let mut cli_exp = CLIexpression::new(expression);
         let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
-        assert_eq!(result.unwrap(), "%20AND%20genome_size%20%3E%201000%20AND%20sequencing_status_dtol%20%3D%3D%20published");
+        assert_eq!(
+            result.unwrap(),
+            "%20AND%20genome_size%20%3E%201000%20AND%20sequencing_status_dtol%20%3D%3D%20published"
+        );
     }
 
     #[test]
@@ -656,5 +706,35 @@ mod tests {
     fn test_operator_parse_lte() {
         let op = Operator::parse("<=").unwrap();
         assert_eq!(op.as_url_encoded(), "<%3D");
+    }
+
+    #[test]
+    fn test_date_check_accepts_year() {
+        let t = TypeOf::Date;
+        assert!(t.check("2024", "assembly_date").is_ok());
+    }
+
+    #[test]
+    fn test_date_check_accepts_full_date() {
+        let t = TypeOf::Date;
+        assert!(t.check("2024-03-10", "assembly_date").is_ok());
+    }
+
+    #[test]
+    fn test_date_check_rejects_bad_token_count() {
+        let t = TypeOf::Date;
+        assert!(t.check("2024-03", "assembly_date").is_err());
+    }
+
+    #[test]
+    fn test_date_check_rejects_non_numeric_year() {
+        let t = TypeOf::Date;
+        assert!(t.check("abcd", "assembly_date").is_err());
+    }
+
+    #[test]
+    fn test_date_check_rejects_bad_full_date_shape() {
+        let t = TypeOf::Date;
+        assert!(t.check("2024-3-10", "assembly_date").is_err());
     }
 }
