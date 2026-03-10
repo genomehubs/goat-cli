@@ -13,6 +13,11 @@ use crate::{
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 
+pub enum UniqueIdAction {
+    Continue(Vec<String>),
+    PrintedAndExit,
+}
+
 /// Determine from the CLI matches how many URLs
 /// are needing to be generated, and return a
 /// vector of random character strings to use as
@@ -20,7 +25,7 @@ use rand::{thread_rng, Rng};
 pub fn generate_unique_strings(
     matches: &clap::ArgMatches,
     index_type: IndexType,
-) -> Result<Vec<String>> {
+) -> Result<UniqueIdAction> {
     let tax_name_op = matches.get_one::<String>("taxon");
     let filename_op = matches.get_one::<PathBuf>("file");
     // print expression table
@@ -36,7 +41,7 @@ pub fn generate_unique_strings(
                     expression::print_variable_data(&GOAT_ASSEMBLY_VARIABLE_DATA)
                 }
             }
-            std::process::exit(0);
+            return Ok(UniqueIdAction::PrintedAndExit);
         }
     }
 
@@ -81,7 +86,7 @@ pub fn generate_unique_strings(
         chars_vec.push(chars.clone());
     }
 
-    Ok(chars_vec)
+    Ok(UniqueIdAction::Continue(chars_vec))
 }
 
 /// Read NCBI taxon ID's or binomial names of species,

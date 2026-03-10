@@ -5,7 +5,7 @@ use goat_cli::{
     cli, count, lookup, progress,
     report::{self, report::ReportType},
     search,
-    utils::utils::generate_unique_strings,
+    utils::utils::{generate_unique_strings, UniqueIdAction},
     IndexType,
 };
 
@@ -31,7 +31,11 @@ async fn run() -> Result<()> {
                 let progress_bar = *taxon_search_matches
                     .get_one::<bool>("progress-bar")
                     .expect("cli default false");
-                let unique_ids = generate_unique_strings(taxon_search_matches, IndexType::Taxon)?;
+                let unique_ids =
+                    match generate_unique_strings(taxon_search_matches, IndexType::Taxon)? {
+                        UniqueIdAction::Continue(ids) => ids,
+                        UniqueIdAction::PrintedAndExit => return Ok(()),
+                    };
 
                 match progress_bar {
                     true => {
@@ -55,12 +59,22 @@ async fn run() -> Result<()> {
                 }
             }
             Some(("sources", taxon_sources_matches)) => {
-                let unique_ids = generate_unique_strings(taxon_sources_matches, IndexType::Taxon)?;
+                let unique_ids =
+                    match generate_unique_strings(taxon_sources_matches, IndexType::Taxon)? {
+                        UniqueIdAction::Continue(ids) => ids,
+                        UniqueIdAction::PrintedAndExit => return Ok(()),
+                    };
+
                 report::fetch::fetch_report(taxon_sources_matches, unique_ids, ReportType::Sources)
                     .await?;
             }
             Some(("count", taxon_count_matches)) => {
-                let unique_ids = generate_unique_strings(taxon_count_matches, IndexType::Taxon)?;
+                let unique_ids =
+                    match generate_unique_strings(taxon_count_matches, IndexType::Taxon)? {
+                        UniqueIdAction::Continue(ids) => ids,
+                        UniqueIdAction::PrintedAndExit => return Ok(()),
+                    };
+
                 count::count(
                     taxon_count_matches,
                     true,
@@ -74,12 +88,21 @@ async fn run() -> Result<()> {
                 lookup::lookup(taxon_lookup_matches, true, IndexType::Taxon).await?;
             }
             Some(("hist", taxon_hist_matches)) => {
-                let unique_ids = generate_unique_strings(taxon_hist_matches, IndexType::Taxon)?;
+                let unique_ids =
+                    match generate_unique_strings(taxon_hist_matches, IndexType::Taxon)? {
+                        UniqueIdAction::Continue(ids) => ids,
+                        UniqueIdAction::PrintedAndExit => return Ok(()),
+                    };
+
                 report::fetch::fetch_report(taxon_hist_matches, unique_ids, ReportType::Histogram)
                     .await?;
             }
             Some(("scatter", scatter_matches)) => {
-                let unique_ids = generate_unique_strings(scatter_matches, IndexType::Taxon)?;
+                let unique_ids = match generate_unique_strings(scatter_matches, IndexType::Taxon)? {
+                    UniqueIdAction::Continue(ids) => ids,
+                    UniqueIdAction::PrintedAndExit => return Ok(()),
+                };
+
                 report::fetch::fetch_report(scatter_matches, unique_ids, ReportType::Scatterplot)
                     .await?;
             }
@@ -87,7 +110,11 @@ async fn run() -> Result<()> {
                 let progress_bar = *taxon_newick_matches
                     .get_one::<bool>("progress-bar")
                     .expect("cli detault false");
-                let unique_ids = generate_unique_strings(taxon_newick_matches, IndexType::Taxon)?;
+                let unique_ids =
+                    match generate_unique_strings(taxon_newick_matches, IndexType::Taxon)? {
+                        UniqueIdAction::Continue(ids) => ids,
+                        UniqueIdAction::PrintedAndExit => return Ok(()),
+                    };
 
                 match progress_bar {
                     true => {
@@ -127,7 +154,10 @@ async fn run() -> Result<()> {
                     .get_one::<bool>("progress-bar")
                     .expect("cli detault false");
                 let unique_ids =
-                    generate_unique_strings(assembly_search_matches, IndexType::Assembly)?;
+                    match generate_unique_strings(assembly_search_matches, IndexType::Assembly)? {
+                        UniqueIdAction::Continue(ids) => ids,
+                        UniqueIdAction::PrintedAndExit => return Ok(()),
+                    };
 
                 match progress_bar {
                     true => {
@@ -153,7 +183,11 @@ async fn run() -> Result<()> {
             }
             Some(("count", assembly_count_matches)) => {
                 let unique_ids =
-                    generate_unique_strings(assembly_count_matches, IndexType::Assembly)?;
+                    match generate_unique_strings(assembly_count_matches, IndexType::Assembly)? {
+                        UniqueIdAction::Continue(ids) => ids,
+                        UniqueIdAction::PrintedAndExit => return Ok(()),
+                    };
+
                 count::count(
                     assembly_count_matches,
                     true,
