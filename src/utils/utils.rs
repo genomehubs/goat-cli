@@ -102,36 +102,13 @@ pub fn lines_from_file(filename: impl AsRef<Path>) -> Result<Vec<String>> {
 // remove whitespace from beginning and end of each element of the vec.
 // TODO: check structure of each element in vec.
 
-/// Parse a comma separated string and return each of the elements
-/// stripped of whitespace in a vector.
-pub fn parse_comma_separated(taxids: &str) -> Vec<String> {
-    let res: Vec<&str> = taxids.split(',').collect();
-
-    let mut res2 = Vec::new();
-    for mut str in res {
-        // sort the rights
-        while str.ends_with(' ') {
-            let len = str.len();
-            let new_len = len.saturating_sub(" ".len());
-            str = &str[..new_len];
-        }
-        // sort the lefts
-        let mut index = 0;
-        while str.starts_with(' ') {
-            index += 1;
-            str = &str[index..];
-        }
-        // in addition, remove any quotes
-        // so we can parse things like:
-        // `-v"assembly_level"`, where there is
-        // no space between the `-v` and `assembly_level`
-        let replaced = str.replace(['\"', '\''], "");
-
-        res2.push(replaced);
-    }
-    res2.sort_unstable();
-    res2.dedup();
-    res2
+pub fn parse_comma_separated(input: &str) -> Vec<String> {
+    input
+        .split(',')
+        .map(|s| s.trim())
+        .map(|s| s.replace(['\"', '\''], ""))
+        .filter(|s| !s.is_empty())
+        .collect()
 }
 
 /// Creates a vector of taxon ranks which will eventually form the
@@ -338,4 +315,31 @@ fn levenshtein_distance(a: &str, b: &str) -> usize {
     }
 
     result
+}
+
+mod tests {
+    use super::parse_comma_separated;
+    #[test]
+    fn test_parse_comma_separated_trims_and_preserves_order() {
+        let parsed = parse_comma_separated(" Mammalia, Aves ,Reptilia ");
+        assert_eq!(parsed, vec!["Mammalia", "Aves", "Reptilia"]);
+    }
+
+    #[test]
+    fn test_parse_comma_separated_removes_quotes() {
+        let parsed = parse_comma_separated("'assembly_level',\"busco_complete\"");
+        assert_eq!(parsed, vec!["assembly_level", "busco_complete"]);
+    }
+
+    #[test]
+    fn test_parse_comma_separated_does_not_sort_or_dedup() {
+        let parsed = parse_comma_separated("zeta,alpha,zeta");
+        assert_eq!(parsed, vec!["zeta", "alpha", "zeta"]);
+    }
+
+    #[test]
+    fn test_parse_comma_separated_drops_empty_entries() {
+        let parsed = parse_comma_separated("Mammalia,,Aves,   ,Reptilia");
+        assert_eq!(parsed, vec!["Mammalia", "Aves", "Reptilia"]);
+    }
 }
