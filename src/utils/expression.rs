@@ -1,5 +1,5 @@
 use crate::utils::tax_ranks::TaxRanks;
-use crate::utils::utils::{did_you_mean, switch_string_to_url_encoding};
+use crate::utils::utils::did_you_mean;
 
 use crate::error::{Error, ErrorKind, Result};
 use regex::{CaptureMatches, Captures, Regex};
@@ -96,6 +96,50 @@ impl<'a> fmt::Display for TypeOf<'a> {
                 "" => write!(f, ""),
                 _ => write!(f, "== {}", k.join(", ")),
             },
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Operator {
+    EqBang,      // =!
+    NotEq,       // !=
+    Lt,          // <
+    LtEq,        // <=
+    Eq,          // =
+    EqEq,        // ==
+    Gt,          // >
+    GtEq,        // >=
+}
+
+impl Operator {
+    fn parse(s: &str) -> Result<Self> {
+        match s.trim() {
+            "=!" => Ok(Self::EqBang),
+            "!=" => Ok(Self::NotEq),
+            "<" => Ok(Self::Lt),
+            "<=" => Ok(Self::LtEq),
+            "=" => Ok(Self::Eq),
+            "==" => Ok(Self::EqEq),
+            ">" => Ok(Self::Gt),
+            ">=" => Ok(Self::GtEq),
+            _ => Err(Error::new(ErrorKind::GenericCli(format!(
+                "unrecognised operator: {}",
+                s
+            )))),
+        }
+    }
+
+    fn as_url_encoded(self) -> &'static str {
+        match self {
+            Self::EqBang => "%3D%21",
+            Self::NotEq => "!%3D",
+            Self::Lt => "%3C",
+            Self::LtEq => "<%3D",
+            Self::Eq => "%3D",
+            Self::EqEq => "%3D%3D",
+            Self::Gt => "%3E",
+            Self::GtEq => ">%3D",
         }
     }
 }
@@ -235,7 +279,7 @@ impl<'a> CLIexpression<'a> {
         
         // essentially splitting on AND
         let split_vec = &self.split();
-        eprintln!("split_vec: {:?}", split_vec);
+        
         let exp_vec = &split_vec.expression;
 
         // split the expression vector into parts
@@ -315,7 +359,9 @@ impl<'a> CLIexpression<'a> {
                     // replace rogue quotes (not sure why this is happening now, but was not before...)
                     // manually escape these...
                     let variable = &curr_el_vec[0].trim().replace('\"', "").replace('\'', "")[..];
-                    let operator = switch_string_to_url_encoding(curr_el_vec[1])?.trim();
+                    let operator = Operator::parse(curr_el_vec[1])?;
+                    let operator_encoded = operator.as_url_encoded();
+
                     let value = &curr_el_vec[2].trim().replace('\"', "").replace('\'', "")[..];
 
                     if !var_vec_check.contains(&variable)
@@ -421,7 +467,7 @@ impl<'a> CLIexpression<'a> {
                             expression += &url_encoded_variable;
                             // do operators need to be translated?
                             expression += "%20";
-                            expression += operator;
+                            expression += operator_encoded;
                             expression += "%20";
                             expression += &parsed_value_split_commas.join("%2C");
                             expression += "%20";
@@ -438,7 +484,7 @@ impl<'a> CLIexpression<'a> {
                             expression += &url_encoded_variable;
                             // do operators need to be translated?
                             expression += "%20";
-                            expression += operator;
+                            expression += operator_encoded;
                             expression += "%20";
                             expression += value;
                             expression += "%20";
@@ -611,5 +657,17 @@ mod tests {
         let mut cli_exp = CLIexpression::new(expression);
         let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
         assert_eq!(result.unwrap(), "%20AND%20genome_size%20%3E%201000%20AND%20sequencing_status_dtol%20%3D%3D%20published");
+    }
+
+    #[test]
+    fn test_operator_parse_gt() {
+        let op = Operator::parse(">").unwrap();
+        assert_eq!(op.as_url_encoded(), "%3E");
+    }
+
+    #[test]
+    fn test_operator_parse_lte() {
+        let op = Operator::parse("<=").unwrap();
+        assert_eq!(op.as_url_encoded(), "<%3D");
     }
 }
