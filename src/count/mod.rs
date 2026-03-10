@@ -28,29 +28,37 @@ pub async fn count(
 
     let concurrent_requests = url_vector_api.len();
 
-    let fetches = futures::stream::iter(url_vector_api.iter().map(|path| async move {
-        // possibly make a again::RetryPolicy
-        // to catch all the values in a *very* large request.
-        let client = reqwest::Client::new();
+    let fetches = futures::stream::iter(
+        url_vector_api
+            .into_iter()
+            .zip(url_vector.iter().cloned())
+            .map(|(path, search_query)| async move {
+                let client = reqwest::Client::new();
 
-        match again::retry(|| client.get(path).header(ACCEPT, "application/json").send()).await {
-            Ok(resp) => match resp.text().await {
-                Ok(body) => {
-                    let v: Value = match serde_json::from_str(&body) {
-                        Ok(inner_v) => inner_v,
-                        Err(err) => return Err(Error::new(ErrorKind::SerdeJSON(err))),
-                    };
-                    let count = &v["count"].as_u64();
-                    match count {
-                        Some(c) => Ok(*c),
-                        None => Ok(0), // bail!("Bad response."),
-                    }
-                }
-                Err(err) => Err(Error::new(ErrorKind::Reqwest(err))),
-            },
-            Err(err) => Err(Error::new(ErrorKind::Reqwest(err))),
-        }
-    }))
+                let count = match again::retry(|| {
+                    client.get(&path).header(ACCEPT, "application/json").send()
+                })
+                .await
+                {
+                    Ok(resp) => match resp.text().await {
+                        Ok(body) => {
+                            let v: Value = serde_json::from_str(&body)?;
+                            match v["count"].as_u64() {
+                                Some(c) => Ok(c),
+                                None => Err(Error::new(ErrorKind::GenericCli(format!(
+                                    "Bad count response: {}",
+                                    body
+                                )))),
+                            }
+                        }
+                        Err(err) => Err(Error::new(ErrorKind::Reqwest(err))),
+                    },
+                    Err(err) => Err(Error::new(ErrorKind::Reqwest(err))),
+                }?;
+
+                Ok((search_query, count))
+            }),
+    )
     .buffered(concurrent_requests)
     .collect::<Vec<_>>();
 
@@ -61,12 +69,12 @@ pub async fn count(
             // print to console
             let mut outer_count = 0;
             println!("search_query\tcount");
-            for (el1, el2) in awaited_fetches.into_iter().zip(url_vector.iter()) {
-                let count = match el1 {
+            for el in awaited_fetches {
+                let (search_query, count) = match el {
                     Ok(e) => e,
                     Err(e) => return Err(e),
                 };
-                println!("{}\t{}", el2, count);
+                println!("{}\t{}", search_query, count);
                 outer_count += count;
             }
             Ok(Some(outer_count))
@@ -76,13 +84,16 @@ pub async fn count(
             let mut outer_count = 0;
             // the zip does not correspond to the awaited fetches...
             // need to match them
-            for (el1, el2) in awaited_fetches.into_iter().zip(url_vector.iter()) {
-                let count = match el1 {
+            for el in awaited_fetches {
+                let (search_query, count) = match el {
                     Ok(e) => e,
                     Err(e) => return Err(e),
                 };
                 if print_warning && size_int < count {
-                    eprintln!("For search query {}, size specified ({}) was less than the number of results returned, ({}).", el2, size_int, count)
+                    eprintln!(
+                        "For search query {}, size specified ({}) was less than the number of results returned, ({}).",
+                        search_query, size_int, count
+                    );
                 }
                 outer_count += count;
             }
