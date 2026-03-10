@@ -5,19 +5,24 @@ use reqwest;
 use reqwest::header::ACCEPT;
 use std::io::Write;
 
+pub enum ReportAction {
+    Continue,
+    PrintedAndExit,
+}
+
 /// CLI entry point to get the Newick file from the GoaT API.
 pub async fn fetch_report(
     matches: &clap::ArgMatches,
     unique_ids: Vec<String>,
     report_type: ReportType,
-) -> Result<()> {
+) -> Result<ReportAction> {
     let report = Report::new(matches, report_type)?;
     let url = report.make_url(unique_ids)?;
 
     let print_url = *matches.get_one::<bool>("url").expect("cli default false");
     if print_url {
         println!("GoaT lookup API URL:\t{}", url);
-        std::process::exit(0);
+        return Ok(ReportAction::PrintedAndExit);
     }
 
     // otherwise we get schema errors.
@@ -73,5 +78,5 @@ pub async fn fetch_report(
         Err(e) => return Err(Error::new(ErrorKind::Report(e.to_string()))),
     }
 
-    Ok(())
+    Ok(ReportAction::Continue)
 }

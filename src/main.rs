@@ -1,6 +1,7 @@
 use futures::try_join;
 use goat_cli::error::Result;
 
+use goat_cli::report::fetch::ReportAction;
 use goat_cli::{
     cli, count, lookup, progress,
     report::{self, report::ReportType},
@@ -65,8 +66,16 @@ async fn run() -> Result<()> {
                         UniqueIdAction::PrintedAndExit => return Ok(()),
                     };
 
-                report::fetch::fetch_report(taxon_sources_matches, unique_ids, ReportType::Sources)
-                    .await?;
+                match report::fetch::fetch_report(
+                    taxon_sources_matches,
+                    unique_ids,
+                    ReportType::Sources,
+                )
+                .await?
+                {
+                    ReportAction::Continue => {}
+                    ReportAction::PrintedAndExit => return Ok(()),
+                };
             }
             Some(("count", taxon_count_matches)) => {
                 let unique_ids =
@@ -94,8 +103,16 @@ async fn run() -> Result<()> {
                         UniqueIdAction::PrintedAndExit => return Ok(()),
                     };
 
-                report::fetch::fetch_report(taxon_hist_matches, unique_ids, ReportType::Histogram)
-                    .await?;
+                match report::fetch::fetch_report(
+                    taxon_hist_matches,
+                    unique_ids,
+                    ReportType::Histogram,
+                )
+                .await?
+                {
+                    ReportAction::Continue => {}
+                    ReportAction::PrintedAndExit => return Ok(()),
+                };
             }
             Some(("scatter", scatter_matches)) => {
                 let unique_ids = match generate_unique_strings(scatter_matches, IndexType::Taxon)? {
@@ -103,42 +120,73 @@ async fn run() -> Result<()> {
                     UniqueIdAction::PrintedAndExit => return Ok(()),
                 };
 
-                report::fetch::fetch_report(scatter_matches, unique_ids, ReportType::Scatterplot)
-                    .await?;
+                match report::fetch::fetch_report(
+                    scatter_matches,
+                    unique_ids,
+                    ReportType::Scatterplot,
+                )
+                .await?
+                {
+                    ReportAction::Continue => {}
+                    ReportAction::PrintedAndExit => return Ok(()),
+                };
             }
             Some(("newick", taxon_newick_matches)) => {
                 let progress_bar = *taxon_newick_matches
                     .get_one::<bool>("progress-bar")
                     .expect("cli detault false");
+                // TODO: check that the CLI has a 'url' option
+                let print_url = taxon_newick_matches
+                    .get_one::<bool>("url")
+                    .copied()
+                    .unwrap_or(false);
+
                 let unique_ids =
                     match generate_unique_strings(taxon_newick_matches, IndexType::Taxon)? {
                         UniqueIdAction::Continue(ids) => ids,
                         UniqueIdAction::PrintedAndExit => return Ok(()),
                     };
 
-                match progress_bar {
-                    true => {
-                        try_join!(
-                            report::fetch::fetch_report(
-                                taxon_newick_matches,
-                                unique_ids.clone(),
-                                ReportType::Newick
-                            ),
-                            progress::progress_bar(
-                                taxon_newick_matches,
-                                "newick",
-                                unique_ids,
-                                IndexType::Taxon
-                            )
-                        )?;
+                if print_url {
+                    match report::fetch::fetch_report(
+                        taxon_newick_matches,
+                        unique_ids,
+                        ReportType::Newick,
+                    )
+                    .await?
+                    {
+                        ReportAction::Continue => {}
+                        ReportAction::PrintedAndExit => return Ok(()),
                     }
-                    false => {
+                } else if progress_bar {
+                    let (report_action, _) = try_join!(
                         report::fetch::fetch_report(
                             taxon_newick_matches,
+                            unique_ids.clone(),
+                            ReportType::Newick
+                        ),
+                        progress::progress_bar(
+                            taxon_newick_matches,
+                            "newick",
                             unique_ids,
-                            ReportType::Newick,
+                            IndexType::Taxon
                         )
-                        .await?
+                    )?;
+
+                    match report_action {
+                        ReportAction::Continue => {}
+                        ReportAction::PrintedAndExit => return Ok(()),
+                    }
+                } else {
+                    match report::fetch::fetch_report(
+                        taxon_newick_matches,
+                        unique_ids,
+                        ReportType::Newick,
+                    )
+                    .await?
+                    {
+                        ReportAction::Continue => {}
+                        ReportAction::PrintedAndExit => return Ok(()),
                     }
                 }
             }

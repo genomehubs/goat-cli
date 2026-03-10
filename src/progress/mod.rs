@@ -43,15 +43,14 @@ pub async fn progress_bar(
 
     let concurrent_requests = url_vector_api.len();
 
-    // should be fine to always unwrap this
-    let no_query_hits = count::count(matches, false, false, unique_ids.clone(), index_type)
-        .await?
-        .unwrap();
-    // might need tweaking...
-    // special case newick
+    // For search/count-style commands, use a count preflight to decide
+    // whether a progress bar is worthwhile. Newick does not share the same
+    // CLI shape, so do not route it through count::count/process_cli_args.
     if api != "newick" {
-        // I think these actually need to be
-        // 10,000... but that's our upper limit for search
+        let no_query_hits = count::count(matches, false, false, unique_ids.clone(), index_type)
+            .await?
+            .unwrap();
+
         if no_query_hits < 10000 || size_int < 10000 {
             return Ok(());
         }
