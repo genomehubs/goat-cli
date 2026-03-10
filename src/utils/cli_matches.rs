@@ -26,13 +26,15 @@ pub fn process_cli_args(
     index_type: IndexType,
 ) -> Result<CliAction> {
     // command line args same between taxon/assembly
-    let print_url = *matches.get_one::<bool>("url").expect("cli defaults false");
-    let print_goat_ui_url = *matches
+    let print_url = matches.get_one::<bool>("url").copied().unwrap_or(false);
+    let print_goat_ui_url = matches
         .get_one::<bool>("goat-ui-url")
-        .expect("cli defaults false");
-    let tax_tree_enum = match *matches
+        .copied()
+        .unwrap_or(false);
+    let tax_tree_enum = match matches
         .get_one::<bool>("descendents")
-        .expect("cli defaults false")
+        .copied()
+        .unwrap_or(false)
     {
         true => TaxType::Tree,
         false => TaxType::Name,
@@ -42,9 +44,10 @@ pub fn process_cli_args(
         true => TaxType::Lineage,
         false => TaxType::Name,
     };
-    let include_estimates = *matches
+    let include_estimates = matches
         .get_one::<bool>("include-estimates")
-        .expect("cli defaults false");
+        .copied()
+        .unwrap_or(false);
     let expression = match matches.get_one::<String>("expression") {
         Some(s) => url::format_expression(s, index_type)?,
         None => "".to_string(),
@@ -53,9 +56,10 @@ pub fn process_cli_args(
     let variable_string = matches.get_one::<String>("variables").map(|x| &**x);
     // this output will differ depending on taxon/assembly
     // but keep cli arg the same
-    let print_expression = *matches
+    let print_expression = matches
         .get_one::<bool>("print-expression")
-        .expect("cli defaults false");
+        .copied()
+        .unwrap_or(false);
 
     let tax_rank = match matches.get_one::<String>("tax-rank") {
         Some(t) => tax_ranks::TaxRanks::init().parse(t, false)?,
