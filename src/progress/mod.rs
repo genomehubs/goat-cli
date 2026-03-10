@@ -4,13 +4,13 @@
 //! Add with `--progress-bar` in `goat-cli search` and
 //! `goat-cli newick`.
 
-use async_std::task;
 use futures::StreamExt;
 use indicatif;
 use reqwest;
 use reqwest::header::ACCEPT;
 use serde_json::Value;
 use std::time::Duration;
+use tokio::time::sleep;
 
 use crate::error::{Error, ErrorKind, Result};
 use crate::utils::cli_matches::{self, CliAction};
@@ -29,7 +29,7 @@ pub async fn progress_bar(
 ) -> Result<()> {
     // wait briefly before submitting
     // so we are sure the API has recieved and set the queryId
-    task::sleep(Duration::from_secs(2)).await;
+    sleep(Duration::from_secs(2)).await;
     // TODO: clean this up.
     let (size_int, url_vector_api) = match api {
         "newick" => (0u64, vec!["init".to_string()]),
@@ -142,7 +142,7 @@ pub async fn progress_bar(
             break;
         }
 
-        task::sleep(Duration::from_millis(1)).await;
+        sleep(Duration::from_millis(500)).await;
     }
 
     Ok(())
