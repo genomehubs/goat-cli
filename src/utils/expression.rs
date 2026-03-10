@@ -285,7 +285,9 @@ impl<'a> CLIexpression<'a> {
         // split the expression vector into parts
         let mut index = 0;
         let exp_vec_len = exp_vec.len();
-        let mut expression = String::new();
+        // parse into clauses
+        let mut clauses: Vec<String> = Vec::new();
+        
         // regular expression splitter
         // precedence here matters
         let re = Regex::new(r"=!|!=|<=|<|==|=|>=|>").unwrap();
@@ -293,8 +295,6 @@ impl<'a> CLIexpression<'a> {
             return Err(Error::new(ErrorKind::Expression("no operators were found in the expression.".to_string())))
         }
 
-        // start with a space and AND
-        expression += "%20AND";
         // vector of variables to check against
         let var_vec_check = &reference_data
             .iter()
@@ -463,45 +463,34 @@ impl<'a> CLIexpression<'a> {
                                 })
                                 .collect::<Vec<String>>();
                             // build expression
-                            expression += "%20";
-                            expression += &url_encoded_variable;
-                            // do operators need to be translated?
-                            expression += "%20";
-                            expression += operator_encoded;
-                            expression += "%20";
-                            expression += &parsed_value_split_commas.join("%2C");
-                            expression += "%20";
-                            // end of sub expression
-                            // assume there is another expression to follow
-                            expression += "AND"
+                            let clause = format!(
+                                "{}%20{}%20{}",
+                                url_encoded_variable,
+                                operator_encoded,
+                                parsed_value_split_commas.join("%2C")
+                            );
+                            clauses.push(clause);
                         }
                         t => {
                             // here can we type check input
                             TypeOf::check(t, value, variable)?;
 
                             // build expression
-                            expression += "%20";
-                            expression += &url_encoded_variable;
-                            // do operators need to be translated?
-                            expression += "%20";
-                            expression += operator_encoded;
-                            expression += "%20";
-                            expression += value;
-                            expression += "%20";
-                            // end of sub expression
-                            // assume there is another expression to follow
-                            expression += "AND"
+                            let clause = format!(
+                                "{}%20{}%20{}",
+                                url_encoded_variable,
+                                operator_encoded,
+                                value
+                            );
+                            clauses.push(clause);
                         }
                     }
                 }
                 1 => {
                     // if this is AND, don't do anything
                     if curr_el_vec[0].trim() != "AND" {
-                        let variable = &curr_el_vec[0].trim().replace('\"', "").replace('\'', "")[..];
-                        expression += "%20";
-                        expression += &variable;
-                        expression += "%20";
-                        expression += "AND";
+                        let variable = curr_el_vec[0].trim().replace('\"', "").replace('\'', "");
+                        clauses.push(variable);
                     }
                 },
                 _ => return Err(Error::new(ErrorKind::Expression("are the input variables or operands correct?".to_string())))
@@ -510,14 +499,12 @@ impl<'a> CLIexpression<'a> {
             index += 1;
         }
         // remove trailing AND%20
-        match expression.len() - 6 > 0 {
-            true => {
-                expression.drain(expression.len() - 6..);
-                Ok(expression)
-            }
-            false => {
-                Err(Error::new(ErrorKind::Expression(format!("must be in the format: <variable> <operator> <value> AND ..."))))
-            }
+        if clauses.is_empty() {
+            Err(Error::new(ErrorKind::Expression(
+                "must be in the format: <variable> <operator> <value> AND ...".to_string(),
+            )))
+        } else {
+            Ok(format!("%20AND%20{}", clauses.join("%20AND%20")))
         }
     }
 }
