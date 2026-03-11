@@ -13,94 +13,122 @@ use serde_json::Value;
 pub mod lookup;
 use lookup::{AssemblyCollector, Collector, Lookups, TaxonCollector};
 
+pub enum LookupAction {
+    Continue,
+    PrintedAndExit,
+}
+
 /// Main entry point for `goat-cli lookup`.
-pub async fn lookup(matches: &clap::ArgMatches, cli: bool, index_type: IndexType) -> Result<()> {
+pub async fn lookup(
+    matches: &clap::ArgMatches,
+    cli: bool,
+    index_type: IndexType,
+) -> Result<LookupAction> {
     let lookups = Lookups::new(matches, index_type)?;
     let url_vector_api = lookups.make_urls();
-    let print_url = *matches.get_one::<bool>("url").expect("cli default false");
+    let print_url = matches.get_one::<bool>("url").copied().unwrap_or(false);
     let size = *matches.get_one::<u64>("size").expect("cli default = 10");
 
     if print_url {
         for (index, (url, _)) in url_vector_api.iter().enumerate() {
             println!("{}.\tGoaT lookup API URL: {}", index, url);
         }
-        // don't exit here internally; we'll exit later
-        if cli {
-            std::process::exit(0);
-        }
+        return Ok(LookupAction::PrintedAndExit);
     }
+
     // so we can make as many concurrent requests
     let concurrent_requests = url_vector_api.len();
 
-    let fetches = futures::stream::iter(url_vector_api.into_iter().map(|(path, search_query)| async move {
-        // possibly make a again::RetryPolicy
-        // to catch all the values in a *very* large request.
-        let client = reqwest::Client::new();
+    let fetches = futures::stream::iter(
+        url_vector_api
+            .into_iter()
+            .enumerate()
+            .map(|(idx, (path, search_query))| async move {
+                // possibly make a again::RetryPolicy
+                // to catch all the values in a *very* large request.
+                let client = reqwest::Client::new();
 
-        match again::retry(|| client.get(&path).header(ACCEPT, "application/json").send()).await {
-            Ok(resp) => match resp.text().await {
-                Ok(body) => {
-                    let v: Value = serde_json::from_str(&body)?;
-                    // print a warning if number of hits > size specified.
-                    let request_size_op = &v["status"]["hits"].as_u64();
-                    match request_size_op {
-                        Some(s) => {
-                            if size < *s {
-                                eprintln!(
-                                "For seach query {}, size specified ({}) was less than the number of results returned, ({}).",
-                                search_query, size, s
-                            )
-                        }
-                    },
-                        None => (),
-                    }
-
-                    // get all the suggestions
-                    let suggestions_text_op = &v["suggestions"].as_array();
-                    // collect into a vec
-                    let mut suggestions_vec = Vec::new();
-                    let suggestions_text = match suggestions_text_op {
-                        Some(suggestions) => {
-                            for el in *suggestions {
-                                let sug_str = el["suggestion"]["text"].as_str();
-                                let sug_string_op = sug_str.map(String::from);
-                                suggestions_vec.push(sug_string_op);
+                match again::retry(|| client.get(&path).header(ACCEPT, "application/json").send())
+                    .await
+                {
+                    Ok(resp) => match resp.text().await {
+                        Ok(body) => {
+                            let v: Value = serde_json::from_str(&body)?;
+                            // print a warning if number of hits > size specified.
+                            let request_size_op = &v["status"]["hits"].as_u64();
+                            match request_size_op {
+                                Some(s) => {
+                                    if size < *s {
+                                        eprintln!(
+                                            "For seach query {}, size specified ({}) was less than the number of results returned, ({}).",
+                                            search_query, size, s
+                                        )
+                                    }
+                                }
+                                None => (),
                             }
-                            Some(suggestions_vec.clone())
+
+                            // get all the suggestions
+                            let suggestions_text_op = &v["suggestions"].as_array();
+                            // collect into a vec
+                            let mut suggestions_vec = Vec::new();
+                            let suggestions_text = match suggestions_text_op {
+                                Some(suggestions) => {
+                                    for el in *suggestions {
+                                        let sug_str = el["suggestion"]["text"].as_str();
+                                        let sug_string_op = sug_str.map(String::from);
+                                        suggestions_vec.push(sug_string_op);
+                                    }
+                                    Some(suggestions_vec.clone())
+                                }
+                                None => None,
+                            };
+
+                            // we have all the information to process the results
+                            let collector = match index_type {
+                                IndexType::Taxon => Collector::Taxon(process_taxon_results(
+                                    v,
+                                    search_query,
+                                    suggestions_text,
+                                )),
+                                IndexType::Assembly => Collector::Assembly(
+                                    process_assembly_results(v, search_query, suggestions_text),
+                                ),
+                            };
+
+                            Ok((idx, collector))
                         }
-                        None => None,
-                    };
-                    // we have all the information to process the results
-                    match index_type {
-                        IndexType::Taxon => Ok(Collector::Taxon(process_taxon_results(v, search_query, suggestions_text))),
-                        IndexType::Assembly => Ok(Collector::Assembly(process_assembly_results(v, search_query, suggestions_text))),
-                    }
+                        Err(e) => Err(Error::new(ErrorKind::Reqwest(e))),
+                    },
+                    Err(e) => Err(Error::new(ErrorKind::Reqwest(e))),
                 }
-                Err(e) => Err(Error::new(ErrorKind::Reqwest(e))),
-            },
-            Err(e) => Err(Error::new(ErrorKind::Reqwest(e))),
-        }
-    }))
+            }),
+    )
     .buffer_unordered(concurrent_requests)
     .collect::<Vec<_>>();
 
     let awaited_fetches = fetches.await;
 
-    for (index, el) in awaited_fetches.into_iter().enumerate() {
+    let mut ordered_results = Vec::new();
+    for el in awaited_fetches {
         match el {
-            Ok(e) => {
-                if cli {
-                    match e {
-                        Collector::Taxon(e) => e.print_result(index)?,
-                        Collector::Assembly(e) => e.print_result(index)?,
-                    }
-                }
-            }
+            Ok(v) => ordered_results.push(v),
             Err(e) => return Err(e),
         }
     }
 
-    Ok(())
+    ordered_results.sort_by_key(|(idx, _)| *idx);
+
+    for (index, (_original_idx, collector)) in ordered_results.into_iter().enumerate() {
+        if cli {
+            match collector {
+                Collector::Taxon(e) => e.print_result(index)?,
+                Collector::Assembly(e) => e.print_result(index)?,
+            }
+        }
+    }
+
+    Ok(LookupAction::Continue)
 }
 
 /// As the taxon and assembly return JSON's are in

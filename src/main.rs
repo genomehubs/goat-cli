@@ -94,7 +94,10 @@ async fn run() -> Result<()> {
                 .await?;
             }
             Some(("lookup", taxon_lookup_matches)) => {
-                lookup::lookup(taxon_lookup_matches, true, IndexType::Taxon).await?;
+                match lookup::lookup(taxon_lookup_matches, true, IndexType::Taxon).await? {
+                    lookup::LookupAction::Continue => {}
+                    lookup::LookupAction::PrintedAndExit => return Ok(()),
+                }
             }
             Some(("hist", taxon_hist_matches)) => {
                 let unique_ids =
@@ -246,7 +249,10 @@ async fn run() -> Result<()> {
                 .await?;
             }
             Some(("lookup", assembly_lookup_matches)) => {
-                lookup::lookup(assembly_lookup_matches, true, IndexType::Assembly).await?;
+                match lookup::lookup(assembly_lookup_matches, true, IndexType::Assembly).await? {
+                    lookup::LookupAction::Continue => {}
+                    lookup::LookupAction::PrintedAndExit => return Ok(()),
+                }
             }
             _ => unreachable!(),
         },
