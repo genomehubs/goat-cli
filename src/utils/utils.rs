@@ -195,16 +195,15 @@ pub fn some_kind_of_uppercase_first_letter(s: &str) -> String {
 /// post on stack overflow. For error messages above cli query limit, print
 /// the [`usize`] prettily.
 pub fn pretty_print_usize(i: usize) -> String {
-    let mut s = String::new();
     let i_str = i.to_string();
-    let a = i_str.chars().rev().enumerate();
-    for (idx, val) in a {
+    let mut chars: Vec<char> = Vec::with_capacity(i_str.len() + i_str.len() / 3);
+    for (idx, val) in i_str.chars().rev().enumerate() {
         if idx != 0 && idx % 3 == 0 {
-            s.insert(0, ',');
+            chars.push(',');
         }
-        s.insert(0, val);
+        chars.push(val);
     }
-    s.to_string()
+    chars.iter().rev().collect()
 }
 
 /// A function to replace certain combinations of characters
@@ -317,8 +316,9 @@ fn levenshtein_distance(a: &str, b: &str) -> usize {
     result
 }
 
+#[cfg(test)]
 mod tests {
-    use super::parse_comma_separated;
+    use super::{parse_comma_separated, pretty_print_usize};
     #[test]
     fn test_parse_comma_separated_trims_and_preserves_order() {
         let parsed = parse_comma_separated(" Mammalia, Aves ,Reptilia ");
@@ -341,5 +341,30 @@ mod tests {
     fn test_parse_comma_separated_drops_empty_entries() {
         let parsed = parse_comma_separated("Mammalia,,Aves,   ,Reptilia");
         assert_eq!(parsed, vec!["Mammalia", "Aves", "Reptilia"]);
+    }
+
+    #[test]
+    fn test_pretty_print_usize_zero() {
+        assert_eq!(pretty_print_usize(0), "0");
+    }
+
+    #[test]
+    fn test_pretty_print_usize_below_threshold() {
+        assert_eq!(pretty_print_usize(999), "999");
+    }
+
+    #[test]
+    fn test_pretty_print_usize_thousands() {
+        assert_eq!(pretty_print_usize(1000), "1,000");
+    }
+
+    #[test]
+    fn test_pretty_print_usize_millions() {
+        assert_eq!(pretty_print_usize(1_000_000), "1,000,000");
+    }
+
+    #[test]
+    fn test_pretty_print_usize_mid_range() {
+        assert_eq!(pretty_print_usize(12345), "12,345");
     }
 }
