@@ -147,7 +147,7 @@ pub fn process_cli_args(
             IndexType::Taxon => expression::print_variable_data(&GOAT_TAXON_VARIABLE_DATA),
             IndexType::Assembly => expression::print_variable_data(&GOAT_ASSEMBLY_VARIABLE_DATA),
         }
-        std::process::exit(0);
+        return Ok(CliAction::PrintedAndExit);
     }
 
     // merge the field flags
