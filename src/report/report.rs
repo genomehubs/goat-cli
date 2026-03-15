@@ -81,26 +81,28 @@ impl Opts {
     ///
     /// "1,10":
     ///
-    /// ```rust
-    /// Opts {
+    /// ```rust,ignore
+    /// use goat_cli::report::report::Opts;
+    /// let _ = Opts {
     ///     min: Some(1),
     ///     max: Some(10),
     ///     tick_count: None,
     ///     scale: None,
-    ///     axis_title: None        
-    /// }
+    ///     axis_title: None
+    /// };
     /// ```
     ///
     /// ",,20":
     ///
-    /// ```rust
-    /// Opts {
+    /// ```rust,ignore
+    /// use goat_cli::report::report::Opts;
+    /// let _ = Opts {
     ///     min: None,
     ///     max: None,
     ///     tick_count: Some(20),
     ///     scale: None,
-    ///     axis_title: None        
-    /// }
+    ///     axis_title: None
+    /// };
     /// ```
     pub fn try_from_string(cli_opts: &str) -> Result<Self> {
         let mut tokens: Vec<Option<_>> = cli_opts
@@ -163,7 +165,7 @@ impl Opts {
                 // bail if the scale isn't one we recognise
                 if !Self::SCALE_TYPES
                     .iter()
-                    .any(|e| **e == opts.scale.clone().unwrap_or_else(|| "".into()))
+                    .any(|e| **e == *opts.scale.as_deref().unwrap_or(""))
                 {
                     return Err(Error::new(ErrorKind::Report(format!(
                         "Did not recognise scale type supplied. The options are: {}.",
@@ -179,7 +181,7 @@ impl Opts {
                 // bail if the scale isn't one we recognise
                 if !Self::SCALE_TYPES
                     .iter()
-                    .any(|e| **e == opts.scale.clone().unwrap_or_else(|| "".into()))
+                    .any(|e| **e == *opts.scale.as_deref().unwrap_or(""))
                 {
                     return Err(Error::new(ErrorKind::Report(format!(
                         "Did not recognise scale type supplied. The options are: {}.",
@@ -430,16 +432,28 @@ impl Report {
                 // and the taxa
                 let taxa = self.search.join("%2C");
                 // and the variable
-                let variable = self.x.clone().unwrap();
-                // safe to unwrap this.
-                let cat = self.category.clone().unwrap();
+                let variable = self.x.as_deref().ok_or_else(|| {
+                    Error::new(ErrorKind::Report(
+                        "Histogram requires an x variable (--x-variable).".into(),
+                    ))
+                })?;
+                let cat = self.category.as_deref().ok_or_else(|| {
+                    Error::new(ErrorKind::Report(
+                        "Histogram requires a category (--category).".into(),
+                    ))
+                })?;
+                let size = self.size.ok_or_else(|| {
+                    Error::new(ErrorKind::Report(
+                        "Histogram requires a size (--size).".into(),
+                    ))
+                })?;
                 url += &format!(
                     "&x={}%28{}%29%20AND%20{}&cat={}%5B{}%5D",
                     taxon_type,
                     taxa,
                     variable,
                     cat,
-                    self.size.unwrap(),
+                    size,
                 );
                 // add x options if any
                 if let Some(xopts) = &self.x_opts {
@@ -451,7 +465,9 @@ impl Report {
             ReportType::Scatterplot => Err(Error::new(ErrorKind::Report(
                 "Scatter plots are not yet implemented; please check back in the future!".into(),
             ))),
-            ReportType::Arc => todo!(),
+            ReportType::Arc => Err(Error::new(ErrorKind::Report(
+                "Arc reports are not yet implemented; please check back in the future!".into(),
+            ))),
             ReportType::Sources => {
                 Err(Error::new(ErrorKind::Report(
                     "Sources are not yet implemented; please check back in the future!".into(),
@@ -488,5 +504,73 @@ impl Report {
                 // Ok(url)
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn base_report(report_type: ReportType) -> Report {
+        Report {
+            report_type,
+            search: vec!["Homo sapiens".into()],
+            rank: "species".into(),
+            taxon_type: TaxType::Tree,
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn test_histogram_missing_x_returns_err() {
+        let mut r = base_report(ReportType::Histogram);
+        r.category = Some("sex".into());
+        r.size = Some(10);
+        let result = r.make_url(vec!["test_id".into()]);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("x variable"));
+    }
+
+    #[test]
+    fn test_histogram_missing_category_returns_err() {
+        let mut r = base_report(ReportType::Histogram);
+        r.x = Some("genome_size".into());
+        r.size = Some(10);
+        let result = r.make_url(vec!["test_id".into()]);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("category"));
+    }
+
+    #[test]
+    fn test_histogram_missing_size_returns_err() {
+        let mut r = base_report(ReportType::Histogram);
+        r.x = Some("genome_size".into());
+        r.category = Some("sex".into());
+        let result = r.make_url(vec!["test_id".into()]);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("size"));
+    }
+
+    #[test]
+    fn test_arc_returns_err() {
+        let r = base_report(ReportType::Arc);
+        let result = r.make_url(vec!["test_id".into()]);
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("not yet implemented"));
+    }
+
+    #[test]
+    fn test_opts_scale_valid() {
+        let result = Opts::try_from_string("1,100,10,linear");
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_opts_scale_invalid_returns_err() {
+        let result = Opts::try_from_string("1,100,10,notascale");
+        assert!(result.is_err());
     }
 }
