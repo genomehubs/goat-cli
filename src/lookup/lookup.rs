@@ -104,7 +104,7 @@ impl Lookups {
 }
 
 /// Took this out of `print_result` as
-fn format_suggestion_string(suggestions: &Vec<Option<String>>) -> Result<()> {
+fn format_suggestion_string(suggestions: &[Option<String>]) -> Result<()> {
     let mut suggestion_str = String::new();
     for el in suggestions {
         match el {
