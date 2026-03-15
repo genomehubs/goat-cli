@@ -6,7 +6,7 @@ use goat_cli::{
     cli, count, lookup, progress,
     report::{self, report::ReportType},
     search,
-    utils::utils::{generate_unique_strings, UniqueIdAction},
+    utils::{field_registry, utils::{generate_unique_strings, UniqueIdAction}},
     IndexType,
 };
 
@@ -22,6 +22,14 @@ async fn main() {
 
 async fn run() -> Result<()> {
     let matches = cli::build_cli().get_matches();
+
+    // Kick off dynamic field registry population in the background so that
+    // expression validation can use live GoaT field names.  These are fire-
+    // and-forget: the OnceLock ensures at-most-one fetch, errors are swallowed,
+    // and expression parsing falls back to the static variable data if the
+    // registry isn't ready in time.
+    tokio::spawn(field_registry::init(IndexType::Taxon));
+    tokio::spawn(field_registry::init(IndexType::Assembly));
 
     // nested matching on subcommands
     match matches.subcommand() {

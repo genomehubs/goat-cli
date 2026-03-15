@@ -1,4 +1,5 @@
 use crate::error::{Error, ErrorKind, Result};
+use crate::utils::url::percent_encode_query_value;
 use crate::utils::variable_data;
 use crate::utils::{tax_ranks::TaxRanks, utils, variables::Variables};
 use crate::{TaxType, GOAT_URL, TAXONOMY};
@@ -384,21 +385,21 @@ impl Report {
             ReportType::Newick => {
                 let base = format!("{}report", *GOAT_URL);
                 let mut url = Url::parse(&base).expect("GOAT_URL is a valid base");
-                // join multiple taxa with plain comma; url builder will percent-encode it
                 let csqs = match self.search.len() {
                     1 => self.search[0].clone(),
                     _ => self.search.join(","),
                 };
                 let x_value =
                     format!("tax_rank({}) AND tax_tree({})", self.rank, csqs);
-                url.query_pairs_mut()
-                    .append_pair("result", "taxon")
-                    .append_pair("report", &self.report_type.to_string())
-                    .append_pair("x", &x_value)
-                    .append_pair("treeThreshold", &self.threshold.to_string())
-                    .append_pair("includeEstimates", "true")
-                    .append_pair("taxonomy", &TAXONOMY)
-                    .append_pair("queryId", &format!("goat_cli_{}", unique_ids[0]));
+                let qp = format!(
+                    "result=taxon&report={}&x={}&treeThreshold={}&includeEstimates=true&taxonomy={}&queryId=goat_cli_{}",
+                    self.report_type,
+                    percent_encode_query_value(&x_value),
+                    self.threshold,
+                    *TAXONOMY,
+                    unique_ids[0],
+                );
+                url.set_query(Some(&qp));
                 Ok(url.to_string())
             }
             // Report      | Required             | Optional
@@ -429,18 +430,18 @@ impl Report {
 
                 let base = format!("{}report", *GOAT_URL);
                 let mut url = Url::parse(&base).expect("GOAT_URL is a valid base");
-                url.query_pairs_mut()
-                    .append_pair("result", "taxon")
-                    .append_pair("includeEstimates", "true")
-                    .append_pair("taxonomy", &TAXONOMY)
-                    .append_pair("report", &self.report_type.to_string())
-                    .append_pair("rank", &self.rank)
-                    .append_pair("x", &x_value)
-                    .append_pair("cat", &cat_value);
+                let mut qp = format!(
+                    "result=taxon&includeEstimates=true&taxonomy={}&report={}&rank={}&x={}&cat={}",
+                    *TAXONOMY,
+                    self.report_type,
+                    percent_encode_query_value(&self.rank),
+                    percent_encode_query_value(&x_value),
+                    percent_encode_query_value(&cat_value),
+                );
                 if let Some(xopts) = &self.x_opts {
-                    url.query_pairs_mut()
-                        .append_pair("xOpts", &xopts.to_string());
+                    qp.push_str(&format!("&xOpts={}", percent_encode_query_value(&xopts.to_string())));
                 }
+                url.set_query(Some(&qp));
                 Ok(url.to_string())
             }
             ReportType::Scatterplot => Err(Error::new(ErrorKind::Report(

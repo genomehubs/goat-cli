@@ -1,4 +1,4 @@
-use goat_cli::utils::url::{format_expression, make_goat_urls, FieldBuilder};
+use goat_cli::utils::url::{format_expression, make_goat_urls, percent_encode_query_value, FieldBuilder};
 use goat_cli::IndexType;
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -64,6 +64,46 @@ fn make_taxon_urls(
         IndexType::Taxon,
     )
     .expect("URL generation should not fail")
+}
+
+// ── percent_encode_query_value ────────────────────────────────────────────────
+
+#[test]
+fn test_percent_encode_space_is_not_plus() {
+    let encoded = percent_encode_query_value("hello world");
+    assert_eq!(encoded, "hello%20world");
+    assert!(!encoded.contains('+'));
+}
+
+#[test]
+fn test_percent_encode_parens_and_operators() {
+    let encoded = percent_encode_query_value("tax_name(Homo sapiens) AND genome_size > 1000");
+    assert!(encoded.contains("%28")); // (
+    assert!(encoded.contains("%29")); // )
+    assert!(encoded.contains("%20")); // space
+    assert!(encoded.contains("%3E")); // >
+    assert!(!encoded.contains('+'));
+}
+
+#[test]
+fn test_percent_encode_unreserved_chars_pass_through() {
+    let s = "genome_size-1.0~ok";
+    assert_eq!(percent_encode_query_value(s), s);
+}
+
+#[test]
+fn test_expression_spaces_encoded_as_percent20_in_url() {
+    let expression =
+        format_expression("genome_size > 1000", IndexType::Taxon).expect("expression parsed");
+    let urls = make_taxon_urls(
+        &[String::from("Mammalia")],
+        empty_fields(),
+        &expression,
+        vec![String::from("id1")],
+    );
+    // Spaces in the query value must be %20, not +
+    assert!(urls[0].contains("%20AND%20"));
+    assert!(!urls[0].contains('+'));
 }
 
 // ── format_expression ────────────────────────────────────────────────────────
@@ -290,8 +330,8 @@ fn test_taxon_name_query_type() {
         "",
         vec![String::from("id1")],
     );
-    // url builder encodes '(' as %28 and space as '+' (form encoding)
-    assert!(urls[0].contains("tax_name%28Homo+sapiens%29"));
+    // url builder encodes '(' as %28 and space as %20 (standard percent-encoding)
+    assert!(urls[0].contains("tax_name%28Homo%20sapiens%29"));
 }
 
 // ── make_goat_urls: field builder flags ──────────────────────────────────────

@@ -3,8 +3,16 @@ use crate::utils::utils::did_you_mean;
 
 use crate::error::{Error, ErrorKind, Result};
 use regex::{CaptureMatches, Captures, Regex};
-use std::{collections::BTreeMap, fmt};
+use std::collections::{BTreeMap, HashSet};
+use std::fmt;
 use tabled::{object::Rows, Modify, Panel, Table, Tabled, Width};
+
+/// Summary/aggregate functions that are valid in a GoaT expression.
+pub const VALID_EXPRESSION_FUNCTIONS: &[&str] =
+    &["min", "max", "count", "length", "sp_count", "range"];
+
+/// Aggregation subset specifiers that may follow a field name with a colon.
+const VALID_SUBSETS: &[&str] = &["direct", "ancestor", "descendant", "estimate"];
 
 /// Serialize GoaT variables into their types.
 ///
@@ -35,6 +43,10 @@ pub enum TypeOf<'a> {
 impl<'a> TypeOf<'a> {
     /// Check the values input by a user, so `goat-cli` displays meaningful help.
     fn check(&self, other: &str, variable: &str) -> Result<()> {
+        // Allow null / not-null queries for any type.
+        if other == "null" || other == "!null" {
+            return Ok(());
+        }
         // we will have to parse the `other` conditionally on what the
         // `TypeOf` is.
         match self {
@@ -124,7 +136,6 @@ impl<'a> fmt::Display for TypeOf<'a> {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Operator {
-    EqBang, // =!
     NotEq,  // !=
     Lt,     // <
     LtEq,   // <=
@@ -137,7 +148,6 @@ enum Operator {
 impl Operator {
     fn parse(s: &str) -> Result<Self> {
         match s.trim() {
-            "=!" => Ok(Self::EqBang),
             "!=" => Ok(Self::NotEq),
             "<" => Ok(Self::Lt),
             "<=" => Ok(Self::LtEq),
@@ -154,7 +164,6 @@ impl Operator {
 
     fn as_str(self) -> &'static str {
         match self {
-            Self::EqBang => "=!",
             Self::NotEq => "!=",
             Self::Lt => "<",
             Self::LtEq => "<=",
@@ -268,6 +277,7 @@ impl<'a> CLIexpression<'a> {
     pub fn parse(
         &mut self,
         reference_data: &BTreeMap<&'static str, Variable<'static>>,
+        extra_fields: Option<&HashSet<String>>,
     ) -> Result<String> {
         // TODO: what's an acceptable limit here?
         let expression_length_limit = 100;
@@ -320,7 +330,7 @@ impl<'a> CLIexpression<'a> {
 
         // regular expression splitter
         // precedence here matters
-        let re = Regex::new(r"=!|!=|<=|<|==|=|>=|>").unwrap();
+        let re = Regex::new(r"!=|<=|<|==|=|>=|>").unwrap();
         if !re.is_match(self.inner) {
             return Err(Error::new(ErrorKind::Expression(
                 "no operators were found in the expression.".to_string(),
@@ -337,19 +347,14 @@ impl<'a> CLIexpression<'a> {
         let var_vec_functions_check = {
             let mut collector = Vec::new();
             for (goat_var, el) in reference_data {
-                match &el.functions {
-                    Function::None => {
-                        // FIXME: this is a horrible hack. Not sure how expressions like this
-                        // fit into the engine at the moment
-                        collector.push(format!("length(long_list)"));
-                    }
-                    Function::Some(f) => {
-                        // FIXME: some functions like 'length' are not yet in the reference data.
-                        // so we can just add them here
-                        for pos in f.iter().chain(["length"].iter()) {
-                            let format_pos = format!("{}({})", pos, goat_var);
-                            collector.push(format_pos);
-                        }
+                let specific_funcs: &[&str] = match &el.functions {
+                    Function::None => &[],
+                    Function::Some(f) => f.as_slice(),
+                };
+                for pos in specific_funcs.iter().chain(VALID_EXPRESSION_FUNCTIONS.iter()) {
+                    let entry = format!("{}({})", pos, goat_var);
+                    if !collector.contains(&entry) {
+                        collector.push(entry);
                     }
                 }
             }
@@ -387,21 +392,36 @@ impl<'a> CLIexpression<'a> {
 
             match curr_el_vec.len() {
                 3 => {
-                    // trim strings
-                    // replace rogue quotes (not sure why this is happening now, but was not before...)
-                    // manually escape these...
+                    // trim strings; strip rogue quotes
                     let variable = &curr_el_vec[0].trim().replace('\"', "").replace('\'', "")[..];
                     let operator = Operator::parse(curr_el_vec[1])?;
                     let operator_str = operator.as_str();
 
                     let value = &curr_el_vec[2].trim().replace('\"', "").replace('\'', "")[..];
 
-                    if !var_vec_check.contains(&variable)
-                        && !var_vec_functions_check.contains(&variable.to_string())
-                    {
-                        // ew
-                        // just combining the min/max and normal variable vectors
-                        // into a single vector.
+                    // Extract field name and optional subset specifier, e.g. "genome_size:direct".
+                    let (field_name, subset_opt) = if let Some(colon_pos) = variable.rfind(':') {
+                        (&variable[..colon_pos], Some(&variable[colon_pos + 1..]))
+                    } else {
+                        (variable, None)
+                    };
+
+                    // Validate the subset specifier if present.
+                    if let Some(sub) = subset_opt {
+                        if !VALID_SUBSETS.contains(&sub) {
+                            return Err(Error::new(ErrorKind::Expression(format!(
+                                "unknown field subset \":{}\" — valid subsets are: {}",
+                                sub,
+                                VALID_SUBSETS.join(", ")
+                            ))));
+                        }
+                    }
+
+                    let is_known_plain = var_vec_check.contains(&field_name);
+                    let is_known_func = var_vec_functions_check.contains(&variable.to_string());
+                    let is_dynamic = extra_fields.map_or(false, |ef| ef.contains(field_name));
+
+                    if !is_known_plain && !is_known_func && !is_dynamic {
                         let combined_checks = var_vec_check
                             .iter()
                             .map(|e| String::from(*e))
@@ -417,50 +437,62 @@ impl<'a> CLIexpression<'a> {
                             .map(String::from)
                             .collect::<Vec<String>>();
 
-                        let var_vec_mean = did_you_mean(&combined_checks, variable);
-
-                        if let Some(value) = var_vec_mean {
+                        let suggestion = did_you_mean(&combined_checks, field_name);
+                        if let Some(s) = suggestion {
                             return Err(Error::new(ErrorKind::Expression(format!(
                                 "in LHS you typed \"{}\" - did you mean \"{}\"?",
-                                variable, value
+                                variable, s
                             ))));
                         }
                     }
 
-                    // if min/max present, extract the variable name within the parentheses.
+                    // Dynamic fields not in reference_data: skip type checking.
+                    if is_dynamic && !is_known_plain && !is_known_func {
+                        let clause = format!("{} {} {}", variable, operator_str, value);
+                        clauses.push(clause);
+                        index += 1;
+                        continue;
+                    }
+
+                    // If a function wrapper is present, extract the inner variable name.
                     let re = Regex::new(r"\((.*?)\)").unwrap();
-                    let keyword_enums =
-                        if var_vec_functions_check.contains(&variable.to_string()) {
-                            let extract_var = re
-                                .captures(variable)
-                                .and_then(|c| c.get(1))
-                                .map(|m| m.as_str())
-                                .ok_or_else(|| {
-                                    Error::new(ErrorKind::Expression(format!(
-                                        "failed to extract variable name from function expression: {}",
-                                        variable
-                                    )))
-                                })?;
-                            reference_data
-                                .get(extract_var)
-                                .ok_or_else(|| {
-                                    Error::new(ErrorKind::Expression(format!(
-                                        "variable \"{}\" not found in reference data",
-                                        extract_var
-                                    )))
-                                })
-                                .map(|v| &v.type_of)?
+                    let keyword_enums = if is_known_func {
+                        let extract_var = re
+                            .captures(variable)
+                            .and_then(|c| c.get(1))
+                            .map(|m| m.as_str())
+                            .ok_or_else(|| {
+                                Error::new(ErrorKind::Expression(format!(
+                                    "failed to extract variable name from function expression: {}",
+                                    variable
+                                )))
+                            })?;
+                        // Strip any subset from the inner variable name.
+                        let inner_field = if let Some(p) = extract_var.rfind(':') {
+                            &extract_var[..p]
                         } else {
-                            reference_data
-                                .get(variable)
-                                .ok_or_else(|| {
-                                    Error::new(ErrorKind::Expression(format!(
-                                        "variable \"{}\" not found in reference data",
-                                        variable
-                                    )))
-                                })
-                                .map(|v| &v.type_of)?
+                            extract_var
                         };
+                        reference_data
+                            .get(inner_field)
+                            .ok_or_else(|| {
+                                Error::new(ErrorKind::Expression(format!(
+                                    "variable \"{}\" not found in reference data",
+                                    inner_field
+                                )))
+                            })
+                            .map(|v| &v.type_of)?
+                    } else {
+                        reference_data
+                            .get(field_name)
+                            .ok_or_else(|| {
+                                Error::new(ErrorKind::Expression(format!(
+                                    "variable \"{}\" not found in reference data",
+                                    field_name
+                                )))
+                            })
+                            .map(|v| &v.type_of)?
+                    };
 
                     // if there are keywords, make sure they are a match
                     match keyword_enums {
@@ -616,21 +648,23 @@ mod tests {
         let expression =
             "bioproject=!PRJEB40665 AND long_list=dtol AND ebp_metric_date AND tax_rank(species)";
         let mut cli_exp = CLIexpression::new(expression);
-        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
+        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA, None);
 
         assert!(result.is_err())
     }
 
     #[test]
     fn test_1_1() {
+        // =! is not a valid operator; `!` is a value-negation prefix.
+        // bioproject=!PRJEB40665 → operator `=`, value `!PRJEB40665`.
         let expression =
             "bioproject=!PRJEB40665 AND long_list=dtol AND ebp_metric_date AND genome_size > 1000";
         let mut cli_exp = CLIexpression::new(expression);
-        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
+        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA, None);
 
         assert_eq!(
             result.unwrap(),
-            " AND bioproject =! PRJEB40665 AND long_list = dtol AND ebp_metric_date AND genome_size > 1000"
+            " AND bioproject = !PRJEB40665 AND long_list = dtol AND ebp_metric_date AND genome_size > 1000"
         );
     }
 
@@ -638,7 +672,7 @@ mod tests {
     fn test_2() {
         let expression = "long_list=dtol AND length(long_list)>1";
         let mut cli_exp = CLIexpression::new(expression);
-        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
+        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA, None);
         assert_eq!(
             result.unwrap(),
             " AND long_list = dtol AND length(long_list) > 1"
@@ -649,7 +683,7 @@ mod tests {
     fn test_3() {
         let expression = "long_list=dtol AND sequencing_status";
         let mut cli_exp = CLIexpression::new(expression);
-        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
+        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA, None);
         assert_eq!(result.unwrap(), " AND long_list = dtol AND sequencing_status");
     }
 
@@ -657,7 +691,7 @@ mod tests {
     fn test_4() {
         let expression = "genome_size > 1000";
         let mut cli_exp = CLIexpression::new(expression);
-        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
+        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA, None);
         assert_eq!(result.unwrap(), " AND genome_size > 1000");
     }
 
@@ -666,7 +700,7 @@ mod tests {
         // we always pad spaces around operators
         let expression = "genome_size<1000";
         let mut cli_exp = CLIexpression::new(expression);
-        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
+        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA, None);
         assert_eq!(result.unwrap(), " AND genome_size < 1000");
     }
 
@@ -674,7 +708,7 @@ mod tests {
     fn test_5() {
         let expression = "sequencing_status_dtol == published";
         let mut cli_exp = CLIexpression::new(expression);
-        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
+        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA, None);
         assert_eq!(result.unwrap(), " AND sequencing_status_dtol == published");
     }
 
@@ -682,11 +716,62 @@ mod tests {
     fn test_6() {
         let expression = "genome_size > 1000 AND sequencing_status_dtol == published";
         let mut cli_exp = CLIexpression::new(expression);
-        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
+        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA, None);
         assert_eq!(
             result.unwrap(),
             " AND genome_size > 1000 AND sequencing_status_dtol == published"
         );
+    }
+
+    #[test]
+    fn test_field_subset_direct() {
+        let expression = "genome_size:direct > 1000";
+        let mut cli_exp = CLIexpression::new(expression);
+        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA, None);
+        assert_eq!(result.unwrap(), " AND genome_size:direct > 1000");
+    }
+
+    #[test]
+    fn test_field_subset_invalid_rejected() {
+        let expression = "genome_size:bogus > 1000";
+        let mut cli_exp = CLIexpression::new(expression);
+        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA, None);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("bogus"));
+    }
+
+    #[test]
+    fn test_null_value_accepted() {
+        let expression = "genome_size = null";
+        let mut cli_exp = CLIexpression::new(expression);
+        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA, None);
+        assert_eq!(result.unwrap(), " AND genome_size = null");
+    }
+
+    #[test]
+    fn test_not_null_value_accepted() {
+        let expression = "genome_size != !null";
+        let mut cli_exp = CLIexpression::new(expression);
+        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA, None);
+        assert_eq!(result.unwrap(), " AND genome_size != !null");
+    }
+
+    #[test]
+    fn test_extra_fields_dynamic_field_accepted() {
+        let mut extra = HashSet::new();
+        extra.insert("some_new_goat_field".to_string());
+        let expression = "some_new_goat_field > 5";
+        let mut cli_exp = CLIexpression::new(expression);
+        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA, Some(&extra));
+        assert_eq!(result.unwrap(), " AND some_new_goat_field > 5");
+    }
+
+    #[test]
+    fn test_extra_fields_unknown_still_rejected() {
+        let expression = "truly_unknown_field > 5";
+        let mut cli_exp = CLIexpression::new(expression);
+        let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA, None);
+        assert!(result.is_err());
     }
 
     #[test]

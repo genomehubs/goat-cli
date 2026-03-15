@@ -2,6 +2,7 @@ use crate::error::Result;
 use crate::{
     utils::{
         expression::CLIexpression,
+        field_registry,
         variable_data::{GOAT_ASSEMBLY_VARIABLE_DATA, GOAT_TAXON_VARIABLE_DATA},
         variables::Variables,
     },
@@ -33,6 +34,25 @@ fn format_rank(r: &str) -> String {
     }
 }
 
+/// Percent-encode a URL query parameter value using `%20` for spaces.
+///
+/// Unlike `url::form_urlencoded` (which encodes spaces as `+`), this produces
+/// standard URL percent-encoding that GoaT's API requires.
+pub fn percent_encode_query_value(s: &str) -> String {
+    let mut encoded = String::with_capacity(s.len() * 3);
+    for byte in s.bytes() {
+        match byte {
+            // RFC 3986 unreserved characters — pass through unchanged
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                encoded.push(byte as char);
+            }
+            // Everything else (including space → %20, < → %3C, ( → %28, etc.)
+            b => encoded.push_str(&format!("%{:02X}", b)),
+        }
+    }
+    encoded
+}
+
 /// Returns the plain comma-separated value for the `names` URL parameter, or empty string.
 fn format_names(flag: bool) -> String {
     match flag {
@@ -43,10 +63,17 @@ fn format_names(flag: bool) -> String {
 
 /// Format an expression put into the `-e` flag on the CLI.
 pub fn format_expression(exp: &str, index_type: IndexType) -> Result<String> {
+    // Pull any live fields from the dynamic registry (empty if not yet initialised).
+    let dynamic_fields = field_registry::get_all_fields(index_type);
+    let extra = if dynamic_fields.is_empty() {
+        None
+    } else {
+        Some(&dynamic_fields)
+    };
     let mut new_exp = CLIexpression::new(exp);
     let parsed_string = match index_type {
-        IndexType::Taxon => new_exp.parse(&GOAT_TAXON_VARIABLE_DATA)?,
-        IndexType::Assembly => new_exp.parse(&GOAT_ASSEMBLY_VARIABLE_DATA)?,
+        IndexType::Taxon => new_exp.parse(&GOAT_TAXON_VARIABLE_DATA, extra)?,
+        IndexType::Assembly => new_exp.parse(&GOAT_ASSEMBLY_VARIABLE_DATA, extra)?,
     };
     Ok(parsed_string)
 }
@@ -417,7 +444,7 @@ pub fn make_goat_urls(
     // corresponding to alphabetical order of taxa
     let mut res = Vec::new();
     for (taxon, query_id_suffix) in taxids.iter().zip(unique_ids.iter()) {
-        // Build the GoaT query language value (unencoded; url builder handles encoding)
+        // Build the GoaT query language value (plain text; encoded below)
         let mut query_value = format!("tax_{}({})", tax_tree, taxon);
         if !tax_rank.is_empty() {
             query_value.push_str(tax_rank);
@@ -426,35 +453,36 @@ pub fn make_goat_urls(
             query_value.push_str(expression);
         }
 
-        let base = format!("{}{}", goat_url, api);
-        let mut url = Url::parse(&base).expect("goat_url is a valid base");
-        url.query_pairs_mut()
-            .append_pair("query", &query_value)
-            .append_pair("includeEstimates", &include_estimates.to_string())
-            .append_pair("includeRawValues", &include_raw_values.to_string())
-            .append_pair("summaryValues", summarise_values_by)
-            .append_pair("result", result)
-            .append_pair("taxonomy", taxonomy)
-            .append_pair("size", &size.to_string());
-
+        // Build the raw query string manually so that spaces are encoded as
+        // %20 (not +).  url::query_pairs_mut uses form-encoding which GoaT rejects.
+        let mut qp: Vec<String> = Vec::new();
+        qp.push(format!("query={}", percent_encode_query_value(&query_value)));
+        qp.push(format!("includeEstimates={}", include_estimates));
+        qp.push(format!("includeRawValues={}", include_raw_values));
+        qp.push(format!("summaryValues={}", summarise_values_by));
+        qp.push(format!("result={}", result));
+        qp.push(format!("taxonomy={}", taxonomy));
+        qp.push(format!("size={}", size));
         if !rank_string.is_empty() {
-            url.query_pairs_mut().append_pair("ranks", &rank_string);
+            qp.push(format!("ranks={}", percent_encode_query_value(&rank_string)));
         }
         if !fields_string.is_empty() {
-            url.query_pairs_mut().append_pair("fields", &fields_string);
+            qp.push(format!("fields={}", percent_encode_query_value(&fields_string)));
         }
         if fields.taxon_tidy {
-            url.query_pairs_mut().append_pair("tidyData", "true");
+            qp.push("tidyData=true".into());
         }
         if !names_string.is_empty() {
-            url.query_pairs_mut().append_pair("names", &names_string);
+            qp.push(format!("names={}", percent_encode_query_value(&names_string)));
         }
-        url.query_pairs_mut()
-            .append_pair("queryId", &format!("goat_cli_{}", query_id_suffix));
+        qp.push(format!("queryId=goat_cli_{}", query_id_suffix));
         for (key, value) in &exclude_pairs {
-            url.query_pairs_mut().append_pair(key, value);
+            qp.push(format!("{}={}", key, percent_encode_query_value(value)));
         }
 
+        let base = format!("{}{}", goat_url, api);
+        let mut url = Url::parse(&base).expect("goat_url is a valid base");
+        url.set_query(Some(&qp.join("&")));
         res.push(url.to_string());
     }
     Ok(res)

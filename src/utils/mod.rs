@@ -1,6 +1,8 @@
 /// Parse the command line arguments
 /// for `goat-cli search` and `goat-cli count`.
 pub mod cli_matches;
+/// Runtime field registry fetched from the GoaT API.
+pub mod field_registry;
 /// Parse an expression from the `-e` flag from
 /// the CLI.
 pub mod expression;

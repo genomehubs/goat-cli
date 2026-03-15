@@ -1,4 +1,5 @@
 use crate::error::{Error, ErrorKind, Result};
+use crate::utils::url::percent_encode_query_value;
 use crate::utils::utils::{
     lines_from_file, parse_comma_separated, some_kind_of_uppercase_first_letter,
 };
@@ -23,11 +24,14 @@ impl Lookup {
     pub fn make_url(&self) -> String {
         let base = format!("{}lookup", *GOAT_URL);
         let mut url = Url::parse(&base).expect("GOAT_URL is a valid base");
-        url.query_pairs_mut()
-            .append_pair("searchTerm", &self.search)
-            .append_pair("size", &self.size.to_string())
-            .append_pair("result", &self.index_type.to_string())
-            .append_pair("taxonomy", &TAXONOMY);
+        let qp = format!(
+            "searchTerm={}&size={}&result={}&taxonomy={}",
+            percent_encode_query_value(&self.search),
+            self.size,
+            self.index_type,
+            *TAXONOMY,
+        );
+        url.set_query(Some(&qp));
         url.to_string()
     }
 }
@@ -351,7 +355,7 @@ mod tests {
     fn test_make_url_contains_search_term() {
         let url = taxon_lookup("Homo sapiens", 10).make_url();
         // query_pairs_mut encodes spaces as '+' (form encoding)
-        assert!(url.contains("searchTerm=Homo+sapiens"));
+        assert!(url.contains("searchTerm=Homo%20sapiens"));
     }
 
     #[test]
