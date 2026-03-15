@@ -427,20 +427,39 @@ impl<'a> CLIexpression<'a> {
                         }
                     }
 
-                    // this panics with min/max.
-                    // if min/max present, extract within the parentheses.
+                    // if min/max present, extract the variable name within the parentheses.
+                    let re = Regex::new(r"\((.*?)\)").unwrap();
                     let keyword_enums =
-                        match var_vec_functions_check.contains(&variable.to_string()) {
-                            true => {
-                                // this means we have min/max
-                                let re = Regex::new(r"\((.*?)\)").unwrap();
-                                // we guarantee getting here with a variable, so unwrap is fine
-                                // the second unwrap is always guaranteed too?
-                                let extract_var =
-                                    re.captures(variable).unwrap().get(1).unwrap().as_str();
-                                &reference_data.get(extract_var).unwrap().type_of
-                            }
-                            false => &reference_data.get(variable).unwrap().type_of,
+                        if var_vec_functions_check.contains(&variable.to_string()) {
+                            let extract_var = re
+                                .captures(variable)
+                                .and_then(|c| c.get(1))
+                                .map(|m| m.as_str())
+                                .ok_or_else(|| {
+                                    Error::new(ErrorKind::Expression(format!(
+                                        "failed to extract variable name from function expression: {}",
+                                        variable
+                                    )))
+                                })?;
+                            reference_data
+                                .get(extract_var)
+                                .ok_or_else(|| {
+                                    Error::new(ErrorKind::Expression(format!(
+                                        "variable \"{}\" not found in reference data",
+                                        extract_var
+                                    )))
+                                })
+                                .map(|v| &v.type_of)?
+                        } else {
+                            reference_data
+                                .get(variable)
+                                .ok_or_else(|| {
+                                    Error::new(ErrorKind::Expression(format!(
+                                        "variable \"{}\" not found in reference data",
+                                        variable
+                                    )))
+                                })
+                                .map(|v| &v.type_of)?
                         };
 
                     // if there are parentheses - i.e. in min()/max() functions
