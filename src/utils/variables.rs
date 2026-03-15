@@ -102,8 +102,11 @@ impl<'a> Variables<'a> {
             }
         }
 
-        // should be okay to do an unchecked drain here
-        parsed_string.drain(parsed_string.len() - 3..);
+        // Remove the trailing DELIMITER ("%2C", 3 bytes) added after the last field.
+        // Guard against the degenerate case where no fields were added.
+        if parsed_string.len() > BASE.len() {
+            parsed_string.drain(parsed_string.len() - 3..);
+        }
 
         Ok(parsed_string)
     }
