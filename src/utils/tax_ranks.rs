@@ -127,3 +127,72 @@ impl<'a> fmt::Display for TaxRanks<'a> {
         write!(f, "{}", tax_ranks_csv)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ── search mode (report = false) ─────────────────────────────────────────
+
+    #[test]
+    fn test_valid_rank_returns_url_segment() {
+        let tr = TaxRanks::init();
+        let result = tr.parse("species", false).unwrap();
+        assert!(result.contains("tax_rank"));
+        assert!(result.contains("species"));
+        assert!(result.starts_with("%20AND%20tax_rank%28"));
+        assert!(result.ends_with("%29"));
+    }
+
+    #[test]
+    fn test_multiple_ranks_comma_separated() {
+        let tr = TaxRanks::init();
+        let result = tr.parse("species,genus", false).unwrap();
+        assert!(result.contains("species"));
+        assert!(result.contains("genus"));
+        // both should be URL-encoded inside the same tax_rank() call
+        assert!(result.contains("%2C"));
+    }
+
+    #[test]
+    fn test_invalid_rank_search_mode_returns_err() {
+        let tr = TaxRanks::init();
+        let result = tr.parse("notarank", false);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_invalid_rank_in_list_returns_err() {
+        let tr = TaxRanks::init();
+        let result = tr.parse("species,notarank", false);
+        assert!(result.is_err());
+    }
+
+    // ── report mode (report = true) ──────────────────────────────────────────
+
+    #[test]
+    fn test_report_mode_valid_rank_returns_plain_string() {
+        let tr = TaxRanks::init();
+        let result = tr.parse("genus", true).unwrap();
+        assert_eq!(result, "genus");
+    }
+
+    #[test]
+    fn test_report_mode_invalid_rank_returns_err() {
+        let tr = TaxRanks::init();
+        let result = tr.parse("notarank", true);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_all_canonical_ranks_are_valid() {
+        let tr = TaxRanks::init();
+        for rank in tr.ranks.iter() {
+            assert!(
+                tr.parse(rank, false).is_ok(),
+                "rank '{}' should be valid",
+                rank
+            );
+        }
+    }
+}

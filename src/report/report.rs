@@ -562,6 +562,68 @@ mod tests {
             .contains("not yet implemented"));
     }
 
+    // ── Newick URL ───────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_newick_url_contains_required_parts() {
+        let r = Report {
+            report_type: ReportType::Newick,
+            search: vec!["Mammalia".into()],
+            rank: "species".into(),
+            taxon_type: TaxType::Tree,
+            threshold: 2000,
+            ..Default::default()
+        };
+        let url = r.make_url(vec!["test123".into()]).unwrap();
+        assert!(url.contains("report=tree"));
+        assert!(url.contains("Mammalia"));
+        assert!(url.contains("treeThreshold=2000"));
+        assert!(url.contains("queryId=goat_cli_test123"));
+        assert!(url.contains("result=taxon"));
+    }
+
+    #[test]
+    fn test_newick_url_multiple_taxa_joined() {
+        let r = Report {
+            report_type: ReportType::Newick,
+            search: vec!["Mammalia".into(), "Aves".into()],
+            rank: "species".into(),
+            taxon_type: TaxType::Tree,
+            threshold: 2000,
+            ..Default::default()
+        };
+        let url = r.make_url(vec!["id1".into()]).unwrap();
+        assert!(url.contains("Mammalia"));
+        assert!(url.contains("Aves"));
+        assert!(url.contains("%2C")); // URL-encoded comma joining the taxa
+    }
+
+    #[test]
+    fn test_newick_url_threshold_value_in_url() {
+        let mut r = base_report(ReportType::Newick);
+        r.threshold = 500;
+        let url = r.make_url(vec!["id1".into()]).unwrap();
+        assert!(url.contains("treeThreshold=500"));
+    }
+
+    // ── Histogram URL success ────────────────────────────────────────────────
+
+    #[test]
+    fn test_histogram_url_success_contains_key_parts() {
+        let mut r = base_report(ReportType::Histogram);
+        r.x = Some("genome_size".into());
+        r.category = Some("sex".into());
+        r.size = Some(50);
+        let url = r.make_url(vec!["id1".into()]).unwrap();
+        assert!(url.contains("report=table"));
+        assert!(url.contains("genome_size"));
+        assert!(url.contains("sex"));
+        assert!(url.contains("50"));
+        assert!(url.contains("result=taxon"));
+    }
+
+    // ── Opts::try_from_string ────────────────────────────────────────────────
+
     #[test]
     fn test_opts_scale_valid() {
         let result = Opts::try_from_string("1,100,10,linear");
@@ -572,5 +634,35 @@ mod tests {
     fn test_opts_scale_invalid_returns_err() {
         let result = Opts::try_from_string("1,100,10,notascale");
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_opts_min_max_only() {
+        let result = Opts::try_from_string("1,100");
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_opts_empty_returns_err() {
+        let result = Opts::try_from_string("");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_opts_non_integer_min_returns_err() {
+        let result = Opts::try_from_string("notanumber,100");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_opts_all_valid_scales() {
+        for scale in Opts::SCALE_TYPES {
+            let input = format!("1,100,10,{}", scale);
+            assert!(
+                Opts::try_from_string(&input).is_ok(),
+                "scale '{}' should be valid",
+                scale
+            );
+        }
     }
 }

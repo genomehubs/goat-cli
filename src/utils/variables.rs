@@ -162,3 +162,88 @@ impl<'a> Variables<'a> {
         Ok(exclusion_string)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::utils::variable_data::GOAT_TAXON_VARIABLE_DATA;
+
+    // ── parse_one ────────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_parse_one_known_variable_returns_name() {
+        let v = Variables::new("genome_size");
+        let result = v.parse_one(&GOAT_TAXON_VARIABLE_DATA).unwrap();
+        assert_eq!(result, "genome_size");
+    }
+
+    #[test]
+    fn test_parse_one_unknown_variable_with_typo_suggests_correction() {
+        // "genome_siz" is close to "genome_size"
+        let v = Variables::new("genome_siz");
+        let err = v.parse_one(&GOAT_TAXON_VARIABLE_DATA).unwrap_err();
+        assert!(
+            err.to_string().contains("genome_size"),
+            "expected suggestion 'genome_size' in: {}",
+            err
+        );
+    }
+
+    // ── parse ────────────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_parse_single_variable_builds_fields_string() {
+        let v = Variables::new("genome_size");
+        let result = v.parse(&GOAT_TAXON_VARIABLE_DATA, false).unwrap();
+        assert!(result.starts_with("&fields="));
+        assert!(result.contains("genome_size"));
+        assert!(!result.ends_with("%2C"), "trailing delimiter present");
+    }
+
+    #[test]
+    fn test_parse_multiple_variables_all_present() {
+        let v = Variables::new("genome_size,c_value");
+        let result = v.parse(&GOAT_TAXON_VARIABLE_DATA, false).unwrap();
+        assert!(result.contains("genome_size"));
+        assert!(result.contains("c_value"));
+        assert!(!result.ends_with("%2C"));
+    }
+
+    #[test]
+    fn test_parse_unknown_variable_returns_err() {
+        let v = Variables::new("not_a_real_var_xyz");
+        assert!(v.parse(&GOAT_TAXON_VARIABLE_DATA, false).is_err());
+    }
+
+    #[test]
+    fn test_parse_toggle_direct_adds_extra_columns() {
+        let v = Variables::new("genome_size");
+        let result = v.parse(&GOAT_TAXON_VARIABLE_DATA, true).unwrap();
+        assert!(result.contains("genome_size%3Adirect"));
+        assert!(result.contains("genome_size%3Aancestor"));
+        assert!(result.contains("genome_size%3Adescendant"));
+        assert!(!result.ends_with("%2C"));
+    }
+
+    // ── parse_exclude ────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_parse_exclude_contains_ancestral_and_missing_segments() {
+        let v = Variables::new("genome_size");
+        let result = v.parse_exclude(&GOAT_TAXON_VARIABLE_DATA).unwrap();
+        assert!(result.contains("excludeAncestral"));
+        assert!(result.contains("excludeMissing"));
+        assert!(result.contains("genome_size"));
+    }
+
+    #[test]
+    fn test_parse_exclude_multiple_variables_all_indexed() {
+        let v = Variables::new("genome_size,c_value");
+        let result = v.parse_exclude(&GOAT_TAXON_VARIABLE_DATA).unwrap();
+        assert!(result.contains("genome_size"));
+        assert!(result.contains("c_value"));
+        // Two variables means indices 0 and 1
+        assert!(result.contains("%5B0%5D"));
+        assert!(result.contains("%5B1%5D"));
+    }
+}

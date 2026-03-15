@@ -328,3 +328,106 @@ pub enum Collector {
     /// The assembly results.
     Assembly(AssemblyCollector),
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::IndexType;
+
+    fn taxon_lookup(search: &str, size: u64) -> Lookup {
+        Lookup {
+            search: search.into(),
+            size,
+            index_type: IndexType::Taxon,
+        }
+    }
+
+    fn assembly_lookup(search: &str, size: u64) -> Lookup {
+        Lookup {
+            search: search.into(),
+            size,
+            index_type: IndexType::Assembly,
+        }
+    }
+
+    // ── Lookup::make_url ─────────────────────────────────────────────────────
+
+    #[test]
+    fn test_make_url_contains_search_term() {
+        let url = taxon_lookup("Homo sapiens", 10).make_url();
+        assert!(url.contains("searchTerm=Homo sapiens"));
+    }
+
+    #[test]
+    fn test_make_url_contains_size() {
+        let url = taxon_lookup("Mammalia", 25).make_url();
+        assert!(url.contains("size=25"));
+    }
+
+    #[test]
+    fn test_make_url_taxon_result_field() {
+        let url = taxon_lookup("Mammalia", 10).make_url();
+        assert!(url.contains("result=taxon"));
+    }
+
+    #[test]
+    fn test_make_url_assembly_result_field() {
+        let url = assembly_lookup("GCA_000001405", 5).make_url();
+        assert!(url.contains("result=assembly"));
+    }
+
+    #[test]
+    fn test_make_url_contains_taxonomy() {
+        let url = taxon_lookup("Mammalia", 10).make_url();
+        assert!(url.contains("taxonomy="));
+    }
+
+    #[test]
+    fn test_make_url_contains_lookup_endpoint() {
+        let url = taxon_lookup("Mammalia", 10).make_url();
+        assert!(url.contains("lookup?"));
+    }
+
+    // ── Lookups::make_urls ───────────────────────────────────────────────────
+
+    #[test]
+    fn test_make_urls_returns_one_per_entry() {
+        let lookups = Lookups {
+            entries: vec![
+                taxon_lookup("Mammalia", 10),
+                taxon_lookup("Aves", 10),
+                taxon_lookup("Reptilia", 10),
+            ],
+        };
+        let urls = lookups.make_urls();
+        assert_eq!(urls.len(), 3);
+    }
+
+    #[test]
+    fn test_make_urls_search_query_is_second_element() {
+        let lookups = Lookups {
+            entries: vec![
+                taxon_lookup("Mammalia", 10),
+                taxon_lookup("Aves", 10),
+            ],
+        };
+        let urls = lookups.make_urls();
+        assert_eq!(urls[0].1, "Mammalia");
+        assert_eq!(urls[1].1, "Aves");
+    }
+
+    #[test]
+    fn test_make_urls_preserves_order() {
+        let taxa = vec!["Zeta", "Alpha", "Gamma"];
+        let lookups = Lookups {
+            entries: taxa
+                .iter()
+                .map(|t| taxon_lookup(t, 10))
+                .collect(),
+        };
+        let urls = lookups.make_urls();
+        for (i, taxon) in taxa.iter().enumerate() {
+            assert_eq!(&urls[i].1, taxon);
+        }
+    }
+}
