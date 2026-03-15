@@ -3,6 +3,7 @@ use crate::utils::variable_data;
 use crate::utils::{tax_ranks::TaxRanks, utils, variables::Variables};
 use crate::{TaxType, GOAT_URL, TAXONOMY};
 use std::fmt;
+use url::Url;
 
 // | Implemented | Report        | Required             | Optional
 // --------------|---------------|-------------------------------------------
@@ -230,7 +231,7 @@ impl fmt::Display for Opts {
         write!(
             f,
             "{}",
-            [min, max, tick_count, scale, axis_title].join("%2C")
+            [min, max, tick_count, scale, axis_title].join(",")
         )
     }
 }
@@ -381,57 +382,32 @@ impl Report {
                 "No report type specified.".into(),
             ))),
             ReportType::Newick => {
-                let mut url = String::new();
-                url += &GOAT_URL;
-                // add report API, and result=taxon
-                url += "report?result=taxon";
-                // it's a tree we're returning
-                url += &format!("&report={}", self.report_type);
-                // get a string of comma separated queries
+                let base = format!("{}report", *GOAT_URL);
+                let mut url = Url::parse(&base).expect("GOAT_URL is a valid base");
+                // join multiple taxa with plain comma; url builder will percent-encode it
                 let csqs = match self.search.len() {
-                    // one entry
                     1 => self.search[0].clone(),
-                    // or greater (zero entries handled by cli)
-                    _ => self.search.join("%2C"),
+                    _ => self.search.join(","),
                 };
-                // the x value source
-                let x_value_source = format!(
-                    "&x=tax_rank%28{}%29%20AND%20tax_tree%28{}%29",
-                    self.rank, csqs
-                );
-                url += &x_value_source;
-                // default stuff for now
-                url += &format!("&treeThreshold={}", self.threshold);
-                url += "&includeEstimates=true";
-                url += &format!("&taxonomy={}", &*TAXONOMY);
-                // fix this for now, as only single requests can be submitted
-                url += &format!("&queryId=goat_cli_{}", unique_ids[0]);
-                Ok(url)
+                let x_value =
+                    format!("tax_rank({}) AND tax_tree({})", self.rank, csqs);
+                url.query_pairs_mut()
+                    .append_pair("result", "taxon")
+                    .append_pair("report", &self.report_type.to_string())
+                    .append_pair("x", &x_value)
+                    .append_pair("treeThreshold", &self.threshold.to_string())
+                    .append_pair("includeEstimates", "true")
+                    .append_pair("taxonomy", &TAXONOMY)
+                    .append_pair("queryId", &format!("goat_cli_{}", unique_ids[0]));
+                Ok(url.to_string())
             }
             // Report      | Required             | Optional
             // ------------|----------------------|-------------------------------------------
             // Histogram   | x                    | cat, catToX, rank, xOpts
             ReportType::Histogram => {
-                let mut url = String::new();
-                // add base URL
-                url += &GOAT_URL;
-                // it's a taxon report
-                url += "report?result=taxon";
-                // default stuff for now
-                // no estimates
-                // not sure whether this should be true or not
-                url += "&includeEstimates=true";
-                // standard taxonomy
-                url += &format!("&taxonomy={}", &*TAXONOMY);
-                // it's a table
-                url += &format!("&report={}", self.report_type);
-                // add the rank from the CLI
-                url += &format!("&rank={}", self.rank);
-                // taxon type: tax_rank/tax_tree
                 let taxon_type = self.taxon_type;
-                // and the taxa
-                let taxa = self.search.join("%2C");
-                // and the variable
+                // join with plain comma; url builder will percent-encode it
+                let taxa = self.search.join(",");
                 let variable = self.x.as_deref().ok_or_else(|| {
                     Error::new(ErrorKind::Report(
                         "Histogram requires an x variable (--x-variable).".into(),
@@ -447,20 +423,25 @@ impl Report {
                         "Histogram requires a size (--size).".into(),
                     ))
                 })?;
-                url += &format!(
-                    "&x={}%28{}%29%20AND%20{}&cat={}%5B{}%5D",
-                    taxon_type,
-                    taxa,
-                    variable,
-                    cat,
-                    size,
-                );
-                // add x options if any
-                if let Some(xopts) = &self.x_opts {
-                    url += &format!("&xOpts={}", xopts);
-                }
 
-                Ok(url)
+                let x_value = format!("{}({}) AND {}", taxon_type, taxa, variable);
+                let cat_value = format!("{}[{}]", cat, size);
+
+                let base = format!("{}report", *GOAT_URL);
+                let mut url = Url::parse(&base).expect("GOAT_URL is a valid base");
+                url.query_pairs_mut()
+                    .append_pair("result", "taxon")
+                    .append_pair("includeEstimates", "true")
+                    .append_pair("taxonomy", &TAXONOMY)
+                    .append_pair("report", &self.report_type.to_string())
+                    .append_pair("rank", &self.rank)
+                    .append_pair("x", &x_value)
+                    .append_pair("cat", &cat_value);
+                if let Some(xopts) = &self.x_opts {
+                    url.query_pairs_mut()
+                        .append_pair("xOpts", &xopts.to_string());
+                }
+                Ok(url.to_string())
             }
             ReportType::Scatterplot => Err(Error::new(ErrorKind::Report(
                 "Scatter plots are not yet implemented; please check back in the future!".into(),

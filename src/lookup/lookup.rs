@@ -4,6 +4,7 @@ use crate::utils::utils::{
 };
 use crate::{IndexType, GOAT_URL, TAXONOMY, UPPER_CLI_FILE_LIMIT};
 use std::path::PathBuf;
+use url::Url;
 
 /// The lookup struct
 #[derive(Clone, Debug)]
@@ -20,20 +21,14 @@ pub struct Lookup {
 impl Lookup {
     /// From our lookup struct we can make an individual URL.
     pub fn make_url(&self) -> String {
-        let mut url = String::new();
-        // add the base
-        url += &GOAT_URL;
-        // add lookup
-        url += "lookup?";
-        // add the search term
-        let search_term = format!("searchTerm={}", self.search);
-        url += &search_term;
-        // add size
-        let size = format!("&size={}", self.size);
-        url += &size;
-        // hardcode the rest for now
-        url += &format!("&result={}&taxonomy={}", self.index_type, &*TAXONOMY);
-        url
+        let base = format!("{}lookup", *GOAT_URL);
+        let mut url = Url::parse(&base).expect("GOAT_URL is a valid base");
+        url.query_pairs_mut()
+            .append_pair("searchTerm", &self.search)
+            .append_pair("size", &self.size.to_string())
+            .append_pair("result", &self.index_type.to_string())
+            .append_pair("taxonomy", &TAXONOMY);
+        url.to_string()
     }
 }
 
@@ -355,7 +350,8 @@ mod tests {
     #[test]
     fn test_make_url_contains_search_term() {
         let url = taxon_lookup("Homo sapiens", 10).make_url();
-        assert!(url.contains("searchTerm=Homo sapiens"));
+        // query_pairs_mut encodes spaces as '+' (form encoding)
+        assert!(url.contains("searchTerm=Homo+sapiens"));
     }
 
     #[test]
