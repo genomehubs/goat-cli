@@ -137,7 +137,7 @@ async fn run() -> Result<()> {
             Some(("newick", taxon_newick_matches)) => {
                 let progress_bar = *taxon_newick_matches
                     .get_one::<bool>("progress-bar")
-                    .expect("cli detault false");
+                    .expect("cli default false");
                 // TODO: check that the CLI has a 'url' option
                 let print_url = taxon_newick_matches
                     .get_one::<bool>("url")
@@ -203,7 +203,7 @@ async fn run() -> Result<()> {
             Some(("search", assembly_search_matches)) => {
                 let progress_bar = *assembly_search_matches
                     .get_one::<bool>("progress-bar")
-                    .expect("cli detault false");
+                    .expect("cli default false");
                 let unique_ids =
                     match generate_unique_strings(assembly_search_matches, IndexType::Assembly)? {
                         UniqueIdAction::Continue(ids) => ids,
