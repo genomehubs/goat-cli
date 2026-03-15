@@ -3,10 +3,9 @@
 //! `goat-cli search <args>`
 
 use futures::StreamExt;
-use reqwest;
-use reqwest::header::ACCEPT;
 
-use crate::error::{Error, ErrorKind, Result};
+use crate::client::GoatClient;
+use crate::error::Result;
 use crate::utils::cli_matches::CliAction;
 use crate::utils::{cli_matches, utils};
 use crate::{count, IndexType};
@@ -28,25 +27,10 @@ pub async fn search(
     // print count warnings.
     count::count(matches, false, true, unique_ids, index_type).await?;
 
-    let fetches = futures::stream::iter(url_vector_api.into_iter().map(|path| async move {
-        // possibly make a again::RetryPolicy
-        // to catch all the values in a *very* large request.
-        let client = reqwest::Client::new();
-
-        match again::retry(|| {
-            client
-                .get(&path)
-                .header(ACCEPT, "text/tab-separated-values")
-                .send()
-        })
-        .await
-        {
-            Ok(resp) => match resp.text().await {
-                Ok(body) => Ok(body),
-                Err(err) => Err(Error::new(ErrorKind::Reqwest(err))),
-            },
-            Err(err) => Err(Error::new(ErrorKind::Reqwest(err))),
-        }
+    let client = GoatClient::new();
+    let fetches = futures::stream::iter(url_vector_api.into_iter().map(|path| {
+        let client = client.clone();
+        async move { client.get_text(&path, "text/tab-separated-values").await }
     }))
     .buffered(concurrent_requests)
     .collect::<Vec<_>>();

@@ -2,11 +2,9 @@
 //! Invoked by calling:
 //! `goat-cli count <args>`
 
+use crate::client::GoatClient;
 use crate::error::{Error, ErrorKind, Result};
 use futures::StreamExt;
-use reqwest;
-use reqwest::header::ACCEPT;
-use serde_json::Value;
 
 use crate::utils::cli_matches::{self, CliAction};
 use crate::IndexType;
@@ -28,35 +26,23 @@ pub async fn count(
 
     let concurrent_requests = url_vector_api.len();
 
+    let client = GoatClient::new();
     let fetches = futures::stream::iter(
         url_vector_api
             .into_iter()
             .zip(url_vector.iter().cloned())
-            .map(|(path, search_query)| async move {
-                let client = reqwest::Client::new();
-
-                let count = match again::retry(|| {
-                    client.get(&path).header(ACCEPT, "application/json").send()
-                })
-                .await
-                {
-                    Ok(resp) => match resp.text().await {
-                        Ok(body) => {
-                            let v: Value = serde_json::from_str(&body)?;
-                            match v["count"].as_u64() {
-                                Some(c) => Ok(c),
-                                None => Err(Error::new(ErrorKind::GenericCli(format!(
-                                    "Bad count response: {}",
-                                    body
-                                )))),
-                            }
-                        }
-                        Err(err) => Err(Error::new(ErrorKind::Reqwest(err))),
-                    },
-                    Err(err) => Err(Error::new(ErrorKind::Reqwest(err))),
-                }?;
-
-                Ok((search_query, count))
+            .map(|(path, search_query)| {
+                let client = client.clone();
+                async move {
+                    let v = client.get_json(&path).await?;
+                    let count = v["count"].as_u64().ok_or_else(|| {
+                        Error::new(ErrorKind::GenericCli(format!(
+                            "Bad count response: {:?}",
+                            v
+                        )))
+                    })?;
+                    Ok((search_query, count))
+                }
             }),
     )
     .buffered(concurrent_requests)

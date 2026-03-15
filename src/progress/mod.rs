@@ -6,13 +6,12 @@
 
 use futures::StreamExt;
 use indicatif;
-use reqwest;
-use reqwest::header::ACCEPT;
 use serde_json::Value;
 use std::time::Duration;
 use tokio::time::sleep;
 
-use crate::error::{Error, ErrorKind, Result};
+use crate::client::GoatClient;
+use crate::error::Result;
 use crate::utils::cli_matches::{self, CliAction};
 use crate::{count, IndexType};
 use crate::{GOAT_URL, UPPER_CLI_SIZE_LIMIT};
@@ -77,40 +76,28 @@ pub async fn progress_bar(
     );
     bar.set_prefix("Fetching from GoaT: ");
 
+    let client = GoatClient::new();
     loop {
         // main body
-        let fetches =
-            futures::stream::iter(query_id_vec.clone().into_iter().map(|path| async move {
-                // possibly make a again::RetryPolicy
-                // to catch all the values in a *very* large request.
-                let client = reqwest::Client::new();
-
-                match again::retry(|| client.get(&path).header(ACCEPT, "application/json").send())
-                    .await
-                {
-                    Ok(resp) => match resp.text().await {
-                        Ok(body) => {
-                            let v: Value = serde_json::from_str(&body)?;
-
-                            match &v["progress"] {
-                                Value::Object(_o) => {
-                                    let progress_total = v["progress"]["total"].as_u64();
-                                    let progress_x = v["progress"]["x"].as_u64();
-                                    Ok(Some((progress_x, progress_total)))
-                                }
-                                _ => Ok(None),
-                            }
-                        }
-                        Err(e) => Err(Error::new(ErrorKind::Reqwest(e))),
-                    },
-                    Err(e) => Err(Error::new(ErrorKind::Reqwest(e))),
+        let fetches = futures::stream::iter(query_id_vec.clone().into_iter().map(|path| {
+            let client = client.clone();
+            async move {
+                let v: Value = client.get_json(&path).await?;
+                match &v["progress"] {
+                    Value::Object(_o) => {
+                        let progress_total = v["progress"]["total"].as_u64();
+                        let progress_x = v["progress"]["x"].as_u64();
+                        Ok(Some((progress_x, progress_total)))
+                    }
+                    _ => Ok(None),
                 }
-            }))
-            .buffered(concurrent_requests)
-            // complicated. Each u64 can be an option, as some
-            // queries will finish before others
-            // entire tuple is an option, as other progress enums evaluate to None.
-            .collect::<Vec<Result<Option<(Option<u64>, Option<u64>)>>>>();
+            }
+        }))
+        .buffered(concurrent_requests)
+        // complicated. Each u64 can be an option, as some
+        // queries will finish before others
+        // entire tuple is an option, as other progress enums evaluate to None.
+        .collect::<Vec<Result<Option<(Option<u64>, Option<u64>)>>>>();
 
         let awaited_fetches = fetches.await;
         // what's going on here?

@@ -1,8 +1,7 @@
+use crate::client::GoatClient;
 use crate::error::{Error, ErrorKind, Result};
 use crate::report::report::{Report, ReportType};
 use futures::StreamExt;
-use reqwest;
-use reqwest::header::ACCEPT;
 use std::io::Write;
 
 pub enum ReportAction {
@@ -40,32 +39,23 @@ pub async fn fetch_report(
     // but whatever!
     let url_vector_api = vec![url];
 
-    let fetches = futures::stream::iter(url_vector_api.into_iter().map(|path| async move {
-        // possibly make a again::RetryPolicy
-        // to catch all the values in a *very* large request.
-        let client = reqwest::Client::new();
-
-        match again::retry(|| client.get(&path).header(ACCEPT, header_value).send()).await {
-            Ok(resp) => match resp.text().await {
-                Ok(body) => Ok(body),
-                Err(err) => Err(err),
-            },
-
-            Err(err) => Err(err),
-        }
+    let client = GoatClient::new();
+    let fetches = futures::stream::iter(url_vector_api.into_iter().map(|path| {
+        let client = client.clone();
+        async move { client.get_text(&path, header_value).await }
     }))
     .buffered(concurrent_requests)
     .collect::<Vec<_>>();
 
-    let awaited_fetches = fetches.await;
+    let mut awaited_fetches = fetches.await;
 
-    let report = &awaited_fetches[0];
+    let report = awaited_fetches.remove(0);
 
     match report {
-        Ok(s) => {
+        Ok(ref s) => {
             // check the length of the string
             // if it's zero, then we have an error
-            if s.len() == 0 || s == ";" {
+            if s.is_empty() || s == ";" {
                 return Err(Error::new(ErrorKind::Report(
                     "no data found. If it was a `taxon newick` call, try increasing the threshold."
                         .to_string(),
@@ -75,7 +65,7 @@ pub async fn fetch_report(
             let mut stdout = std::io::stdout();
             writeln!(stdout, "{}", s)?;
         }
-        Err(e) => return Err(Error::new(ErrorKind::Report(e.to_string()))),
+        Err(e) => return Err(e),
     }
 
     Ok(ReportAction::Continue)

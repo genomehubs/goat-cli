@@ -9,8 +9,12 @@ use std::fmt;
 
 /// The cli itself
 pub mod cli;
+/// Shared HTTP client for all GoaT API requests.
+pub mod client;
 /// Query the GoaT count API.
 pub mod count;
+/// The custom error handling
+pub mod error;
 /// Query the GoaT lookup API.
 pub mod lookup;
 /// A module to produce a progress
@@ -23,9 +27,6 @@ pub mod search;
 /// Collection of utility functions
 /// used elsewhere.
 pub mod utils;
-
-/// The custom error handling
-pub mod error;
 
 /// The base URL for GoaT.
 const GOAT_URL_BASE: &str = "https://goat.genomehubs.org/api/";

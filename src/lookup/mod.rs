@@ -2,11 +2,10 @@
 //! Invoked by calling:
 //! `goat-cli taxon/assembly lookup <args>`
 
-use crate::error::{Error, ErrorKind, Result};
+use crate::client::GoatClient;
+use crate::error::Result;
 use crate::IndexType;
 use futures::StreamExt;
-use reqwest;
-use reqwest::header::ACCEPT;
 use serde_json::Value;
 
 /// The inner structs used in lookup.
@@ -39,21 +38,15 @@ pub async fn lookup(
     // so we can make as many concurrent requests
     let concurrent_requests = url_vector_api.len();
 
+    let client = GoatClient::new();
     let fetches = futures::stream::iter(
         url_vector_api
             .into_iter()
             .enumerate()
-            .map(|(idx, (path, search_query))| async move {
-                // possibly make a again::RetryPolicy
-                // to catch all the values in a *very* large request.
-                let client = reqwest::Client::new();
-
-                match again::retry(|| client.get(&path).header(ACCEPT, "application/json").send())
-                    .await
-                {
-                    Ok(resp) => match resp.text().await {
-                        Ok(body) => {
-                            let v: Value = serde_json::from_str(&body)?;
+            .map(|(idx, (path, search_query))| {
+                let client = client.clone();
+                async move {
+                    let v: Value = client.get_json(&path).await?;
                             // print a warning if number of hits > size specified.
                             let request_size_op = &v["status"]["hits"].as_u64();
                             match request_size_op {
@@ -96,11 +89,7 @@ pub async fn lookup(
                                 ),
                             };
 
-                            Ok((idx, collector))
-                        }
-                        Err(e) => Err(Error::new(ErrorKind::Reqwest(e))),
-                    },
-                    Err(e) => Err(Error::new(ErrorKind::Reqwest(e))),
+                    Ok((idx, collector))
                 }
             }),
     )
