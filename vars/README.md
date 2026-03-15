@@ -1,41 +1,53 @@
 # GoaT variables
 
-This is mainly a developer note. Run `bash get_vars.bash` to retrieve latest GoaT variables.
+This directory holds snapshots of the GoaT `resultFields` API endpoint, used at
+compile time to generate the field validation map in `src/utils/variable_data.rs`.
 
-As variables are being continually added to GoaT, they need to be updated. The CLI has to add these in manually, as they will need additional CLI flags when the time comes. The expression option in the CLI however needs a database to compare against, to prevent against no-hits from the GoaT API.
+## Updating
 
-Therefore the script in this dir fetches the latest variables and parses them into a Rust formatted structure. This is currently pasted into the code, but in future there might be a better way of handling this.
+Run `get_vars.bash` from anywhere in the repo, then rebuild:
 
-The current implementation uses the following data structures:
-
-```Rust
-// data type associated with each variable
-enum TypeOf<'a> {
-    Long,
-    Short,
-    OneDP,
-    TwoDP,
-    Integer,
-    Date,
-    HalfFloat,
-    Keyword(Vec<&'a str>),
-}
-
-// An alias for option
-// this is for detecting min()/max()
-// and any other expression functions in the future
-enum Function<'a> {
-    None,
-    Some(Vec<&'a str>),
-}
-
-// each entry in the database.
-struct Variable<'a> {
-    display_name: &'a str,
-    type_of: TypeOf<'a>,
-    functions: Function<'a>,
-}
-
+```bash
+./vars/get_vars.bash
+cargo build
 ```
 
-The file `goat_variable_data.txt` formats the text from the JSON into the above structure.
+`get_vars.bash` fetches fresh JSON from:
+- `GET /api/v2/resultFields?result=taxon&taxonomy=ncbi` → `taxon_vars.json`
+- `GET /api/v2/resultFields?result=assembly&taxonomy=ncbi` → `assembly_vars.json`
+
+`cargo build` then runs `build.rs`, which reads those JSON files and generates
+the `GOAT_TAXON_VARIABLE_DATA` and `GOAT_ASSEMBLY_VARIABLE_DATA` maps. No manual
+editing of Rust code is required.
+
+## Runtime supplement
+
+Fields added to GoaT after the last `get_vars.bash` run are still accepted at
+runtime via the dynamic field registry (`src/utils/field_registry.rs`), which
+fetches live field names from the same endpoint at startup.
+
+## Data structures
+
+Each field in the JSON is mapped to:
+
+```rust
+struct Variable<'a> {
+    display_name: &'a str,
+    type_of: TypeOf<'a>,   // Long | Short | Integer | Date | HalfFloat | OneDP | TwoDP | Keyword(Vec<&'a str>)
+    functions: Function<'a>, // None | Some(Vec<&'a str>)  e.g. Some(vec!["min", "max"])
+}
+```
+
+Type mapping from JSON `type` field:
+
+| JSON type       | `TypeOf` variant        |
+|-----------------|-------------------------|
+| `long`          | `Long`                  |
+| `integer`       | `Integer`               |
+| `short`         | `Short`                 |
+| `date`          | `Date`                  |
+| `half_float`    | `HalfFloat`             |
+| `1dp`           | `OneDP`                 |
+| `2dp` / `4dp`   | `TwoDP`                 |
+| `keyword`       | `Keyword(enum values)`  |
+| null / other    | `Keyword(vec![""])`     |

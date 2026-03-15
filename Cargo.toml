@@ -16,6 +16,9 @@ documentation = "https://genomehubs.github.io/goat-cli/goat_cli/"
 keywords = ["goat", "genome", "tree", "ncbi", "genomics"]
 categories = ["command-line-utilities", "science"]
 
+[build-dependencies]
+serde_json = "1.0"
+
 [dependencies]
 clap = { version = "4.0.22", features = ["cargo"] }
 reqwest = "0.11.12"

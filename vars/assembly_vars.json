@@ -10,14 +10,15 @@
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
             "source": "INSDC",
             "constraint": {
-                "min": 1,
-                "type": "4dp"
+                "min": 1
             },
-            "description": "VGP Quality Value score computed with gfastats",
+            "type": "4dp",
+            "description": "Quality Value score of the assembly",
             "display_level": 2,
             "display_name": "Quality Value score",
             "sequence": 28,
-            "processed_summary": "undefined_value",
+            "processed_type": "float",
+            "processed_summary": "4dp_value",
             "processed_simple": "value"
         },
         "linked_accession": {
@@ -26,6 +27,8 @@
             "display_group": "linked assemblies",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
             "source": "INSDC",
+            "description": "Linked assembly accession",
+            "long_description": "Accession of genome assemblies derived from the same diploid individual",
             "type": "keyword",
             "sequence": 29,
             "processed_type": "keyword",
@@ -38,6 +41,7 @@
             "display_group": "linked assemblies",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
             "source": "INSDC",
+            "description": "Source of linked assembly accession",
             "type": "keyword",
             "sequence": 30,
             "processed_type": "keyword",
@@ -50,6 +54,7 @@
             "display_group": "linked assemblies",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
             "source": "INSDC",
+            "description": "Mitochondrion assembly accession",
             "type": "keyword",
             "sequence": 33,
             "processed_type": "keyword",
@@ -62,6 +67,7 @@
             "display_group": "linked assemblies",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
             "source": "INSDC",
+            "description": "Number of scaffolds in the mitochondrial assembly",
             "type": "keyword",
             "sequence": 34,
             "processed_type": "keyword",
@@ -74,6 +80,7 @@
             "display_group": "linked assemblies",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
             "source": "INSDC",
+            "description": "Plastid assembly accession",
             "type": "keyword",
             "sequence": 37,
             "processed_type": "keyword",
@@ -86,6 +93,7 @@
             "display_group": "linked assemblies",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
             "source": "INSDC",
+            "description": "Number of scaffolds in the plastid assembly",
             "type": "keyword",
             "sequence": 38,
             "processed_type": "keyword",
@@ -150,13 +158,404 @@
             "processed_summary": "keyword_value.raw",
             "processed_simple": "value"
         },
+        "data_freeze": {
+            "group": "assembly",
+            "name": "data_freeze",
+            "display_group": "data_freeze",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "source": "INSDC",
+            "constraint": {
+                "enum": [
+                    "latest",
+                    "vgp_phase1_main",
+                    "vgp_phase1_comp_vgp",
+                    "vgp_phase1_alt",
+                    "vgp_phase1_aux",
+                    "vgp_phase1_comp_external"
+                ]
+            },
+            "description": "list of data freezes this assembly is included in",
+            "type": "keyword",
+            "sequence": 42,
+            "processed_type": "keyword",
+            "processed_summary": "keyword_value.raw",
+            "processed_simple": "value"
+        },
+        "organelle": {
+            "group": "assembly",
+            "name": "organelle",
+            "display_group": "general",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "source": "INSDC",
+            "constraint": {
+                "enum": [
+                    "nucleus",
+                    "mitochondrion",
+                    "chloroplast",
+                    "plastid",
+                    "apicoplast"
+                ]
+            },
+            "description": "assembled organelle",
+            "long_description": "The organelle from which the assembly was derived",
+            "display_level": 2,
+            "type": "keyword",
+            "sequence": 1,
+            "default": "nucleus",
+            "organelle": "nucleus",
+            "processed_type": "keyword",
+            "processed_summary": "keyword_value.raw",
+            "processed_simple": "value"
+        },
+        "protein_count": {
+            "group": "assembly",
+            "name": "protein_count",
+            "display_group": "annotation",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "source": "INSDC",
+            "description": "Assembly protein count",
+            "long_description": "The total number of proteins predicted in the assembly",
+            "display_level": 2,
+            "display_name": "Protein count",
+            "constraint": {
+                "min": 1
+            },
+            "type": "integer",
+            "sequence": 4,
+            "organelle": "nucleus",
+            "processed_type": "integer",
+            "processed_summary": "integer_value",
+            "processed_simple": "value"
+        },
+        "pseudogene_count": {
+            "group": "assembly",
+            "name": "pseudogene_count",
+            "display_group": "annotation",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "source": "INSDC",
+            "description": "Assembly pseudogene count",
+            "long_description": "The total number of pseudogenes predicted in the assembly",
+            "display_level": 2,
+            "display_name": "Pseudogene count",
+            "constraint": {
+                "min": 1
+            },
+            "type": "integer",
+            "sequence": 5,
+            "organelle": "nucleus",
+            "processed_type": "integer",
+            "processed_summary": "integer_value",
+            "processed_simple": "value"
+        },
+        "noncoding_gene_count": {
+            "group": "assembly",
+            "name": "noncoding_gene_count",
+            "display_group": "annotation",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "source": "INSDC",
+            "description": "Assembly non-coding gene count",
+            "long_description": "The total number of non-coding genes predicted in the assembly",
+            "display_level": 2,
+            "display_name": "Non-coding gene count",
+            "constraint": {
+                "min": 1
+            },
+            "type": "integer",
+            "sequence": 6,
+            "organelle": "nucleus",
+            "processed_type": "integer",
+            "processed_summary": "integer_value",
+            "processed_simple": "value"
+        },
+        "sample_sex": {
+            "group": "assembly",
+            "name": "sample_sex",
+            "display_group": "general",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "source": "INSDC",
+            "description": "Sample sex",
+            "long_description": "Physical sex of sampled organism",
+            "display_level": 2,
+            "display_name": "Sample sex",
+            "type": "keyword",
+            "sequence": 7,
+            "organelle": "nucleus",
+            "processed_type": "keyword",
+            "processed_summary": "keyword_value.raw",
+            "processed_simple": "value"
+        },
+        "isolate": {
+            "group": "assembly",
+            "name": "isolate",
+            "display_group": "general",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "source": "INSDC",
+            "description": "Isolate identifier",
+            "long_description": "The individual isolate from which the sequences in the genome assembly were derived",
+            "display_level": 2,
+            "display_name": "Isolate",
+            "type": "keyword",
+            "sequence": 8,
+            "organelle": "nucleus",
+            "processed_type": "keyword",
+            "processed_summary": "keyword_value.raw",
+            "processed_simple": "value"
+        },
+        "assembly_type": {
+            "group": "assembly",
+            "name": "assembly_type",
+            "display_group": "general",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "source": "INSDC",
+            "description": "Type of assembly",
+            "long_description": "Chromosome or ploidy content of the submitted genome assembly",
+            "display_level": 2,
+            "display_name": "Assembly type",
+            "type": "keyword",
+            "sequence": 10,
+            "organelle": "nucleus",
+            "processed_type": "keyword",
+            "processed_summary": "keyword_value.raw",
+            "processed_simple": "value"
+        },
+        "ungapped_span": {
+            "group": "assembly",
+            "name": "ungapped_span",
+            "display_group": "metrics",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "source": "INSDC",
+            "description": "Total length of the ungapped assembly",
+            "long_description": "Total length of all top-level sequences ignoring gaps. Any stretch of 10 or more Ns in a sequence is treated like a gap",
+            "display_level": 2,
+            "display_name": "Ungapped span",
+            "constraint": {
+                "min": 1
+            },
+            "type": "long",
+            "units": "bases",
+            "sequence": 12,
+            "organelle": "nucleus",
+            "processed_type": "integer",
+            "processed_summary": "long_value",
+            "processed_simple": "value"
+        },
+        "contig_l50": {
+            "group": "assembly",
+            "name": "contig_l50",
+            "display_group": "metrics",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "source": "INSDC",
+            "description": "Contig L50 value",
+            "long_description": "Number of sequence contigs that are longer than, or equal to, the N50 length and therefore include half the bases of the assembly",
+            "display_level": 2,
+            "display_name": "Contig L50",
+            "constraint": {
+                "min": 1
+            },
+            "type": "long",
+            "units": "bases",
+            "sequence": 14,
+            "organelle": "nucleus",
+            "processed_type": "integer",
+            "processed_summary": "long_value",
+            "processed_simple": "value"
+        },
+        "scaffold_l50": {
+            "group": "assembly",
+            "name": "scaffold_l50",
+            "display_group": "metrics",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "source": "INSDC",
+            "description": "Scaffold L50 value",
+            "long_description": "Number of scaffolds that are longer than, or equal to, the N50 length and therefore include half the bases of the assembly",
+            "display_level": 2,
+            "display_name": "Scaffold L50",
+            "constraint": {
+                "min": 1
+            },
+            "type": "long",
+            "units": "bases",
+            "sequence": 16,
+            "organelle": "nucleus",
+            "processed_type": "integer",
+            "processed_summary": "long_value",
+            "processed_simple": "value"
+        },
+        "contig_count": {
+            "group": "assembly",
+            "name": "contig_count",
+            "display_group": "metrics",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "source": "INSDC",
+            "description": "Number of contigs",
+            "long_description": "Total number of sequence contigs in the assembly. Any stretch of 10 or more Ns in a sequence is treated as a gap between two contigs in a scaffold when counting contigs and calculating contig N50 & L50 values",
+            "display_level": 1,
+            "display_name": "Contig count",
+            "constraint": {
+                "min": 1
+            },
+            "type": "long",
+            "units": "bases",
+            "sequence": 17,
+            "organelle": "nucleus",
+            "processed_type": "integer",
+            "processed_summary": "long_value",
+            "processed_simple": "value"
+        },
+        "scaffold_count": {
+            "group": "assembly",
+            "name": "scaffold_count",
+            "display_group": "metrics",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "source": "INSDC",
+            "description": "Number of scaffolds",
+            "long_description": "Number of scaffolds including placed, unlocalized, unplaced, alternate loci and patch scaffolds",
+            "display_level": 1,
+            "display_name": "Scaffold count",
+            "constraint": {
+                "min": 1
+            },
+            "type": "long",
+            "units": "bases",
+            "sequence": 18,
+            "organelle": "nucleus",
+            "processed_type": "integer",
+            "processed_summary": "long_value",
+            "processed_simple": "value"
+        },
+        "chromosome_count": {
+            "group": "assembly",
+            "name": "chromosome_count",
+            "display_group": "metrics",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "source": "INSDC",
+            "description": "Number of chromosomes in the assembly",
+            "long_description": "Count of nuclear chromosomes in a submitted genome assembly, can be the chromosome count in a single haplotype plus all types of sex chromosomes found in the individual",
+            "display_level": 1,
+            "display_name": "Chromosome count",
+            "constraint": {
+                "min": 1
+            },
+            "type": "long",
+            "units": "bases",
+            "sequence": 19,
+            "taxon_display_group": "assembly",
+            "taxon_summary": [
+                "primary",
+                "mode",
+                "median",
+                "min",
+                "max",
+                "count"
+            ],
+            "taxon_display_level": 2,
+            "organelle": "nucleus",
+            "processed_type": "integer",
+            "processed_summary": "long_value",
+            "processed_simple": "value"
+        },
+        "sequence_count": {
+            "group": "assembly",
+            "name": "sequence_count",
+            "display_group": "metrics",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "source": "INSDC",
+            "description": "Number of Component Sequences",
+            "long_description": "Total number of component WGS or clone sequences in the assembly",
+            "display_level": 2,
+            "display_name": "Sequence count",
+            "constraint": {
+                "min": 1
+            },
+            "type": "long",
+            "units": "bases",
+            "sequence": 20,
+            "organelle": "nucleus",
+            "processed_type": "integer",
+            "processed_summary": "long_value",
+            "processed_simple": "value"
+        },
+        "refseq_category": {
+            "group": "assembly",
+            "name": "refseq_category",
+            "display_group": "general",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "source": "INSDC",
+            "description": "RefSeq category assigned to the assembly",
+            "long_description": "The RefSeq category, if present, indicates whether the assembly is a reference genome",
+            "display_level": 2,
+            "display_name": "RefSeq category",
+            "type": "keyword",
+            "sequence": 24,
+            "organelle": "nucleus",
+            "processed_type": "keyword",
+            "processed_summary": "keyword_value.raw",
+            "processed_simple": "value"
+        },
+        "submitter": {
+            "group": "assembly",
+            "name": "submitter",
+            "display_group": "general",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "source": "INSDC",
+            "description": "Name of the submitting organization",
+            "long_description": "The submitting consortium or organization. Full submitter information is available in the BioProject",
+            "display_level": 2,
+            "display_name": "Submitter",
+            "type": "keyword",
+            "sequence": 25,
+            "organelle": "nucleus",
+            "processed_type": "keyword",
+            "processed_summary": "keyword_value.raw",
+            "processed_simple": "value"
+        },
+        "gc_percent": {
+            "group": "assembly",
+            "name": "gc_percent",
+            "display_group": "metrics",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "source": "INSDC",
+            "description": "The percentage of GC base-pairs in the assembly",
+            "display_level": 1,
+            "constraint": {
+                "min": 0,
+                "max": 100
+            },
+            "type": "2dp",
+            "units": "%",
+            "sequence": 26,
+            "organelle": "nucleus",
+            "processed_type": "float",
+            "processed_summary": "2dp_value",
+            "processed_simple": "value"
+        },
+        "n_percent": {
+            "group": "assembly",
+            "name": "n_percent",
+            "display_group": "metrics",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "source": "INSDC",
+            "description": "The percentage of Ns, undefined bases, in the assembly",
+            "display_level": 2,
+            "constraint": {
+                "min": 0,
+                "max": 100
+            },
+            "type": "2dp",
+            "units": "%",
+            "sequence": 27,
+            "organelle": "nucleus",
+            "processed_type": "float",
+            "processed_summary": "2dp_value",
+            "processed_simple": "value"
+        },
         "bioproject": {
             "group": "assembly",
             "name": "bioproject",
             "display_group": "general",
             "source": "INSDC",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "source_date": "2025-02-24",
+            "source_date": "2026-03-13",
             "constraint": {
                 "len": 32
             },
@@ -184,6 +583,12 @@
                 },
                 "prjna533106": {
                     "description": "Earth Biogenome Project (click to view on ENA)"
+                },
+                "prjeb81973": {
+                    "description": "The 959 Nematode Genomes Project (click to view on ENA)"
+                },
+                "prjeb80366": {
+                    "description": "Ancient Environmental Genomics Initiative for Sustainability (click to view on ENA)"
                 },
                 "prjna811786": {
                     "description": "Africa Biogenome Project (click to view on ENA)"
@@ -227,6 +632,9 @@
                 "prjna393850": {
                     "description": "EUROFISH (click to view on ENA)"
                 },
+                "prjna1180976": {
+                    "description": "Genomics of Brazilian Biodiversity (click to view on ENA)"
+                },
                 "prjna649812": {
                     "description": "Global Invertebrate Genomics Alliance (click to view on ENA)"
                 },
@@ -262,6 +670,8 @@
             "display_group": "general",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
             "source": "INSDC",
+            "description": "INSDC biosample ID",
+            "long_description": "INSDC BioSample from which the sequences in the genome assembly were obtained",
             "constraint": {
                 "len": 32
             },
@@ -294,6 +704,8 @@
             "display_group": "annotation",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
             "source": "INSDC",
+            "description": "Assembly gene count",
+            "long_description": "The total number of genes predicted in the assembly",
             "display_level": 1,
             "display_name": "Gene count",
             "constraint": {
@@ -327,6 +739,7 @@
             "display_group": "general",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
             "source": "INSDC",
+            "description": "The level at which a genome has been assembled",
             "display_level": 1,
             "display_name": "Assembly level",
             "type": "keyword",
@@ -357,6 +770,8 @@
             "display_group": "metrics",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
             "source": "INSDC",
+            "description": "Total length of the assembly",
+            "long_description": "Total sequence length of the genome including unplaced and unlocalized sequences",
             "display_level": 1,
             "display_name": "Assembly span",
             "constraint": {
@@ -392,6 +807,8 @@
             "display_group": "metrics",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
             "source": "INSDC",
+            "description": "Contig N50 value",
+            "long_description": "Length such that sequence contigs of this length or longer include half the bases of the assembly",
             "display_level": 1,
             "display_name": "Contig N50",
             "constraint": {
@@ -428,6 +845,8 @@
             "display_group": "metrics",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
             "source": "INSDC",
+            "description": "Scaffold N50 value",
+            "long_description": "Length such that scaffolds of this length or longer include half the bases of the assembly",
             "display_level": 1,
             "display_name": "Scaffold N50",
             "constraint": {
@@ -464,6 +883,7 @@
             "display_group": "general",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
             "source": "INSDC",
+            "description": "Date the assembly was last updated by NCBI",
             "display_level": 2,
             "display_name": "Last updated",
             "type": "date",
@@ -492,7 +912,7 @@
             "display_level": 2,
             "display_name": "EBP metric date",
             "type": "date",
-            "sequence": 42,
+            "sequence": 43,
             "taxon_display_group": "assembly",
             "taxon_summary": [
                 "min",
@@ -502,330 +922,6 @@
             "taxon_traverse_direction": "up",
             "processed_type": "date",
             "processed_summary": "date_value",
-            "processed_simple": "value"
-        },
-        "organelle": {
-            "group": "assembly",
-            "name": "organelle",
-            "display_group": "general",
-            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "source": "INSDC",
-            "constraint": {
-                "enum": [
-                    "nucleus",
-                    "mitochondrion",
-                    "chloroplast",
-                    "plastid",
-                    "apicoplast"
-                ]
-            },
-            "description": "assembled organelle",
-            "type": "keyword",
-            "sequence": 1,
-            "default": "nucleus",
-            "organelle": "nucleus",
-            "processed_type": "keyword",
-            "processed_summary": "keyword_value.raw",
-            "processed_simple": "value"
-        },
-        "protein_count": {
-            "group": "assembly",
-            "name": "protein_count",
-            "display_group": "annotation",
-            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "source": "INSDC",
-            "display_level": 2,
-            "display_name": "Protein count",
-            "constraint": {
-                "min": 1
-            },
-            "type": "integer",
-            "sequence": 4,
-            "organelle": "nucleus",
-            "processed_type": "integer",
-            "processed_summary": "integer_value",
-            "processed_simple": "value"
-        },
-        "pseudogene_count": {
-            "group": "assembly",
-            "name": "pseudogene_count",
-            "display_group": "annotation",
-            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "source": "INSDC",
-            "display_level": 2,
-            "display_name": "Pseudogene count",
-            "constraint": {
-                "min": 1
-            },
-            "type": "integer",
-            "sequence": 5,
-            "organelle": "nucleus",
-            "processed_type": "integer",
-            "processed_summary": "integer_value",
-            "processed_simple": "value"
-        },
-        "noncoding_gene_count": {
-            "group": "assembly",
-            "name": "noncoding_gene_count",
-            "display_group": "annotation",
-            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "source": "INSDC",
-            "display_level": 2,
-            "display_name": "Non-coding gene count",
-            "constraint": {
-                "min": 1
-            },
-            "type": "integer",
-            "sequence": 6,
-            "organelle": "nucleus",
-            "processed_type": "integer",
-            "processed_summary": "integer_value",
-            "processed_simple": "value"
-        },
-        "sample_sex": {
-            "group": "assembly",
-            "name": "sample_sex",
-            "display_group": "general",
-            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "source": "INSDC",
-            "display_level": 2,
-            "display_name": "Sample sex",
-            "type": "keyword",
-            "sequence": 7,
-            "organelle": "nucleus",
-            "processed_type": "keyword",
-            "processed_summary": "keyword_value.raw",
-            "processed_simple": "value"
-        },
-        "isolate": {
-            "group": "assembly",
-            "name": "isolate",
-            "display_group": "general",
-            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "source": "INSDC",
-            "display_level": 2,
-            "display_name": "Isolate",
-            "type": "keyword",
-            "sequence": 8,
-            "organelle": "nucleus",
-            "processed_type": "keyword",
-            "processed_summary": "keyword_value.raw",
-            "processed_simple": "value"
-        },
-        "assembly_type": {
-            "group": "assembly",
-            "name": "assembly_type",
-            "display_group": "general",
-            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "source": "INSDC",
-            "display_level": 2,
-            "display_name": "Assembly type",
-            "type": "keyword",
-            "sequence": 10,
-            "organelle": "nucleus",
-            "processed_type": "keyword",
-            "processed_summary": "keyword_value.raw",
-            "processed_simple": "value"
-        },
-        "ungapped_span": {
-            "group": "assembly",
-            "name": "ungapped_span",
-            "display_group": "metrics",
-            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "source": "INSDC",
-            "display_level": 2,
-            "display_name": "Ungapped span",
-            "constraint": {
-                "min": 1
-            },
-            "type": "long",
-            "units": "bases",
-            "sequence": 12,
-            "organelle": "nucleus",
-            "processed_type": "integer",
-            "processed_summary": "long_value",
-            "processed_simple": "value"
-        },
-        "contig_l50": {
-            "group": "assembly",
-            "name": "contig_l50",
-            "display_group": "metrics",
-            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "source": "INSDC",
-            "display_level": 2,
-            "display_name": "Contig L50",
-            "constraint": {
-                "min": 1
-            },
-            "type": "long",
-            "units": "bases",
-            "sequence": 14,
-            "organelle": "nucleus",
-            "processed_type": "integer",
-            "processed_summary": "long_value",
-            "processed_simple": "value"
-        },
-        "scaffold_l50": {
-            "group": "assembly",
-            "name": "scaffold_l50",
-            "display_group": "metrics",
-            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "source": "INSDC",
-            "display_level": 2,
-            "display_name": "Scaffold L50",
-            "constraint": {
-                "min": 1
-            },
-            "type": "long",
-            "units": "bases",
-            "sequence": 16,
-            "organelle": "nucleus",
-            "processed_type": "integer",
-            "processed_summary": "long_value",
-            "processed_simple": "value"
-        },
-        "contig_count": {
-            "group": "assembly",
-            "name": "contig_count",
-            "display_group": "metrics",
-            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "source": "INSDC",
-            "display_level": 1,
-            "display_name": "Contig count",
-            "constraint": {
-                "min": 1
-            },
-            "type": "long",
-            "units": "bases",
-            "sequence": 17,
-            "organelle": "nucleus",
-            "processed_type": "integer",
-            "processed_summary": "long_value",
-            "processed_simple": "value"
-        },
-        "scaffold_count": {
-            "group": "assembly",
-            "name": "scaffold_count",
-            "display_group": "metrics",
-            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "source": "INSDC",
-            "display_level": 1,
-            "display_name": "Scaffold count",
-            "constraint": {
-                "min": 1
-            },
-            "type": "long",
-            "units": "bases",
-            "sequence": 18,
-            "organelle": "nucleus",
-            "processed_type": "integer",
-            "processed_summary": "long_value",
-            "processed_simple": "value"
-        },
-        "chromosome_count": {
-            "group": "assembly",
-            "name": "chromosome_count",
-            "display_group": "metrics",
-            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "source": "INSDC",
-            "display_level": 1,
-            "display_name": "Chromosome count",
-            "constraint": {
-                "min": 1
-            },
-            "type": "long",
-            "units": "bases",
-            "sequence": 19,
-            "organelle": "nucleus",
-            "processed_type": "integer",
-            "processed_summary": "long_value",
-            "processed_simple": "value"
-        },
-        "sequence_count": {
-            "group": "assembly",
-            "name": "sequence_count",
-            "display_group": "metrics",
-            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "source": "INSDC",
-            "display_level": 2,
-            "display_name": "Sequence count",
-            "constraint": {
-                "min": 1
-            },
-            "type": "long",
-            "units": "bases",
-            "sequence": 20,
-            "organelle": "nucleus",
-            "processed_type": "integer",
-            "processed_summary": "long_value",
-            "processed_simple": "value"
-        },
-        "refseq_category": {
-            "group": "assembly",
-            "name": "refseq_category",
-            "display_group": "general",
-            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "source": "INSDC",
-            "display_level": 2,
-            "display_name": "RefSeq category",
-            "type": "keyword",
-            "sequence": 24,
-            "organelle": "nucleus",
-            "processed_type": "keyword",
-            "processed_summary": "keyword_value.raw",
-            "processed_simple": "value"
-        },
-        "submitter": {
-            "group": "assembly",
-            "name": "submitter",
-            "display_group": "general",
-            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "source": "INSDC",
-            "display_level": 2,
-            "display_name": "Submitter",
-            "type": "keyword",
-            "sequence": 25,
-            "organelle": "nucleus",
-            "processed_type": "keyword",
-            "processed_summary": "keyword_value.raw",
-            "processed_simple": "value"
-        },
-        "gc_percent": {
-            "group": "assembly",
-            "name": "gc_percent",
-            "display_group": "metrics",
-            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "source": "INSDC",
-            "display_level": 1,
-            "constraint": {
-                "min": 0,
-                "max": 100
-            },
-            "type": "2dp",
-            "units": "%",
-            "sequence": 26,
-            "organelle": "nucleus",
-            "processed_type": "float",
-            "processed_summary": "2dp_value",
-            "processed_simple": "value"
-        },
-        "n_percent": {
-            "group": "assembly",
-            "name": "n_percent",
-            "display_group": "metrics",
-            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "source": "INSDC",
-            "display_level": 2,
-            "constraint": {
-                "min": 0,
-                "max": 100
-            },
-            "type": "2dp",
-            "units": "%",
-            "sequence": 27,
-            "organelle": "nucleus",
-            "processed_type": "float",
-            "processed_summary": "2dp_value",
             "processed_simple": "value"
         },
         "busco_completeness": {
@@ -852,7 +948,7 @@
             "taxon_type": "1dp",
             "type": "1dp",
             "units": "%",
-            "sequence": 43,
+            "sequence": 44,
             "processed_type": "float",
             "processed_summary": "1dp_value",
             "processed_simple": "value"
@@ -874,7 +970,7 @@
             "taxon_summary": "list",
             "taxon_traverse": false,
             "taxon_type": "keyword",
-            "sequence": 44,
+            "sequence": 45,
             "processed_type": "keyword",
             "processed_summary": "keyword_value.raw",
             "processed_simple": "value"
@@ -896,7 +992,7 @@
             "taxon_summary": "list",
             "taxon_traverse": false,
             "taxon_type": "keyword",
-            "sequence": 45,
+            "sequence": 46,
             "processed_type": "keyword",
             "processed_summary": "keyword_value.raw",
             "processed_simple": "value"
@@ -930,7 +1026,7 @@
             ],
             "taxon_traverse": false,
             "taxon_type": "1dp",
-            "sequence": 46,
+            "sequence": 47,
             "processed_type": "float",
             "processed_summary": "1dp_value",
             "processed_simple": "value"
@@ -964,7 +1060,7 @@
             ],
             "taxon_traverse": false,
             "taxon_type": "1dp",
-            "sequence": 47,
+            "sequence": 48,
             "processed_type": "float",
             "processed_summary": "1dp_value",
             "processed_simple": "value"
@@ -975,6 +1071,7 @@
             "display_group": "general",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
             "source": "INSDC",
+            "description": "Date the assembly reached an ebp_standard_criteria",
             "display_level": 2,
             "display_name": "EBP metric date",
             "synonyms": [
@@ -999,6 +1096,7 @@
             "display_group": "general",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
             "source": "INSDC",
+            "description": "highest EBP standard criteria met by the assembly",
             "constraint": {
                 "enum": [
                     "6.c",
@@ -1027,6 +1125,7 @@
             "display_group": "linked assemblies",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
             "source": "INSDC",
+            "description": "total length of mitochondrial assembly",
             "type": "keyword",
             "sequence": 31,
             "taxon_display_group": "mitochondrion_assembly",
@@ -1045,6 +1144,7 @@
             "display_group": "linked assemblies",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
             "source": "INSDC",
+            "description": "The percentage of GC base-pairs in the mitochondrial assembly",
             "constraint": {
                 "min": 0,
                 "max": 100
@@ -1076,6 +1176,7 @@
             "display_group": "linked assemblies",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
             "source": "INSDC",
+            "description": "total length of plastid assembly",
             "type": "keyword",
             "sequence": 35,
             "taxon_display_group": "plastid_assembly",
@@ -1094,6 +1195,7 @@
             "display_group": "linked assemblies",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
             "source": "INSDC",
+            "description": "The percentage of GC base-pairs in the plastid assembly",
             "constraint": {
                 "min": 0,
                 "max": 100
@@ -1121,13 +1223,6 @@
         }
     },
     "identifiers": {
-        "ucsc_assembly_name": {
-            "group": "assembly",
-            "name": "ucsc_assembly_name",
-            "index": 0,
-            "processed_summary": "undefined_value",
-            "processed_simple": "value"
-        },
         "refseq_accession": {
             "group": "assembly",
             "name": "refseq_accession",
@@ -1161,6 +1256,20 @@
             "processed_summary": "keyword_value.raw",
             "processed_simple": "value"
         },
+        "common_name": {
+            "group": "assembly",
+            "name": "common_name",
+            "header": "commonName",
+            "processed_summary": "undefined_value",
+            "processed_simple": "value"
+        },
+        "ucsc_assembly_name": {
+            "group": "assembly",
+            "name": "ucsc_assembly_name",
+            "index": 0,
+            "processed_summary": "undefined_value",
+            "processed_simple": "value"
+        },
         "assembly_alias": {
             "group": "assembly",
             "name": "assembly_alias",
@@ -1172,20 +1281,6 @@
             "group": "assembly",
             "name": "assembly_id",
             "header": "accession",
-            "processed_summary": "undefined_value",
-            "processed_simple": "value"
-        },
-        "bioproject": {
-            "group": "assembly",
-            "name": "bioproject",
-            "header": "bioproject",
-            "processed_summary": "undefined_value",
-            "processed_simple": "value"
-        },
-        "biosample": {
-            "group": "assembly",
-            "name": "biosample",
-            "header": "biosample",
             "processed_summary": "undefined_value",
             "processed_simple": "value"
         },
@@ -1205,6 +1300,6 @@
         }
     },
     "hub": "goat",
-    "release": "2025.02.24",
-    "source": "https://github.com/genomehubs/goat-data/tree/2025.02.24"
+    "release": "2026.03.13",
+    "source": "https://github.com/genomehubs/goat-data/tree/2026.03.13"
 }
