@@ -47,18 +47,15 @@ impl<'a> Variables<'a> {
     /// Simple parsing of a comma separated string,
     /// which will error if the variable is not found
     /// with a suggestion as to which one you meant.
+    ///
+    /// Returns a plain comma-separated field list (no `&fields=` prefix, no percent-encoding).
+    /// The caller is responsible for adding the field as a URL query parameter.
     pub fn parse(
         &self,
         reference_data: &BTreeMap<&'static str, Variable<'static>>,
         // this is a pretty hacky way of adding this in.
         taxon_toggle_direct: bool,
     ) -> Result<String> {
-        const BASE: &str = "&fields=";
-        const DELIMITER: &str = "%2C";
-        const COLON: &str = "%3A";
-
-        let mut parsed_string = String::new();
-
         let split_vec = parse_comma_separated(self.variables);
         // check that all the strings in split_vec are real
         let var_vec_check = reference_data
@@ -79,51 +76,26 @@ impl<'a> Variables<'a> {
             }
         }
 
-        parsed_string += BASE;
+        let mut fields: Vec<String> = Vec::new();
         for el in split_vec {
-            parsed_string += &el;
-            parsed_string += DELIMITER;
-
+            fields.push(el.clone());
             if taxon_toggle_direct {
-                // first add direct
-                parsed_string += &el;
-                parsed_string += COLON;
-                parsed_string += "direct";
-                // now we need to push two more
-                parsed_string += DELIMITER;
-                parsed_string += &el;
-                parsed_string += COLON;
-                parsed_string += "ancestor";
-                parsed_string += DELIMITER;
-                parsed_string += &el;
-                parsed_string += COLON;
-                parsed_string += "descendant";
-                parsed_string += DELIMITER;
+                fields.push(format!("{}:direct", el));
+                fields.push(format!("{}:ancestor", el));
+                fields.push(format!("{}:descendant", el));
             }
         }
 
-        // Remove the trailing DELIMITER ("%2C", 3 bytes) added after the last field.
-        // Guard against the degenerate case where no fields were added.
-        if parsed_string.len() > BASE.len() {
-            parsed_string.drain(parsed_string.len() - 3..);
-        }
-
-        Ok(parsed_string)
+        Ok(fields.join(","))
     }
 
-    /// Parse a variable name into a string which will be entered in the final URL
-    /// to exclude missing and ancestral taxa.
+    /// Parse a variable name into key-value pairs for excluding missing and ancestral taxa.
+    ///
+    /// Returns `Vec<(param_name, field_name)>` pairs; the URL builder handles encoding.
     pub fn parse_exclude(
         &self,
         reference_data: &BTreeMap<&'static str, Variable<'static>>,
-    ) -> Result<String> {
-        const ANCESTRAL: &str = "&excludeAncestral";
-        const MISSING: &str = "&excludeMissing";
-        const OPEN_ANGLE_BRACE: &str = "%5B";
-        const CLOSE_ANGLE_BRACE: &str = "%5D";
-
-        let mut exclusion_string = String::new();
-
+    ) -> Result<Vec<(String, String)>> {
         let split_vec = parse_comma_separated(self.variables);
         // check that all the strings in split_vec are real
         let var_vec_check = reference_data
@@ -144,22 +116,13 @@ impl<'a> Variables<'a> {
             }
         }
 
+        let mut pairs = Vec::new();
         for (exclude_index, field) in split_vec.into_iter().enumerate() {
-            exclusion_string += ANCESTRAL;
-            exclusion_string += OPEN_ANGLE_BRACE;
-            exclusion_string += &exclude_index.to_string();
-            exclusion_string += CLOSE_ANGLE_BRACE;
-            exclusion_string += &format!("={field}");
-
-            // add missing
-            exclusion_string += MISSING;
-            exclusion_string += OPEN_ANGLE_BRACE;
-            exclusion_string += &exclude_index.to_string();
-            exclusion_string += CLOSE_ANGLE_BRACE;
-            exclusion_string += &format!("={field}");
+            pairs.push((format!("excludeAncestral[{}]", exclude_index), field.clone()));
+            pairs.push((format!("excludeMissing[{}]", exclude_index), field));
         }
 
-        Ok(exclusion_string)
+        Ok(pairs)
     }
 }
 
@@ -195,9 +158,10 @@ mod tests {
     fn test_parse_single_variable_builds_fields_string() {
         let v = Variables::new("genome_size");
         let result = v.parse(&GOAT_TAXON_VARIABLE_DATA, false).unwrap();
-        assert!(result.starts_with("&fields="));
+        // Returns a plain field list — no &fields= prefix, no percent-encoding
+        assert!(!result.starts_with("&fields="), "should not have &fields= prefix");
         assert!(result.contains("genome_size"));
-        assert!(!result.ends_with("%2C"), "trailing delimiter present");
+        assert!(!result.ends_with(','), "trailing delimiter present");
     }
 
     #[test]
@@ -206,7 +170,7 @@ mod tests {
         let result = v.parse(&GOAT_TAXON_VARIABLE_DATA, false).unwrap();
         assert!(result.contains("genome_size"));
         assert!(result.contains("c_value"));
-        assert!(!result.ends_with("%2C"));
+        assert!(!result.ends_with(','));
     }
 
     #[test]
@@ -219,10 +183,10 @@ mod tests {
     fn test_parse_toggle_direct_adds_extra_columns() {
         let v = Variables::new("genome_size");
         let result = v.parse(&GOAT_TAXON_VARIABLE_DATA, true).unwrap();
-        assert!(result.contains("genome_size%3Adirect"));
-        assert!(result.contains("genome_size%3Aancestor"));
-        assert!(result.contains("genome_size%3Adescendant"));
-        assert!(!result.ends_with("%2C"));
+        assert!(result.contains("genome_size:direct"));
+        assert!(result.contains("genome_size:ancestor"));
+        assert!(result.contains("genome_size:descendant"));
+        assert!(!result.ends_with(','));
     }
 
     // ── parse_exclude ────────────────────────────────────────────────────────
@@ -230,20 +194,22 @@ mod tests {
     #[test]
     fn test_parse_exclude_contains_ancestral_and_missing_segments() {
         let v = Variables::new("genome_size");
-        let result = v.parse_exclude(&GOAT_TAXON_VARIABLE_DATA).unwrap();
-        assert!(result.contains("excludeAncestral"));
-        assert!(result.contains("excludeMissing"));
-        assert!(result.contains("genome_size"));
+        let pairs = v.parse_exclude(&GOAT_TAXON_VARIABLE_DATA).unwrap();
+        let keys: Vec<&str> = pairs.iter().map(|(k, _)| k.as_str()).collect();
+        let vals: Vec<&str> = pairs.iter().map(|(_, v)| v.as_str()).collect();
+        assert!(keys.iter().any(|k| k.contains("excludeAncestral")));
+        assert!(keys.iter().any(|k| k.contains("excludeMissing")));
+        assert!(vals.iter().all(|v| *v == "genome_size"));
     }
 
     #[test]
     fn test_parse_exclude_multiple_variables_all_indexed() {
         let v = Variables::new("genome_size,c_value");
-        let result = v.parse_exclude(&GOAT_TAXON_VARIABLE_DATA).unwrap();
-        assert!(result.contains("genome_size"));
-        assert!(result.contains("c_value"));
-        // Two variables means indices 0 and 1
-        assert!(result.contains("%5B0%5D"));
-        assert!(result.contains("%5B1%5D"));
+        let pairs = v.parse_exclude(&GOAT_TAXON_VARIABLE_DATA).unwrap();
+        // Two variables × two param types = 4 pairs
+        assert_eq!(pairs.len(), 4);
+        let keys: Vec<&str> = pairs.iter().map(|(k, _)| k.as_str()).collect();
+        assert!(keys.iter().any(|k| k.contains("[0]")));
+        assert!(keys.iter().any(|k| k.contains("[1]")));
     }
 }

@@ -93,9 +93,6 @@ impl<'a> TaxRanks<'a> {
         }
         // split the string on commas
         let split = utils::parse_comma_separated(cmp);
-        let mut tax_rank_string = String::new();
-        // space and AND tax_rank open parentheses
-        tax_rank_string += "%20AND%20tax_rank%28";
         let mut ranks_vec = Vec::new();
 
         // iterate over split
@@ -111,11 +108,8 @@ impl<'a> TaxRanks<'a> {
             }
         }
 
-        tax_rank_string += &ranks_vec.join("%2C");
-        // close parentheses
-        tax_rank_string += "%29";
-
-        Ok(tax_rank_string)
+        // Return unencoded — url builder handles encoding
+        Ok(format!(" AND tax_rank({})", ranks_vec.join(",")))
     }
 }
 
@@ -140,8 +134,8 @@ mod tests {
         let result = tr.parse("species", false).unwrap();
         assert!(result.contains("tax_rank"));
         assert!(result.contains("species"));
-        assert!(result.starts_with("%20AND%20tax_rank%28"));
-        assert!(result.ends_with("%29"));
+        assert!(result.starts_with(" AND tax_rank("));
+        assert!(result.ends_with(')'));
     }
 
     #[test]
@@ -150,8 +144,8 @@ mod tests {
         let result = tr.parse("species,genus", false).unwrap();
         assert!(result.contains("species"));
         assert!(result.contains("genus"));
-        // both should be URL-encoded inside the same tax_rank() call
-        assert!(result.contains("%2C"));
+        // both should be inside the same tax_rank() call, separated by a plain comma
+        assert!(result.contains(','));
     }
 
     #[test]

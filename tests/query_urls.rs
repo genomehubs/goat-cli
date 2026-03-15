@@ -70,9 +70,10 @@ fn make_taxon_urls(
 
 #[test]
 fn test_format_expression_taxon_encodes_operator() {
+    // format_expression now returns an unencoded string; url builder handles encoding later
     let exp = format_expression("genome_size > 1000", IndexType::Taxon).expect("expression parsed");
     assert!(exp.contains("genome_size"));
-    assert!(exp.contains("%3E"));
+    assert!(exp.contains(">"));
     assert!(exp.contains("1000"));
 }
 
@@ -289,7 +290,8 @@ fn test_taxon_name_query_type() {
         "",
         vec![String::from("id1")],
     );
-    assert!(urls[0].contains("tax_name%28Homo sapiens%29"));
+    // url builder encodes '(' as %28 and space as '+' (form encoding)
+    assert!(urls[0].contains("tax_name%28Homo+sapiens%29"));
 }
 
 // ── make_goat_urls: field builder flags ──────────────────────────────────────

@@ -152,16 +152,16 @@ impl Operator {
         }
     }
 
-    fn as_url_encoded(self) -> &'static str {
+    fn as_str(self) -> &'static str {
         match self {
-            Self::EqBang => "%3D%21",
-            Self::NotEq => "!%3D",
-            Self::Lt => "%3C",
-            Self::LtEq => "<%3D",
-            Self::Eq => "%3D",
-            Self::EqEq => "%3D%3D",
-            Self::Gt => "%3E",
-            Self::GtEq => ">%3D",
+            Self::EqBang => "=!",
+            Self::NotEq => "!=",
+            Self::Lt => "<",
+            Self::LtEq => "<=",
+            Self::Eq => "=",
+            Self::EqEq => "==",
+            Self::Gt => ">",
+            Self::GtEq => ">=",
         }
     }
 }
@@ -392,7 +392,7 @@ impl<'a> CLIexpression<'a> {
                     // manually escape these...
                     let variable = &curr_el_vec[0].trim().replace('\"', "").replace('\'', "")[..];
                     let operator = Operator::parse(curr_el_vec[1])?;
-                    let operator_encoded = operator.as_url_encoded();
+                    let operator_str = operator.as_str();
 
                     let value = &curr_el_vec[2].trim().replace('\"', "").replace('\'', "")[..];
 
@@ -462,15 +462,10 @@ impl<'a> CLIexpression<'a> {
                                 .map(|v| &v.type_of)?
                         };
 
-                    // if there are parentheses - i.e. in min()/max() functions
-                    let url_encoded_variable = variable.replace('(', "%28");
-                    let url_encoded_variable = url_encoded_variable.replace(')', "%29");
-
                     // if there are keywords, make sure they are a match
                     match keyword_enums {
                         TypeOf::Keyword(k) => {
-                            // split on commas here
-                            // and trim
+                            // split on commas here and trim (strip ! prefix for validation)
                             let value_split_commas = value
                                 .split(',')
                                 .map(|e| {
@@ -502,25 +497,16 @@ impl<'a> CLIexpression<'a> {
                                 }
                             }
 
-                            // now modify value_split_commas to parse parentheses
-                            let parsed_value_split_commas = value
+                            // build clause — pass values as-is; the URL builder handles encoding
+                            let trimmed_values = value
                                 .split(',')
-                                .map(|e| {
-                                    // trim again but keep bool flags
-                                    let f = e.trim();
-                                    // janky but will do for now.
-                                    let f = f.replace('(', "%28");
-                                    let f = f.replace(')', "%29");
-                                    let f = f.replace(' ', "%20");
-                                    f.replace('!', "%21")
-                                })
+                                .map(|e| e.trim().to_string())
                                 .collect::<Vec<String>>();
-                            // build expression
                             let clause = format!(
-                                "{}%20{}%20{}",
-                                url_encoded_variable,
-                                operator_encoded,
-                                parsed_value_split_commas.join("%2C")
+                                "{} {} {}",
+                                variable,
+                                operator_str,
+                                trimmed_values.join(",")
                             );
                             clauses.push(clause);
                         }
@@ -528,11 +514,8 @@ impl<'a> CLIexpression<'a> {
                             // here can we type check input
                             TypeOf::check(t, value, variable)?;
 
-                            // build expression
-                            let clause = format!(
-                                "{}%20{}%20{}",
-                                url_encoded_variable, operator_encoded, value
-                            );
+                            // build clause — pass values as-is; the URL builder handles encoding
+                            let clause = format!("{} {} {}", variable, operator_str, value);
                             clauses.push(clause);
                         }
                     }
@@ -559,7 +542,7 @@ impl<'a> CLIexpression<'a> {
                 "must be in the format: <variable> <operator> <value> AND ...".to_string(),
             )))
         } else {
-            Ok(format!("%20AND%20{}", clauses.join("%20AND%20")))
+            Ok(format!(" AND {}", clauses.join(" AND ")))
         }
     }
 }
@@ -645,11 +628,12 @@ mod tests {
         let mut cli_exp = CLIexpression::new(expression);
         let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
 
-        assert_eq!(result.unwrap(), "%20AND%20bioproject%20%3D%21%20PRJEB40665%20AND%20long_list%20%3D%20dtol%20AND%20ebp_metric_date%20AND%20genome_size%20%3E%201000");
+        assert_eq!(
+            result.unwrap(),
+            " AND bioproject =! PRJEB40665 AND long_list = dtol AND ebp_metric_date AND genome_size > 1000"
+        );
     }
 
-    // long_list=dtol AND length(long_list)>1
-    // long_list%3Ddtol%20AND%20length%28long_list%29>1
     #[test]
     fn test_2() {
         let expression = "long_list=dtol AND length(long_list)>1";
@@ -657,30 +641,24 @@ mod tests {
         let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
         assert_eq!(
             result.unwrap(),
-            "%20AND%20long_list%20%3D%20dtol%20AND%20length%28long_list%29%20%3E%201"
+            " AND long_list = dtol AND length(long_list) > 1"
         );
     }
 
-    // long_list=dtol AND sequencing_status
-    // long_list%3Ddtol%20AND%20sequencing_status%20AND%20tax_rank(species)
     #[test]
     fn test_3() {
         let expression = "long_list=dtol AND sequencing_status";
         let mut cli_exp = CLIexpression::new(expression);
         let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
-        assert_eq!(
-            result.unwrap(),
-            "%20AND%20long_list%20%3D%20dtol%20AND%20sequencing_status"
-        );
+        assert_eq!(result.unwrap(), " AND long_list = dtol AND sequencing_status");
     }
 
-    // some basic expressions
     #[test]
     fn test_4() {
         let expression = "genome_size > 1000";
         let mut cli_exp = CLIexpression::new(expression);
         let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
-        assert_eq!(result.unwrap(), "%20AND%20genome_size%20%3E%201000");
+        assert_eq!(result.unwrap(), " AND genome_size > 1000");
     }
 
     #[test]
@@ -689,7 +667,7 @@ mod tests {
         let expression = "genome_size<1000";
         let mut cli_exp = CLIexpression::new(expression);
         let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
-        assert_eq!(result.unwrap(), "%20AND%20genome_size%20%3C%201000");
+        assert_eq!(result.unwrap(), " AND genome_size < 1000");
     }
 
     #[test]
@@ -697,13 +675,9 @@ mod tests {
         let expression = "sequencing_status_dtol == published";
         let mut cli_exp = CLIexpression::new(expression);
         let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
-        assert_eq!(
-            result.unwrap(),
-            "%20AND%20sequencing_status_dtol%20%3D%3D%20published"
-        );
+        assert_eq!(result.unwrap(), " AND sequencing_status_dtol == published");
     }
 
-    // and combining expressions
     #[test]
     fn test_6() {
         let expression = "genome_size > 1000 AND sequencing_status_dtol == published";
@@ -711,20 +685,20 @@ mod tests {
         let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA);
         assert_eq!(
             result.unwrap(),
-            "%20AND%20genome_size%20%3E%201000%20AND%20sequencing_status_dtol%20%3D%3D%20published"
+            " AND genome_size > 1000 AND sequencing_status_dtol == published"
         );
     }
 
     #[test]
     fn test_operator_parse_gt() {
         let op = Operator::parse(">").unwrap();
-        assert_eq!(op.as_url_encoded(), "%3E");
+        assert_eq!(op.as_str(), ">");
     }
 
     #[test]
     fn test_operator_parse_lte() {
         let op = Operator::parse("<=").unwrap();
-        assert_eq!(op.as_url_encoded(), "<%3D");
+        assert_eq!(op.as_str(), "<=");
     }
 
     #[test]

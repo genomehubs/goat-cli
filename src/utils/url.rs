@@ -7,13 +7,14 @@ use crate::{
     },
     IndexType,
 };
+use url::Url;
 
 // format the ranks for the URL.
 
-/// Function to format the rank into a GoaT URL segment.
+/// Function to format the rank into a plain comma-separated string for the `ranks` URL parameter.
+///
+/// Returns an empty string if the rank is not recognised (e.g. "none").
 fn format_rank(r: &str) -> String {
-    // fixed vector of ranks.
-    // "none" by default will return an empty string here.
     let ranks = [
         "subspecies",
         "species",
@@ -26,23 +27,16 @@ fn format_rank(r: &str) -> String {
         "superkingdom",
     ];
     let position_selected = ranks.iter().position(|e| e == &r);
-    let updated_ranks = match position_selected {
-        Some(p) => &ranks[p..],
-        None => return "".to_string(),
-    };
-    let mut rank_string = String::new();
-    rank_string += "&ranks=";
-    let ranks_to_add = updated_ranks.join("%2C");
-    rank_string += &ranks_to_add;
-
-    rank_string
+    match position_selected {
+        Some(p) => ranks[p..].join(","),
+        None => "".to_string(),
+    }
 }
 
-/// If names appears in [`FieldBuilder`], then we add the
-/// GoaT URL segment for that.
+/// Returns the plain comma-separated value for the `names` URL parameter, or empty string.
 fn format_names(flag: bool) -> String {
     match flag {
-        true => "&names=synonym%2Ctol_id%2Ccommon_name".to_string(),
+        true => "synonym,tol_id,common_name".to_string(),
         false => "".to_string(),
     }
 }
@@ -298,121 +292,66 @@ impl FieldBuilder {
         ]
     }
 
-    /// A function which formats all of the GoaT fields
-    /// together into a URL segment.
+    /// Returns a plain comma-separated field list (no `&fields=` prefix, no percent-encoding).
+    ///
+    /// Returns an empty string if no field flags are set.
     pub fn build_fields_string(&self) -> String {
-        const BASE: &str = "&fields=";
-        const DELIMITER: &str = "%2C";
-        const COLON: &str = "%3A";
-
-        // build the little data base
         let data = self.to_vec_tuples();
 
-        // and now build the string
-        let mut field_string = String::new();
-        // add the base
-        field_string += BASE;
+        let mut fields: Vec<String> = Vec::new();
         for (field_present, field_vec) in data.iter() {
-            match field_present {
-                true => {
-                    // a loop here is easier
-                    for field in field_vec {
-                        field_string += field;
-                        field_string += DELIMITER;
-                        // if we have this toggle, add the extra columns
-                        if self.taxon_toggle_direct {
-                            // first add direct
-                            field_string += field;
-                            field_string += COLON;
-                            field_string += "direct";
-                            // now we need to push two more
-                            field_string += DELIMITER;
-                            field_string += field;
-                            field_string += COLON;
-                            field_string += "ancestor";
-                            field_string += DELIMITER;
-                            field_string += field;
-                            field_string += COLON;
-                            field_string += "descendant";
-                            field_string += DELIMITER;
-                        }
+            if *field_present {
+                for field in field_vec {
+                    fields.push(field.to_string());
+                    if self.taxon_toggle_direct {
+                        fields.push(format!("{}:direct", field));
+                        fields.push(format!("{}:ancestor", field));
+                        fields.push(format!("{}:descendant", field));
                     }
                 }
-                false => continue,
             }
         }
 
-        // remove the last three chars == '&2C'
-        field_string.drain(field_string.len() - 3..);
-        // check for blanks
-        let any_true = data.iter().map(|e| e.0).any(|e| e);
-        if !any_true {
-            // remove everything
-            field_string.drain(..);
-        }
-
-        field_string
+        fields.join(",")
     }
 
-    /// An implementation of exculding values returned if they are missing or ancestral values inferred by GoaT.
-    fn generate_exculde_flags(&self) -> String {
-        const ANCESTRAL: &str = "&excludeAncestral";
-        const MISSING: &str = "&excludeMissing";
-        const OPEN_ANGLE_BRACE: &str = "%5B";
-        const CLOSE_ANGLE_BRACE: &str = "%5D";
-
+    /// Returns key-value pairs for excluding missing and ancestral values.
+    ///
+    /// Each pair is `(param_name, field_name)` — the URL builder handles encoding.
+    fn generate_exclude_flags(&self) -> Vec<(String, String)> {
         let data = self.to_vec_tuples();
-        let mut exclusion_string = String::new();
+        let mut pairs: Vec<(String, String)> = Vec::new();
 
-        let mut exclude_index: i32 = 0;
+        let mut exclude_index: usize = 0;
         for (field_present, field_vec) in data.iter() {
-            match field_present {
-                true => {
-                    for field in field_vec {
-                        // e.g. &excludeAncestral%5B0%5D=assembly_span
-                        // add ancestral
-                        exclusion_string += ANCESTRAL;
-                        exclusion_string += OPEN_ANGLE_BRACE;
-                        exclusion_string += &exclude_index.to_string();
-                        exclusion_string += CLOSE_ANGLE_BRACE;
-                        exclusion_string += &format!("={field}");
-
-                        // add missing
-                        exclusion_string += MISSING;
-                        exclusion_string += OPEN_ANGLE_BRACE;
-                        exclusion_string += &exclude_index.to_string();
-                        exclusion_string += CLOSE_ANGLE_BRACE;
-                        exclusion_string += &format!("={field}");
-
-                        exclude_index += 1;
-                    }
+            if *field_present {
+                for field in field_vec {
+                    pairs.push((
+                        format!("excludeAncestral[{}]", exclude_index),
+                        field.to_string(),
+                    ));
+                    pairs.push((
+                        format!("excludeMissing[{}]", exclude_index),
+                        field.to_string(),
+                    ));
+                    exclude_index += 1;
                 }
-                false => continue,
             }
         }
 
-        exclusion_string
+        pairs
     }
 }
 
-/// Combine the fields URL string generated from the flags on the CLI,
-/// and the variable string on the CLI.
+/// Combine the plain field lists from the `-v` flag and the field-builder flags.
+///
+/// Both inputs are plain comma-separated lists (no prefix, no encoding).
 fn combine_variable_string(v: String, fb: String) -> String {
-    let is_v_empty = v.is_empty();
-    let is_fb_empty = fb.is_empty();
-
-    match (is_v_empty, is_fb_empty) {
-        // both empty, return empty string
+    match (v.is_empty(), fb.is_empty()) {
         (true, true) => "".into(),
-        // variables empty, fieldbuilder not
         (true, false) => fb,
-        // variables not, fieldbuilder empty
         (false, true) => v,
-        // both contain something
-        (false, false) => {
-            let fb_replaced = fb.replace("&fields=", "%2C");
-            v + &fb_replaced
-        }
+        (false, false) => format!("{},{}", v, fb),
     }
 }
 
@@ -458,7 +397,9 @@ pub fn make_goat_urls(
     // and combine
     let fields_string = combine_variable_string(variables_field_string, field_builder_string);
 
-    let exclude_missing_or_ancestral = if exclude {
+    let names_string = format_names(fields.taxon_names);
+
+    let exclude_pairs: Vec<(String, String)> = if exclude {
         match variables {
             Some(v) => match index_type {
                 IndexType::Taxon => Variables::new(v).parse_exclude(&GOAT_TAXON_VARIABLE_DATA)?,
@@ -466,29 +407,55 @@ pub fn make_goat_urls(
                     Variables::new(v).parse_exclude(&GOAT_ASSEMBLY_VARIABLE_DATA)?
                 }
             },
-            None => fields.generate_exculde_flags(),
+            None => fields.generate_exclude_flags(),
         }
     } else {
-        "".into()
-    };
-
-    let names = format_names(fields.taxon_names);
-
-    let tidy_data: &str = match fields.taxon_tidy {
-        true => "&tidyData=true",
-        false => "",
+        vec![]
     };
 
     // enumeration of the taxa will be 0 -> n,
     // corresponding to alphabetical order of taxa
     let mut res = Vec::new();
-    for (taxon, chars) in taxids.iter().zip(unique_ids.iter()) {
-        let query_id = format!("&queryId=goat_cli_{}", chars);
-        let url = format!(
-        // hardcode tidy data for now.
-        "{goat_url}{api}?query=tax_{tax_tree}%28{taxon}%29{tax_rank}{expression}&includeEstimates={include_estimates}&includeRawValues={include_raw_values}&summaryValues={summarise_values_by}&result={result}&taxonomy={taxonomy}&size={size}{rank_string}{fields_string}{tidy_data}{names}{query_id}{exclude_missing_or_ancestral}"
-    );
-        res.push(url);
+    for (taxon, query_id_suffix) in taxids.iter().zip(unique_ids.iter()) {
+        // Build the GoaT query language value (unencoded; url builder handles encoding)
+        let mut query_value = format!("tax_{}({})", tax_tree, taxon);
+        if !tax_rank.is_empty() {
+            query_value.push_str(tax_rank);
+        }
+        if !expression.is_empty() {
+            query_value.push_str(expression);
+        }
+
+        let base = format!("{}{}", goat_url, api);
+        let mut url = Url::parse(&base).expect("goat_url is a valid base");
+        url.query_pairs_mut()
+            .append_pair("query", &query_value)
+            .append_pair("includeEstimates", &include_estimates.to_string())
+            .append_pair("includeRawValues", &include_raw_values.to_string())
+            .append_pair("summaryValues", summarise_values_by)
+            .append_pair("result", result)
+            .append_pair("taxonomy", taxonomy)
+            .append_pair("size", &size.to_string());
+
+        if !rank_string.is_empty() {
+            url.query_pairs_mut().append_pair("ranks", &rank_string);
+        }
+        if !fields_string.is_empty() {
+            url.query_pairs_mut().append_pair("fields", &fields_string);
+        }
+        if fields.taxon_tidy {
+            url.query_pairs_mut().append_pair("tidyData", "true");
+        }
+        if !names_string.is_empty() {
+            url.query_pairs_mut().append_pair("names", &names_string);
+        }
+        url.query_pairs_mut()
+            .append_pair("queryId", &format!("goat_cli_{}", query_id_suffix));
+        for (key, value) in &exclude_pairs {
+            url.query_pairs_mut().append_pair(key, value);
+        }
+
+        res.push(url.to_string());
     }
     Ok(res)
 }

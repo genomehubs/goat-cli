@@ -48,11 +48,12 @@ fn test_genome_size_group_produces_three_fields() {
     let mut f = empty_fields();
     f.taxon_gs = true;
     let s = f.build_fields_string();
-    assert!(s.starts_with("&fields="), "should start with &fields=");
+    // Returns a plain field list — no prefix, no percent-encoding
+    assert!(!s.starts_with("&fields="), "should not have &fields= prefix");
     assert!(s.contains("genome_size"), "missing genome_size");
     assert!(s.contains("genome_size_kmer"), "missing genome_size_kmer");
     assert!(s.contains("genome_size_draft"), "missing genome_size_draft");
-    assert!(!s.ends_with("%2C"), "trailing delimiter present");
+    assert!(!s.ends_with(','), "trailing delimiter present");
 }
 
 #[test]
@@ -62,7 +63,7 @@ fn test_karyotype_group_produces_two_fields() {
     let s = f.build_fields_string();
     assert!(s.contains("chromosome_number"));
     assert!(s.contains("haploid_number"));
-    assert!(!s.ends_with("%2C"));
+    assert!(!s.ends_with(','));
 }
 
 #[test]
@@ -79,7 +80,7 @@ fn test_assembly_index_assembly_group() {
     let mut f = empty_fields();
     f.assembly_assembly = true;
     let s = f.build_fields_string();
-    assert!(s.starts_with("&fields="));
+    assert!(!s.starts_with("&fields="), "should not have &fields= prefix");
     assert!(s.contains("assembly_level"));
     assert!(s.contains("assembly_span"));
 }
@@ -113,7 +114,7 @@ fn test_two_groups_both_appear() {
     let s = f.build_fields_string();
     assert!(s.contains("genome_size"));
     assert!(s.contains("chromosome_number"));
-    assert!(!s.ends_with("%2C"));
+    assert!(!s.ends_with(','));
 }
 
 #[test]
@@ -126,7 +127,7 @@ fn test_three_groups_no_trailing_delimiter() {
     assert!(s.contains("genome_size"));
     assert!(s.contains("chromosome_number"));
     assert!(s.contains("scaffold_n50"));
-    assert!(!s.ends_with("%2C"));
+    assert!(!s.ends_with(','));
 }
 
 // ── toggle_direct ─────────────────────────────────────────────────────────────
@@ -137,11 +138,11 @@ fn test_toggle_direct_appends_direct_ancestor_descendant() {
     f.taxon_gs = true;
     f.taxon_toggle_direct = true;
     let s = f.build_fields_string();
-    // Each field gets :direct, :ancestor, :descendant appended (URL-encoded colon = %3A)
-    assert!(s.contains("genome_size%3Adirect"));
-    assert!(s.contains("genome_size%3Aancestor"));
-    assert!(s.contains("genome_size%3Adescendant"));
-    assert!(!s.ends_with("%2C"));
+    // Each field gets :direct, :ancestor, :descendant appended (plain colon — url builder encodes)
+    assert!(s.contains("genome_size:direct"));
+    assert!(s.contains("genome_size:ancestor"));
+    assert!(s.contains("genome_size:descendant"));
+    assert!(!s.ends_with(','));
 }
 
 #[test]
@@ -150,7 +151,7 @@ fn test_toggle_direct_false_no_extra_columns() {
     f.taxon_gs = true;
     f.taxon_toggle_direct = false;
     let s = f.build_fields_string();
-    assert!(!s.contains("%3Adirect"));
-    assert!(!s.contains("%3Aancestor"));
-    assert!(!s.contains("%3Adescendant"));
+    assert!(!s.contains(":direct"));
+    assert!(!s.contains(":ancestor"));
+    assert!(!s.contains(":descendant"));
 }
