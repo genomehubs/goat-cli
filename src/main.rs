@@ -6,7 +6,7 @@ use goat_cli::{
     cli, count, lookup, progress,
     report::{self, report::ReportType},
     search,
-    utils::{field_registry, utils::{generate_unique_strings, UniqueIdAction}},
+    utils::{field_registry, utils::{generate_one_unique_id, generate_unique_strings, UniqueIdAction}},
     IndexType,
 };
 
@@ -138,6 +138,26 @@ async fn run() -> Result<()> {
                 )
                 .await?
                 {
+                    ReportAction::Continue => {}
+                    ReportAction::PrintedAndExit => return Ok(()),
+                };
+            }
+            Some(("arc", arc_matches)) => {
+                // Arc may have no taxon (global query), so only call generate_unique_strings
+                // when a taxon or file is present; otherwise generate a single ID.
+                let unique_ids =
+                    if arc_matches.get_one::<String>("taxon").is_some()
+                        || arc_matches.get_one::<std::path::PathBuf>("file").is_some()
+                    {
+                        match generate_unique_strings(arc_matches, IndexType::Taxon)? {
+                            UniqueIdAction::Continue(ids) => ids,
+                            UniqueIdAction::PrintedAndExit => return Ok(()),
+                        }
+                    } else {
+                        vec![generate_one_unique_id()]
+                    };
+
+                match report::fetch::fetch_report(arc_matches, unique_ids, ReportType::Arc).await? {
                     ReportAction::Continue => {}
                     ReportAction::PrintedAndExit => return Ok(()),
                 };

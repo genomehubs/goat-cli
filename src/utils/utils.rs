@@ -89,6 +89,12 @@ pub fn generate_unique_strings(
     Ok(UniqueIdAction::Continue(chars_vec))
 }
 
+/// Generate a single random query ID, for use when no taxon input is needed.
+pub fn generate_one_unique_id() -> String {
+    let mut rng = thread_rng();
+    (0..15).map(|_| rng.sample(Alphanumeric) as char).collect()
+}
+
 /// Read NCBI taxon ID's or binomial names of species,
 /// or higher order taxa from a file.
 pub fn lines_from_file(filename: impl AsRef<Path>) -> Result<Vec<String>> {

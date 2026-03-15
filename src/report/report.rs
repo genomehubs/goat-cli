@@ -43,15 +43,14 @@ pub enum ReportType {
 }
 
 impl fmt::Display for ReportType {
-    /// Implement [`fmt::Display`] for [`ReportType`] so we can
-    /// use `.to_string()` method.
-    ///
-    /// Only tree is different for newick, otherwise, use table.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ReportType::Newick => write!(f, "tree"),
+            ReportType::Histogram => write!(f, "histogram"),
+            ReportType::Scatterplot => write!(f, "scatter"),
+            ReportType::Arc => write!(f, "arc"),
             ReportType::Sources => write!(f, "sources"),
-            _ => write!(f, "table"),
+            ReportType::None => write!(f, ""),
         }
     }
 }
@@ -265,6 +264,10 @@ pub struct Report {
     pub category: Option<String>,
     /// The threshold. For Newick.
     pub threshold: i32,
+    /// Fields to exclude if missing. For Arc.
+    pub exclude_missing: Vec<String>,
+    /// Fields to exclude if ancestral. For Arc.
+    pub exclude_ancestral: Vec<String>,
 }
 
 impl Report {
@@ -276,13 +279,10 @@ impl Report {
             ..Default::default()
         };
 
-        // fill the mandatory fields.
-        // search from CLI
-        let search = matches
-            .get_one::<String>("taxon")
-            .expect("cli requires input");
-        // TODO: could also take from file
-        report.search = utils::parse_comma_separated(search);
+        // Taxon is optional for arc (global query), required for all other report types.
+        if let Some(search) = matches.get_one::<String>("taxon") {
+            report.search = utils::parse_comma_separated(search);
+        }
 
         // safe to unwrap, as default is defined.
         report.rank = matches
@@ -292,21 +292,38 @@ impl Report {
         // taxon type will be by default tax_tree(). change this here
         // for future reference. But will require a flag on the cli.
 
-        // for newick
-        let threshold = matches
+        report.threshold = matches
             .get_one::<i32>("threshold")
-            .expect("cli default 2000");
-        report.threshold = *threshold;
+            .copied()
+            .unwrap_or(2000);
 
-        // the x string will be just a variable.
-        let x_variable = matches.get_one::<String>("x-variable");
+        // Arc uses raw filter expressions; other reports use validated variable names.
+        if report_type == ReportType::Arc {
+            if let Some(xf) = matches.get_one::<String>("x-filter") {
+                report.x = Some(xf.clone());
+            }
+            if let Some(yf) = matches.get_one::<String>("y-filter") {
+                report.y = Some(yf.clone());
+            }
+            if let Some(em) = matches.get_one::<String>("exclude-missing") {
+                report.exclude_missing = em.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
+            }
+            if let Some(ea) = matches.get_one::<String>("exclude-ancestral") {
+                report.exclude_ancestral = ea.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
+            }
+        } else {
+            let x_variable = matches.get_one::<String>("x-variable");
+            if let Some(xvar) = x_variable {
+                let inner_x =
+                    Variables::new(xvar).parse_one(&variable_data::GOAT_TAXON_VARIABLE_DATA)?;
+                report.x = Some(inner_x);
+            }
 
-        if let Some(xvar) = x_variable {
-            let inner_x =
-                Variables::new(xvar).parse_one(&variable_data::GOAT_TAXON_VARIABLE_DATA)?;
-            // assign to struct
-            report.x = Some(inner_x);
-        };
+            let y_variable = matches.get_one::<String>("y-variable");
+            if let Some(y_var) = y_variable {
+                report.y = Some(y_var.to_string());
+            }
+        }
 
         // parse size
         let size = matches.get_one::<usize>("size");
@@ -319,12 +336,6 @@ impl Report {
             if *desc {
                 report.taxon_type = TaxType::Name;
             }
-        }
-
-        // now the optionals.
-        let y_variable = matches.get_one::<String>("y-variable");
-        if let Some(y_var) = y_variable {
-            report.y = Some(y_var.to_string());
         }
         // x options
         let xopts = matches.get_one::<String>("x-opts");
@@ -407,83 +418,151 @@ impl Report {
             // Histogram   | x                    | cat, catToX, rank, xOpts
             ReportType::Histogram => {
                 let taxon_type = self.taxon_type;
-                // join with plain comma; url builder will percent-encode it
                 let taxa = self.search.join(",");
                 let variable = self.x.as_deref().ok_or_else(|| {
                     Error::new(ErrorKind::Report(
                         "Histogram requires an x variable (--x-variable).".into(),
                     ))
                 })?;
-                let cat = self.category.as_deref().ok_or_else(|| {
-                    Error::new(ErrorKind::Report(
-                        "Histogram requires a category (--category).".into(),
-                    ))
-                })?;
-                let size = self.size.ok_or_else(|| {
-                    Error::new(ErrorKind::Report(
-                        "Histogram requires a size (--size).".into(),
-                    ))
-                })?;
 
                 let x_value = format!("{}({}) AND {}", taxon_type, taxa, variable);
-                let cat_value = format!("{}[{}]", cat, size);
 
                 let base = format!("{}report", *GOAT_URL);
                 let mut url = Url::parse(&base).expect("GOAT_URL is a valid base");
                 let mut qp = format!(
-                    "result=taxon&includeEstimates=true&taxonomy={}&report={}&rank={}&x={}&cat={}",
+                    "result=taxon&includeEstimates=true&taxonomy={}&report={}&rank={}&x={}&queryId=goat_cli_{}",
                     *TAXONOMY,
                     self.report_type,
                     percent_encode_query_value(&self.rank),
                     percent_encode_query_value(&x_value),
-                    percent_encode_query_value(&cat_value),
+                    unique_ids[0],
                 );
+                if let Some(cat) = &self.category {
+                    let cat_value = match self.size {
+                        Some(sz) => format!("{}[{}]", cat, sz),
+                        None => cat.clone(),
+                    };
+                    qp.push_str(&format!("&cat={}", percent_encode_query_value(&cat_value)));
+                }
                 if let Some(xopts) = &self.x_opts {
-                    qp.push_str(&format!("&xOpts={}", percent_encode_query_value(&xopts.to_string())));
+                    qp.push_str(&format!(
+                        "&xOpts={}",
+                        percent_encode_query_value(&xopts.to_string())
+                    ));
                 }
                 url.set_query(Some(&qp));
                 Ok(url.to_string())
             }
-            ReportType::Scatterplot => Err(Error::new(ErrorKind::Report(
-                "Scatter plots are not yet implemented; please check back in the future!".into(),
-            ))),
-            ReportType::Arc => Err(Error::new(ErrorKind::Report(
-                "Arc reports are not yet implemented; please check back in the future!".into(),
-            ))),
+            // Scatter      | x, y, rank           | cat, xOpts, yOpts, scatterThreshold
+            ReportType::Scatterplot => {
+                let taxon_type = self.taxon_type;
+                let taxa = self.search.join(",");
+                let x_variable = self.x.as_deref().ok_or_else(|| {
+                    Error::new(ErrorKind::Report(
+                        "Scatter requires an x variable (--x-variable).".into(),
+                    ))
+                })?;
+                let y_variable = self.y.as_deref().ok_or_else(|| {
+                    Error::new(ErrorKind::Report(
+                        "Scatter requires a y variable (--y-variable).".into(),
+                    ))
+                })?;
+
+                let x_value = format!("{}({}) AND {}", taxon_type, taxa, x_variable);
+
+                let base = format!("{}report", *GOAT_URL);
+                let mut url = Url::parse(&base).expect("GOAT_URL is a valid base");
+                let mut qp = format!(
+                    "result=taxon&includeEstimates=true&taxonomy={}&report={}&rank={}&x={}&y={}&queryId=goat_cli_{}",
+                    *TAXONOMY,
+                    self.report_type,
+                    percent_encode_query_value(&self.rank),
+                    percent_encode_query_value(&x_value),
+                    percent_encode_query_value(y_variable),
+                    unique_ids[0],
+                );
+                if let Some(cat) = &self.category {
+                    qp.push_str(&format!("&cat={}", percent_encode_query_value(cat)));
+                }
+                if let Some(xopts) = &self.x_opts {
+                    qp.push_str(&format!(
+                        "&xOpts={}",
+                        percent_encode_query_value(&xopts.to_string())
+                    ));
+                }
+                if let Some(yopts) = &self.y_opts {
+                    qp.push_str(&format!(
+                        "&yOpts={}",
+                        percent_encode_query_value(&yopts.to_string())
+                    ));
+                }
+                url.set_query(Some(&qp));
+                Ok(url.to_string())
+            }
+            // Arc: x = numerator expression, y = denominator expression
+            ReportType::Arc => {
+                let x_filter = self.x.as_deref().ok_or_else(|| {
+                    Error::new(ErrorKind::Report(
+                        "Arc requires an x filter expression (--x-filter).".into(),
+                    ))
+                })?;
+
+                // Without a taxon, x is used directly; with a taxon it is scoped to that clade.
+                let x_value = if self.search.is_empty() {
+                    x_filter.to_string()
+                } else {
+                    let taxon_type = self.taxon_type;
+                    let taxa = self.search.join(",");
+                    format!("{}({}) AND {}", taxon_type, taxa, x_filter)
+                };
+
+                let base = format!("{}report", *GOAT_URL);
+                let mut url = Url::parse(&base).expect("GOAT_URL is a valid base");
+                let mut qp = format!(
+                    "result=taxon&taxonomy={}&includeEstimates=true&report={}&rank={}&x={}&queryId=goat_cli_{}",
+                    *TAXONOMY,
+                    self.report_type,
+                    percent_encode_query_value(&self.rank),
+                    percent_encode_query_value(&x_value),
+                    unique_ids[0],
+                );
+                if let Some(y_filter) = &self.y {
+                    qp.push_str(&format!("&y={}", percent_encode_query_value(y_filter)));
+                }
+                for (i, field) in self.exclude_missing.iter().enumerate() {
+                    qp.push_str(&format!(
+                        "&excludeMissing%5B{}%5D={}",
+                        i,
+                        percent_encode_query_value(field)
+                    ));
+                }
+                for (i, field) in self.exclude_ancestral.iter().enumerate() {
+                    qp.push_str(&format!(
+                        "&excludeAncestral%5B{}%5D={}",
+                        i,
+                        percent_encode_query_value(field)
+                    ));
+                }
+                url.set_query(Some(&qp));
+                Ok(url.to_string())
+            }
+            // Sources      | -                    | -
             ReportType::Sources => {
-                Err(Error::new(ErrorKind::Report(
-                    "Sources are not yet implemented; please check back in the future!".into(),
-                )))
-                // https://goat.genomehubs.org/reporturl?
-                // query=tax_tree%2891896%5BOrobanchaceae%5D%29
-                // &includeEstimates=false
-                // &includeRawValues=false
-                // &summaryValues=count
-                // &result=taxon
-                // &taxonomy=ncbi
-                // &size=50
-                // &queryId=goat_cli_du8TOca5YBVF4rL
-                // &report=sources
+                let taxon_type = self.taxon_type;
+                let taxa = self.search.join(",");
+                let x_value = format!("{}({})", taxon_type, taxa);
 
-                // this would work, but it's unimplemented yet
-                // let mut url = String::new();
-                // url += &GOAT_URL;
-                // // it's a taxon report
-                // url += "report?result=taxon";
-                // url += "&includeEstimates=false";
-                // url += "&includeRawValues=false";
-                // // standard taxonomy
-                // url += &format!("&taxonomy={}", &*TAXONOMY);
-                // // it's a source
-                // url += &format!("&report={}", self.report_type);
-                // // taxon type: tax_rank/tax_tree
-                // let taxon_type = self.taxon_type;
-                // // and the taxa
-                // let taxa = self.search.join("%2C");
-                // url += &format!("&query={}%28{}%29", taxon_type, taxa);
-                // // add unique_id?
-
-                // Ok(url)
+                let base = format!("{}report", *GOAT_URL);
+                let mut url = Url::parse(&base).expect("GOAT_URL is a valid base");
+                let qp = format!(
+                    "result=taxon&includeEstimates=false&taxonomy={}&report={}&x={}&queryId=goat_cli_{}",
+                    *TAXONOMY,
+                    self.report_type,
+                    percent_encode_query_value(&x_value),
+                    unique_ids[0],
+                );
+                url.set_query(Some(&qp));
+                Ok(url.to_string())
             }
         }
     }
@@ -513,35 +592,34 @@ mod tests {
         assert!(result.unwrap_err().to_string().contains("x variable"));
     }
 
-    #[test]
-    fn test_histogram_missing_category_returns_err() {
-        let mut r = base_report(ReportType::Histogram);
-        r.x = Some("genome_size".into());
-        r.size = Some(10);
-        let result = r.make_url(vec!["test_id".into()]);
-        assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("category"));
-    }
 
     #[test]
-    fn test_histogram_missing_size_returns_err() {
-        let mut r = base_report(ReportType::Histogram);
-        r.x = Some("genome_size".into());
-        r.category = Some("sex".into());
-        let result = r.make_url(vec!["test_id".into()]);
-        assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("size"));
-    }
-
-    #[test]
-    fn test_arc_returns_err() {
+    fn test_arc_missing_x_returns_err() {
         let r = base_report(ReportType::Arc);
         let result = r.make_url(vec!["test_id".into()]);
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("not yet implemented"));
+        assert!(result.unwrap_err().to_string().contains("x filter"));
+    }
+
+    #[test]
+    fn test_arc_url_contains_required_parts() {
+        let mut r = base_report(ReportType::Arc);
+        r.x = Some("assembly_level >= scaffold".into());
+        let url = r.make_url(vec!["arc_id".into()]).unwrap();
+        assert!(url.contains("report=arc"));
+        assert!(url.contains("assembly_level"));
+        assert!(url.contains("result=taxon"));
+        assert!(url.contains("queryId=goat_cli_arc_id"));
+    }
+
+    #[test]
+    fn test_arc_url_with_y_filter() {
+        let mut r = base_report(ReportType::Arc);
+        r.x = Some("assembly_level >= scaffold".into());
+        r.y = Some("assembly_span > 1000000000".into());
+        let url = r.make_url(vec!["arc_id".into()]).unwrap();
+        assert!(url.contains("assembly_span"));
+        assert!(url.contains("&y="));
     }
 
     // ── Newick URL ───────────────────────────────────────────────────────────
@@ -597,11 +675,66 @@ mod tests {
         r.category = Some("sex".into());
         r.size = Some(50);
         let url = r.make_url(vec!["id1".into()]).unwrap();
-        assert!(url.contains("report=table"));
+        assert!(url.contains("report=histogram"));
         assert!(url.contains("genome_size"));
         assert!(url.contains("sex"));
         assert!(url.contains("50"));
         assert!(url.contains("result=taxon"));
+        assert!(url.contains("queryId=goat_cli_id1"));
+    }
+
+    #[test]
+    fn test_histogram_url_no_cat_ok() {
+        let mut r = base_report(ReportType::Histogram);
+        r.x = Some("genome_size".into());
+        let url = r.make_url(vec!["id1".into()]).unwrap();
+        assert!(url.contains("report=histogram"));
+        assert!(!url.contains("cat="));
+    }
+
+    // ── Scatterplot URL ──────────────────────────────────────────────────────
+
+    #[test]
+    fn test_scatter_missing_x_returns_err() {
+        let mut r = base_report(ReportType::Scatterplot);
+        r.y = Some("chromosome_number".into());
+        let result = r.make_url(vec!["id1".into()]);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("x variable"));
+    }
+
+    #[test]
+    fn test_scatter_missing_y_returns_err() {
+        let mut r = base_report(ReportType::Scatterplot);
+        r.x = Some("genome_size".into());
+        let result = r.make_url(vec!["id1".into()]);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("y variable"));
+    }
+
+    #[test]
+    fn test_scatter_url_contains_required_parts() {
+        let mut r = base_report(ReportType::Scatterplot);
+        r.x = Some("genome_size".into());
+        r.y = Some("chromosome_number".into());
+        let url = r.make_url(vec!["sc_id".into()]).unwrap();
+        assert!(url.contains("report=scatter"));
+        assert!(url.contains("genome_size"));
+        assert!(url.contains("chromosome_number"));
+        assert!(url.contains("result=taxon"));
+        assert!(url.contains("queryId=goat_cli_sc_id"));
+    }
+
+    // ── Sources URL ──────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_sources_url_contains_required_parts() {
+        let r = base_report(ReportType::Sources);
+        let url = r.make_url(vec!["src_id".into()]).unwrap();
+        assert!(url.contains("report=sources"));
+        assert!(url.contains("result=taxon"));
+        assert!(url.contains("queryId=goat_cli_src_id"));
+        assert!(url.contains("Homo%20sapiens"));
     }
 
     // ── Opts::try_from_string ────────────────────────────────────────────────

@@ -24,11 +24,9 @@ pub async fn fetch_report(
         return Ok(ReportAction::PrintedAndExit);
     }
 
-    // otherwise we get schema errors.
-    // more schemas could be defined here.
     let header_value = match report_type {
         ReportType::Newick => "text/x-nh",
-        _ => "text/tab-separated-values",
+        _ => "application/json",
     };
 
     // for now, you can only submit a single request at once.

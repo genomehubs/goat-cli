@@ -500,6 +500,7 @@ pub fn build_cli() -> clap::Command {
                                 Arg::new("taxon")
                                     .short('t')
                                     .long("taxon")
+                                    .required(true)
                                     .help("The taxon to return sources for. Multiple taxa will return the sources for all.")
                             )
                             .arg(
@@ -509,6 +510,13 @@ pub fn build_cli() -> clap::Command {
                                     .default_value("species")
                                     .value_parser(["species", "genus", "family", "order"])
                                     .help("The rank of the results to return."),
+                            )
+                            .arg(
+                                Arg::new("no-descendents")
+                                    .short('n')
+                                    .long("no-descendents")
+                                    .action(SetTrue)
+                                    .help("Do not return values for descendents (i.e. a tax_name() call).")
                             )
                             .arg(
                                 Arg::new("url")
@@ -525,9 +533,16 @@ pub fn build_cli() -> clap::Command {
                                 Arg::new("taxon")
                                     .short('t')
                                     .long("taxon")
-                                    // FIXME: is a file actually allowed here?
                                     .required_unless_present("file")
                                     .help("The taxon to return a newick of. Multiple taxa will return the joint tree."),
+                            )
+                            .arg(
+                                Arg::new("file")
+                                    .short('f')
+                                    .long("file")
+                                    .value_parser(value_parser!(PathBuf))
+                                    .required_unless_present("taxon")
+                                    .help(taxon_file_or_lookup_help.clone()),
                             )
                             .arg(
                                 Arg::new("threshold")
@@ -537,19 +552,26 @@ pub fn build_cli() -> clap::Command {
                                     .help("Threshold for returned number of nodes. -1 disables the parameter.")
                             )
                             .arg(
-                                Arg::new("url")
-                                    .short('u')
-                                    .long("url")
-                                    .action(SetTrue)
-                                    .help("Print report URL.")
-                            )
-                            .arg(
                                 Arg::new("rank")
                                     .short('r')
                                     .long("rank")
                                     .default_value("species")
                                     .value_parser(["species", "genus", "family", "order"])
                                     .help("The rank of the results to return."),
+                            )
+                            .arg(
+                                Arg::new("no-descendents")
+                                    .short('n')
+                                    .long("no-descendents")
+                                    .action(SetTrue)
+                                    .help("Do not return values for descendents (i.e. a tax_name() call).")
+                            )
+                            .arg(
+                                Arg::new("url")
+                                    .short('u')
+                                    .long("url")
+                                    .action(SetTrue)
+                                    .help("Print report URL.")
                             )
                             .arg(
                                 Arg::new("progress-bar")
@@ -569,18 +591,19 @@ pub fn build_cli() -> clap::Command {
                                     .help("The taxon to return a histogram of. Multiple taxa will return the joint histogram."),
                             )
                             .arg(
-                                Arg::new("url")
-                                    .short('u')
-                                    .long("url")
-                                    .action(SetTrue)
-                                    .help("Print report URL.")
+                                Arg::new("file")
+                                    .short('f')
+                                    .long("file")
+                                    .value_parser(value_parser!(PathBuf))
+                                    .required_unless_present("taxon")
+                                    .help(taxon_file_or_lookup_help.clone()),
                             )
                             .arg(
-                                Arg::new("no-descendents")
-                                    .short('n')
-                                    .long("no-descendents")
-                                    .action(SetTrue)
-                                    .help("If a taxon is supplied, do not return values for its descendents (i.e. a tax_name() call).")
+                                Arg::new("x-variable")
+                                    .short('x')
+                                    .long("x-variable")
+                                    .required(true)
+                                    .help("The variable to bin on the x-axis."),
                             )
                             .arg(
                                 Arg::new("rank")
@@ -588,34 +611,42 @@ pub fn build_cli() -> clap::Command {
                                     .long("rank")
                                     .default_value("species")
                                     .value_parser(["species", "genus", "family", "order"])
-                                    .help("The number of results to return."),
+                                    .help("The taxonomic rank to aggregate results at."),
                             )
                             .arg(
-                                Arg::new("x-variable")
-                                    .short('x')
-                                    .long("x-variable")
-                                    .required(true)
-                                    .help("The name of the x variable."),
+                                Arg::new("category")
+                                    .short('c')
+                                    .long("category")
+                                    .required(false)
+                                    .help("A variable or rank to use as a colour category (e.g. 'sex', 'genus')."),
                             )
                             .arg(
                                 Arg::new("size")
                                     .short('s')
                                     .long("size")
-                                    .default_value("10")
                                     .value_parser(value_parser!(usize))
-                                    .help("The number of category levels to return."),
+                                    .help("The number of category levels to show."),
+                            )
+                            .arg(
+                                Arg::new("no-descendents")
+                                    .short('n')
+                                    .long("no-descendents")
+                                    .action(SetTrue)
+                                    .help("Do not return values for descendents (i.e. a tax_name() call).")
                             )
                             .arg(
                                 Arg::new("x-opts")
                                     .short('o')
-                                    .long("opts")
+                                    .long("x-opts")
                                     .required(false)
-                                    .help("The options for the variable axis. A comma separated string of options in the order:
-\t1. minimum value
-\t2. maximum value
-\t3. tick count
-\t4. scale (linear, sqrt, log10, log2, log, proportion, or ordinal)
-\t5. axis title\nE.g. ',,20' is 20 bins. '1,10,5' is start at 1, end at 10, with 5 bins."),
+                                    .help("Options for the x-axis. Comma-separated: min,max,tickCount,scale,axisTitle.\nScales: linear, sqrt, log10, log2, log, proportion, ordinal.\nE.g. ',,20' = 20 bins; '1,10,5' = range 1–10 with 5 bins."),
+                            )
+                            .arg(
+                                Arg::new("url")
+                                    .short('u')
+                                    .long("url")
+                                    .action(SetTrue)
+                                    .help("Print report URL.")
                             )
                     )
                     .subcommand(
@@ -629,18 +660,26 @@ pub fn build_cli() -> clap::Command {
                                     .help("The taxon to return a scatter of. Multiple taxa will return the joint scatter."),
                             )
                             .arg(
-                                Arg::new("url")
-                                    .short('u')
-                                    .long("url")
-                                    .action(SetTrue)
-                                    .help("Print report URL.")
+                                Arg::new("file")
+                                    .short('f')
+                                    .long("file")
+                                    .value_parser(value_parser!(PathBuf))
+                                    .required_unless_present("taxon")
+                                    .help(taxon_file_or_lookup_help.clone()),
                             )
                             .arg(
-                                Arg::new("no-descendents")
-                                    .short('n')
-                                    .long("no-descendents")
-                                    .action(SetTrue)
-                                    .help("If a taxon is supplied, do not return values for its descendents (i.e. a tax_name() call).")
+                                Arg::new("x-variable")
+                                    .short('x')
+                                    .long("x-variable")
+                                    .required(true)
+                                    .help("The variable on the x-axis."),
+                            )
+                            .arg(
+                                Arg::new("y-variable")
+                                    .short('y')
+                                    .long("y-variable")
+                                    .required(true)
+                                    .help("The variable on the y-axis."),
                             )
                             .arg(
                                 Arg::new("rank")
@@ -648,49 +687,101 @@ pub fn build_cli() -> clap::Command {
                                     .long("rank")
                                     .default_value("species")
                                     .value_parser(["species", "genus", "family", "order"])
-                                    .help("The rank of the results to return."),
+                                    .help("The taxonomic rank to aggregate results at."),
                             )
                             .arg(
-                                Arg::new("x-variable")
-                                    .short('x')
-                                    .long("x-variable")
-                                    .required(true)
-                                    .help("The name of the x variable."),
+                                Arg::new("category")
+                                    .short('c')
+                                    .long("category")
+                                    .required(false)
+                                    .help("A variable or rank to use as a colour category."),
                             )
                             .arg(
-                                Arg::new("y-variable")
-                                    .short('y')
-                                    .long("y-variable")
-                                    .required(true)
-                                    .help("The name of the y variable."),
-                            )
-                            .arg(
-                                Arg::new("size")
-                                    .short('s')
-                                    .long("size")
-                                    .default_value("10")
-                                    .value_parser(value_parser!(usize))
-                                    .help("The number of category levels to return."),
+                                Arg::new("no-descendents")
+                                    .short('n')
+                                    .long("no-descendents")
+                                    .action(SetTrue)
+                                    .help("Do not return values for descendents (i.e. a tax_name() call).")
                             )
                             .arg(
                                 Arg::new("x-opts")
                                     .long("x-opts")
                                     .required(false)
-                                    .help("The options for the variable axis. A comma separated string of options in the order:
-\t1. minimum value
-\t2. maximum value
-\t3. tick count
-\t4. scale (linear, sqrt, log10, log2, log, proportion, or ordinal)
-\t5. axis title\nE.g. ',,20' is 20 bins. '1,10,5' is start at 1, end at 10, with 5 bins.
-"),
+                                    .help("Options for the x-axis. Comma-separated: min,max,tickCount,scale,axisTitle.\nScales: linear, sqrt, log10, log2, log, proportion, ordinal."),
                             )
                             .arg(
                                 Arg::new("y-opts")
                                     .long("y-opts")
                                     .required(false)
-                                    .help("As for x options."),
+                                    .help("Options for the y-axis. Same format as --x-opts."),
+                            )
+                            .arg(
+                                Arg::new("url")
+                                    .short('u')
+                                    .long("url")
+                                    .action(SetTrue)
+                                    .help("Print report URL.")
+                            )
                     )
-                )
+                    .subcommand(
+                        Command::new("arc")
+                            .about("Generate an arc report (proportion of taxa meeting a condition).\nOmit --taxon for a global query across all taxa.")
+                            .arg(
+                                Arg::new("taxon")
+                                    .short('t')
+                                    .long("taxon")
+                                    .required(false)
+                                    .help("The taxon to scope the arc report to. Omit for a global query."),
+                            )
+                            .arg(
+                                Arg::new("x-filter")
+                                    .short('x')
+                                    .long("x-filter")
+                                    .required(true)
+                                    .help("Filter expression for the numerator.\nE.g. 'assembly_level >= scaffold', 'assembly_span', 'genome_size > 1e9'."),
+                            )
+                            .arg(
+                                Arg::new("y-filter")
+                                    .short('y')
+                                    .long("y-filter")
+                                    .required(false)
+                                    .help("Filter expression for the denominator (reference population).\nDefaults to all taxa at the given rank."),
+                            )
+                            .arg(
+                                Arg::new("rank")
+                                    .short('r')
+                                    .long("rank")
+                                    .default_value("species")
+                                    .value_parser(["species", "genus", "family", "order", "phylum", "class", "kingdom"])
+                                    .help("The taxonomic rank to aggregate results at."),
+                            )
+                            .arg(
+                                Arg::new("exclude-missing")
+                                    .long("exclude-missing")
+                                    .required(false)
+                                    .help("Comma-separated fields to exclude if missing (e.g. 'assembly_span').\nReduces denominator to only taxa with a direct value for this field."),
+                            )
+                            .arg(
+                                Arg::new("exclude-ancestral")
+                                    .long("exclude-ancestral")
+                                    .required(false)
+                                    .help("Comma-separated fields to exclude if ancestrally inferred (e.g. 'assembly_span')."),
+                            )
+                            .arg(
+                                Arg::new("no-descendents")
+                                    .short('n')
+                                    .long("no-descendents")
+                                    .action(SetTrue)
+                                    .help("Do not include descendents (i.e. a tax_name() call).")
+                            )
+                            .arg(
+                                Arg::new("url")
+                                    .short('u')
+                                    .long("url")
+                                    .action(SetTrue)
+                                    .help("Print report URL.")
+                            )
+                    )
             )
         .subcommand(
             Command::new("assembly")
