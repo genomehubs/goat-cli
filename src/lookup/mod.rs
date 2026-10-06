@@ -36,7 +36,6 @@ pub async fn lookup(
         return Ok(LookupAction::PrintedAndExit);
     }
 
-    // so we can make as many concurrent requests
     let concurrent_requests = url_vector_api.len();
 
     let client = GoatClient::new();
@@ -94,7 +93,7 @@ pub async fn lookup(
                 }
             }),
     )
-    .buffer_unordered(concurrent_requests)
+    .buffer_unordered(crate::client::concurrency(concurrent_requests))
     .collect::<Vec<_>>();
 
     let awaited_fetches = fetches.await;

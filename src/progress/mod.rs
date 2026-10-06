@@ -98,7 +98,7 @@ pub async fn progress_bar(
                 }
             }
         }))
-        .buffered(concurrent_requests)
+        .buffered(crate::client::concurrency(concurrent_requests))
         // complicated. Each u64 can be an option, as some
         // queries will finish before others
         // entire tuple is an option, as other progress enums evaluate to None.

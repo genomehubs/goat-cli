@@ -14,6 +14,16 @@ use std::time::Duration;
 /// Identify ourselves to the GoaT API.
 const USER_AGENT: &str = concat!("goat-cli/", env!("CARGO_PKG_VERSION"));
 
+/// The most requests to have in flight at once, so that large batches
+/// (e.g. a `-f` file of 500 taxa) don't flood the GoaT API.
+pub const MAX_CONCURRENT_REQUESTS: usize = 8;
+
+/// How many of `n` requests to run at once: at most
+/// [`MAX_CONCURRENT_REQUESTS`], and at least 1 (`buffered(0)` never completes).
+pub fn concurrency(n: usize) -> usize {
+    n.clamp(1, MAX_CONCURRENT_REQUESTS)
+}
+
 /// Shared HTTP client for the GoaT API.
 #[derive(Clone)]
 pub struct GoatClient {
@@ -28,6 +38,8 @@ impl GoatClient {
     pub fn new() -> Self {
         let inner = Client::builder()
             .user_agent(USER_AGENT)
+            // responses (especially large TSVs) compress ~5x
+            .gzip(true)
             // no overall timeout, as large searches can legitimately take a while.
             .connect_timeout(Duration::from_secs(30))
             .build()
@@ -140,6 +152,13 @@ fn error_message(body: &str) -> String {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn test_concurrency_is_capped_and_never_zero() {
+        assert_eq!(concurrency(0), 1);
+        assert_eq!(concurrency(3), 3);
+        assert_eq!(concurrency(500), MAX_CONCURRENT_REQUESTS);
+    }
 
     #[test]
     fn test_check_status_success() {

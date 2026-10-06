@@ -1,6 +1,7 @@
 use crate::error::{Error, ErrorKind, Result};
 use crate::utils::{
     expression::{canonical_field, Variable},
+    field_registry,
     utils::{did_you_mean, parse_comma_separated},
 };
 use std::collections::BTreeMap;
@@ -88,6 +89,10 @@ fn resolve(
 ) -> Result<String> {
     if let Some(canonical) = canonical_field(variable, reference_data) {
         return Ok(canonical.to_string());
+    }
+    // added to GoaT since this binary's variable data was generated
+    if field_registry::is_dynamic_field_any(variable) {
+        return Ok(variable.to_string());
     }
     let possibilities = reference_data
         .keys()

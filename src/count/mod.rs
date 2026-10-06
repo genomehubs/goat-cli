@@ -56,7 +56,7 @@ pub async fn count(
                 }
             }),
     )
-    .buffered(concurrent_requests)
+    .buffered(crate::client::concurrency(concurrent_requests))
     .collect::<Vec<_>>();
 
     let awaited_fetches = fetches.await;

@@ -29,13 +29,17 @@ async fn main() -> ExitCode {
 async fn run() -> Result<()> {
     let matches = cli::build_cli().get_matches();
 
-    // Kick off dynamic field registry population in the background so that
-    // expression validation can use live GoaT field names.  These are fire-
-    // and-forget: the OnceLock ensures at-most-one fetch, errors are swallowed,
-    // and expression parsing falls back to the static variable data if the
-    // registry isn't ready in time.
-    tokio::spawn(field_registry::init(IndexType::Taxon));
-    tokio::spawn(field_registry::init(IndexType::Assembly));
+    // If -e or -v name a field this binary doesn't know, load the live GoaT
+    // field list (cached on disk) so newly added fields are still accepted.
+    if let Some((index, index_matches)) = matches.subcommand() {
+        if let Some(("search" | "count", leaf)) = index_matches.subcommand() {
+            let index_type = match index {
+                "assembly" => IndexType::Assembly,
+                _ => IndexType::Taxon,
+            };
+            field_registry::prepare(leaf, index_type).await;
+        }
+    }
 
     // nested matching on subcommands
     match matches.subcommand() {
