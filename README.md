@@ -18,6 +18,12 @@ Please consult the <b><a href="https://github.com/genomehubs/goat-cli/wiki">wiki
 
 For the full syntax of expressions (`-e`), including `OR`, lists, negation, functions and searching without a taxon, see <b><a href="EXPRESSIONS.md">EXPRESSIONS.md</a></b>.
 
+## Output formats and records
+
+Most commands take `-F/--format tsv|csv|json` (default `tsv`). Reports (`hist`, `scatter`, `arc`, `sources`) print tables, e.g. one row per histogram bin with a column per `-c` category; `-F json` gives GoaT's full response instead, as does `search`.
+
+`goat-cli taxon record -t "Homo sapiens"` (or a taxon ID) shows every field of a record with its value, count, aggregation and sources; `--names` and `--lineage` show its names or lineage instead. `goat-cli assembly record -t GCA_000001405.29` does the same for assemblies.
+
 ## Shell completions
 
 `goat-cli completions <shell>` prints a completion script for `bash`, `zsh`, `fish`, `elvish` or `powershell`, completing subcommands, flags and their values. For example:

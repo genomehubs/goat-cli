@@ -12,7 +12,7 @@ use goat_cli::utils::field_registry;
 use goat_cli::utils::utils::{
     generate_one_unique_id, generate_unique_ids, print_variables, taxa_from_input,
 };
-use goat_cli::{count, lookup, progress, search, IndexType};
+use goat_cli::{count, lookup, progress, record, search, IndexType};
 
 #[tokio::main]
 async fn main() -> ExitCode {
@@ -36,6 +36,7 @@ async fn run() -> Result<()> {
             TaxonCommand::Lookup(args) => lookup::lookup(&args, true, IndexType::Taxon)
                 .await
                 .map(|_| ()),
+            TaxonCommand::Record(args) => record::record(&args, IndexType::Taxon).await,
             TaxonCommand::Sources(args) => {
                 run_report(&ReportOptions::from(&args), ReportType::Sources).await
             }
@@ -75,6 +76,7 @@ async fn run() -> Result<()> {
             AssemblyCommand::Lookup(args) => lookup::lookup(&args, true, IndexType::Assembly)
                 .await
                 .map(|_| ()),
+            AssemblyCommand::Record(args) => record::record(&args, IndexType::Assembly).await,
         },
     }
 }

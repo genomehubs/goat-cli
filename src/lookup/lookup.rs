@@ -1,5 +1,7 @@
 use crate::error::Result;
 use crate::cli::LookupArgs;
+use crate::output::Table;
+use serde_json::json;
 use crate::utils::url::percent_encode_query_value;
 use crate::utils::utils::{some_kind_of_uppercase_first_letter, taxa_from_input};
 use crate::{IndexType, GOAT_URL, TAXONOMY};
@@ -118,20 +120,21 @@ pub struct TaxonCollector {
 }
 
 impl TaxonCollector {
-    /// The TSV header for [`TaxonCollector::print_result`].
-    pub const HEADER: &'static str = "taxon\trank\tsearch_query\tname\ttype";
+    /// The columns added by [`TaxonCollector::add_rows`].
+    pub const HEADER: &'static [&'static str] = &["taxon", "rank", "search_query", "name", "type"];
 
-    /// Print the rows for this result. A search without hits is reported
-    /// on stderr, rather than as an error, so other searches still print.
-    pub fn print_result(&self) -> Result<()> {
+    /// Add the rows for this result to `table`. A search without hits is
+    /// reported on stderr, rather than as an error, so other searches still
+    /// print.
+    pub fn add_rows(&self, table: &mut Table) {
         let search = self.search.as_deref().unwrap_or_default();
         // GoaT only returns suggestions when there are no hits
         if let Some(suggestions) = &self.suggestions {
             print_no_results(search, suggestions);
-            return Ok(());
+            return;
         }
 
-        let mut rows = String::new();
+        let before = table.rows.len();
         for ((taxon_id, taxon_rank), taxon_names) in self
             .taxon_id
             .iter()
@@ -144,15 +147,18 @@ impl TaxonCollector {
                 continue;
             };
             for (name, class) in taxon_names {
-                rows += &format!("{}\t{}\t{}\t{}\t{}\n", taxon_id, taxon_rank, search, name, class);
+                table.push(vec![
+                    json!(taxon_id),
+                    json!(taxon_rank),
+                    json!(search),
+                    json!(name),
+                    json!(class),
+                ]);
             }
         }
-        if rows.is_empty() {
+        if table.rows.len() == before {
             print_no_results(search, &[]);
-            return Ok(());
         }
-        crate::outln!("{}", rows.trim_end_matches('\n'))?;
-        Ok(())
     }
 }
 
@@ -173,34 +179,32 @@ pub struct AssemblyCollector {
 }
 
 impl AssemblyCollector {
-    /// The TSV header for [`AssemblyCollector::print_result`].
-    pub const HEADER: &'static str = "taxon\tsearch_query\tidentifier\ttype";
+    /// The columns added by [`AssemblyCollector::add_rows`].
+    pub const HEADER: &'static [&'static str] = &["taxon", "search_query", "identifier", "type"];
 
-    /// Print the rows for this result. A search without hits is reported
-    /// on stderr, rather than as an error, so other searches still print.
-    pub fn print_result(&self) -> Result<()> {
+    /// Add the rows for this result to `table`. A search without hits is
+    /// reported on stderr, rather than as an error, so other searches still
+    /// print.
+    pub fn add_rows(&self, table: &mut Table) {
         let search = self.search.as_deref().unwrap_or_default();
         // GoaT only returns suggestions when there are no hits
         if let Some(suggestions) = &self.suggestions {
             print_no_results(search, suggestions);
-            return Ok(());
+            return;
         }
 
-        let mut rows = String::new();
+        let before = table.rows.len();
         for (taxon_id, identifiers) in self.taxon_id.iter().zip(self.identifiers.iter()) {
             let (Some(taxon_id), Some(identifiers)) = (taxon_id, identifiers) else {
                 continue;
             };
             for (identifier, class) in identifiers {
-                rows += &format!("{}\t{}\t{}\t{}\n", taxon_id, search, identifier, class);
+                table.push(vec![json!(taxon_id), json!(search), json!(identifier), json!(class)]);
             }
         }
-        if rows.is_empty() {
+        if table.rows.len() == before {
             print_no_results(search, &[]);
-            return Ok(());
         }
-        crate::outln!("{}", rows.trim_end_matches('\n'))?;
-        Ok(())
     }
 }
 

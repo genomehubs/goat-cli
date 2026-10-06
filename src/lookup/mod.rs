@@ -5,6 +5,7 @@
 use crate::client::GoatClient;
 use crate::error::Result;
 use crate::cli::LookupArgs;
+use crate::output::Table;
 use crate::IndexType;
 use futures::StreamExt;
 use serde_json::Value;
@@ -108,17 +109,17 @@ pub async fn lookup(
     ordered_results.sort_by_key(|(idx, _)| *idx);
 
     if cli {
-        let header = match index_type {
+        let mut table = Table::new(match index_type {
             IndexType::Taxon => TaxonCollector::HEADER,
             IndexType::Assembly => AssemblyCollector::HEADER,
-        };
-        crate::outln!("{}", header)?;
+        });
         for (_original_idx, collector) in ordered_results {
             match collector {
-                Collector::Taxon(e) => e.print_result()?,
-                Collector::Assembly(e) => e.print_result()?,
+                Collector::Taxon(e) => e.add_rows(&mut table),
+                Collector::Assembly(e) => e.add_rows(&mut table),
             }
         }
+        table.print(args.format)?;
     }
 
     Ok(LookupAction::Continue)
