@@ -167,18 +167,72 @@
             "constraint": {
                 "enum": [
                     "latest",
-                    "vgp_phase1_main",
-                    "vgp_phase1_comp_vgp",
-                    "vgp_phase1_alt",
-                    "vgp_phase1_aux",
-                    "vgp_phase1_comp_external"
+                    "vgp_phase1_main_v1",
+                    "vgp_phase1_main_v4",
+                    "vgp_phase1_main_ucsc",
+                    "vgp_phase1_busco_vgp",
+                    "vgp_phase1_comp_busco_external",
+                    "vgp_phase1_comp_busco_vgp",
+                    "vgp_phase1_alignment",
+                    "vgp_phase1_annotation",
+                    "vgp_phase1_external"
                 ]
             },
             "description": "list of data freezes this assembly is included in",
             "type": "keyword",
             "sequence": 42,
+            "default": "superseded",
+            "source_date": "2026-10-02",
             "processed_type": "keyword",
             "processed_summary": "keyword_value.raw",
+            "processed_simple": "value"
+        },
+        "superseded_by": {
+            "group": "assembly",
+            "name": "superseded_by",
+            "display_group": "general",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "source_date": "2026-10-02",
+            "path": "processedAssemblyInfo.supersededBy",
+            "sequence": 47,
+            "processed_summary": "undefined_value",
+            "processed_simple": "value"
+        },
+        "superseded_by_version": {
+            "group": "assembly",
+            "name": "superseded_by_version",
+            "display_group": "general",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "source_date": "2026-10-02",
+            "path": "processedAssemblyInfo.supersededByVersion",
+            "sequence": 48,
+            "processed_summary": "undefined_value",
+            "processed_simple": "value"
+        },
+        "superseded_date": {
+            "group": "assembly",
+            "name": "superseded_date",
+            "display_group": "general",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "source_date": "2026-10-02",
+            "path": "processedAssemblyInfo.supersededDate",
+            "sequence": 49,
+            "processed_summary": "undefined_value",
+            "processed_simple": "value"
+        },
+        "version_status": {
+            "group": "assembly",
+            "name": "version_status",
+            "display_group": "general",
+            "source": "INSDC",
+            "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
+            "source_date": "2026-10-02",
+            "path": "processedAssemblyInfo.versionStatus",
+            "sequence": 50,
+            "processed_summary": "undefined_value",
             "processed_simple": "value"
         },
         "organelle": {
@@ -555,7 +609,7 @@
             "display_group": "general",
             "source": "INSDC",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "source_date": "2026-03-13",
+            "source_date": "2026-10-02",
             "constraint": {
                 "len": 32
             },
@@ -912,7 +966,7 @@
             "display_level": 2,
             "display_name": "EBP metric date",
             "type": "date",
-            "sequence": 43,
+            "sequence": 51,
             "taxon_display_group": "assembly",
             "taxon_summary": [
                 "min",
@@ -948,7 +1002,7 @@
             "taxon_type": "1dp",
             "type": "1dp",
             "units": "%",
-            "sequence": 44,
+            "sequence": 52,
             "processed_type": "float",
             "processed_summary": "1dp_value",
             "processed_simple": "value"
@@ -970,7 +1024,7 @@
             "taxon_summary": "list",
             "taxon_traverse": false,
             "taxon_type": "keyword",
-            "sequence": 45,
+            "sequence": 53,
             "processed_type": "keyword",
             "processed_summary": "keyword_value.raw",
             "processed_simple": "value"
@@ -992,7 +1046,7 @@
             "taxon_summary": "list",
             "taxon_traverse": false,
             "taxon_type": "keyword",
-            "sequence": 46,
+            "sequence": 54,
             "processed_type": "keyword",
             "processed_summary": "keyword_value.raw",
             "processed_simple": "value"
@@ -1026,7 +1080,7 @@
             ],
             "taxon_traverse": false,
             "taxon_type": "1dp",
-            "sequence": 47,
+            "sequence": 55,
             "processed_type": "float",
             "processed_summary": "1dp_value",
             "processed_simple": "value"
@@ -1060,7 +1114,7 @@
             ],
             "taxon_traverse": false,
             "taxon_type": "1dp",
-            "sequence": 48,
+            "sequence": 56,
             "processed_type": "float",
             "processed_summary": "1dp_value",
             "processed_simple": "value"
@@ -1245,17 +1299,6 @@
             "processed_summary": "keyword_value.raw",
             "processed_simple": "value"
         },
-        "assembly_name": {
-            "group": "assembly",
-            "name": "assembly_name",
-            "constraint": {
-                "len": 64
-            },
-            "type": "keyword",
-            "processed_type": "keyword",
-            "processed_summary": "keyword_value.raw",
-            "processed_simple": "value"
-        },
         "common_name": {
             "group": "assembly",
             "name": "common_name",
@@ -1270,17 +1313,31 @@
             "processed_summary": "undefined_value",
             "processed_simple": "value"
         },
+        "assembly_id": {
+            "group": "assembly",
+            "name": "assembly_id",
+            "header": "freeze_id",
+            "processed_summary": "undefined_value",
+            "processed_simple": "value"
+        },
+        "genbank_accession": {
+            "group": "assembly",
+            "name": "genbank_accession",
+            "header": "Accession_ID",
+            "processed_summary": "undefined_value",
+            "processed_simple": "value"
+        },
+        "assembly_name": {
+            "group": "assembly",
+            "name": "assembly_name",
+            "header": "Assembly_Name",
+            "processed_summary": "undefined_value",
+            "processed_simple": "value"
+        },
         "assembly_alias": {
             "group": "assembly",
             "name": "assembly_alias",
             "header": "alias",
-            "processed_summary": "undefined_value",
-            "processed_simple": "value"
-        },
-        "assembly_id": {
-            "group": "assembly",
-            "name": "assembly_id",
-            "header": "accession",
             "processed_summary": "undefined_value",
             "processed_simple": "value"
         },
@@ -1290,16 +1347,9 @@
             "header": "id",
             "processed_summary": "undefined_value",
             "processed_simple": "value"
-        },
-        "genbank_accession": {
-            "group": "assembly",
-            "name": "genbank_accession",
-            "header": "accession",
-            "processed_summary": "undefined_value",
-            "processed_simple": "value"
         }
     },
     "hub": "goat",
-    "release": "2026.03.13",
-    "source": "https://github.com/genomehubs/goat-data/tree/2026.03.13"
+    "release": "2026.10.02",
+    "source": "https://github.com/genomehubs/goat-data/tree/2026.10.02"
 }
