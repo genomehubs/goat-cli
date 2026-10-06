@@ -12,33 +12,30 @@ use tokio::time::sleep;
 
 use crate::client::GoatClient;
 use crate::error::Result;
-use crate::utils::args::ArgMatchesExt;
+use crate::cli::SearchRequest;
+use crate::count;
 use crate::utils::cli_matches::{self, CliAction};
-use crate::{count, IndexType};
 use crate::{GOAT_URL, UPPER_CLI_SIZE_LIMIT};
 
 // a function to create and display a progress bar
 // for large requests. Currently limited to single large requests.
 
-/// Adds a progress bar to large requests.
-pub async fn progress_bar(
-    matches: &clap::ArgMatches,
-    api: &str,
-    unique_ids: Vec<String>,
-    index_type: IndexType,
-) -> Result<()> {
+/// Adds a progress bar to large requests: a `search` (`Some(request)`),
+/// or a `newick` report (`None`).
+pub async fn progress_bar(search: Option<&SearchRequest>, unique_ids: Vec<String>) -> Result<()> {
     // nothing is fetched when only printing the URLs
-    if matches.flag("url") || matches.flag("goat-ui-url") {
-        return Ok(());
+    if let Some(request) = search {
+        if request.output.url || request.output.goat_ui_url {
+            return Ok(());
+        }
     }
     // wait briefly before submitting
     // so we are sure the API has recieved and set the queryId
     sleep(Duration::from_secs(2)).await;
-    // TODO: clean this up.
-    let (size_int, url_vector_api) = match api {
-        "newick" => (0u64, vec!["init".to_string()]),
-        other => {
-            match cli_matches::process_cli_args(matches, other, unique_ids.clone(), index_type)? {
+    let (size_int, url_vector_api) = match search {
+        None => (0u64, vec!["init".to_string()]),
+        Some(request) => {
+            match cli_matches::process_cli_args(request, "search", unique_ids.clone())? {
                 CliAction::Continue { size, urls, .. } => (size, urls),
                 CliAction::PrintedAndExit => return Ok(()),
             }
@@ -50,8 +47,8 @@ pub async fn progress_bar(
     // For search/count-style commands, use a count preflight to decide
     // whether a progress bar is worthwhile. Newick does not share the same
     // CLI shape, so do not route it through count::count/process_cli_args.
-    if api != "newick" {
-        let no_query_hits = count::count(matches, false, false, unique_ids.clone(), index_type)
+    if let Some(request) = search {
+        let no_query_hits = count::count(request, false, false, unique_ids.clone())
             .await?
             .unwrap();
 
@@ -120,12 +117,10 @@ pub async fn progress_bar(
         }
 
         // special case newick
-        match api {
-            "newick" => bar.set_length(progress_total_total),
-            _ => match progress_total_total > *UPPER_CLI_SIZE_LIMIT as u64 {
-                true => bar.set_length(size_int),
-                false => bar.set_length(progress_total_total),
-            },
+        if search.is_some() && progress_total_total > *UPPER_CLI_SIZE_LIMIT as u64 {
+            bar.set_length(size_int);
+        } else {
+            bar.set_length(progress_total_total);
         }
 
         bar.set_position(progress_x_total);

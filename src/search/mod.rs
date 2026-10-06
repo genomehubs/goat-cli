@@ -8,16 +8,13 @@ use crate::client::GoatClient;
 use crate::error::Result;
 use crate::utils::cli_matches::CliAction;
 use crate::utils::{cli_matches, utils};
-use crate::{count, IndexType};
+use crate::cli::SearchRequest;
+use crate::count;
 
 /// Execute the `search` subcommand from `goat-cli`. Print a TSV.
-pub async fn search(
-    matches: &clap::ArgMatches,
-    unique_ids: Vec<String>,
-    index_type: IndexType,
-) -> Result<()> {
+pub async fn search(request: &SearchRequest, unique_ids: Vec<String>) -> Result<()> {
     let url_vector_api =
-        match cli_matches::process_cli_args(matches, "search", unique_ids.clone(), index_type)? {
+        match cli_matches::process_cli_args(request, "search", unique_ids.clone())? {
             CliAction::Continue { urls, .. } => urls,
             CliAction::PrintedAndExit => return Ok(()),
         };
@@ -35,7 +32,7 @@ pub async fn search(
     // the count is only used to print warnings, so fetch it alongside the
     // search rather than before it.
     let (_, awaited_fetches) = futures::try_join!(
-        count::count(matches, false, true, unique_ids, index_type),
+        count::count(request, false, true, unique_ids),
         fetches.map(Ok)
     )?;
 

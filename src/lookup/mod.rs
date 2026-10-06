@@ -4,7 +4,7 @@
 
 use crate::client::GoatClient;
 use crate::error::Result;
-use crate::utils::args::ArgMatchesExt;
+use crate::cli::LookupArgs;
 use crate::IndexType;
 use futures::StreamExt;
 use serde_json::Value;
@@ -20,16 +20,15 @@ pub enum LookupAction {
 
 /// Main entry point for `goat-cli lookup`.
 pub async fn lookup(
-    matches: &clap::ArgMatches,
+    args: &LookupArgs,
     cli: bool,
     index_type: IndexType,
 ) -> Result<LookupAction> {
-    let lookups = Lookups::new(matches, index_type)?;
+    let lookups = Lookups::new(args, index_type)?;
     let url_vector_api = lookups.make_urls();
-    let print_url = matches.opt_one::<bool>("url").copied().unwrap_or(false);
-    let size = *matches.opt_one::<u64>("size").expect("cli default = 10");
+    let size = args.size;
 
-    if print_url {
+    if args.url {
         for (index, (url, _)) in url_vector_api.iter().enumerate() {
             crate::outln!("{}.\tGoaT lookup API URL: {}", index, url)?;
         }

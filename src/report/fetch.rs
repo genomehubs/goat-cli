@@ -1,7 +1,6 @@
 use crate::client::GoatClient;
 use crate::error::{Error, ErrorKind, Result};
-use crate::utils::args::ArgMatchesExt;
-use crate::report::report::{Report, ReportType};
+use crate::report::report::{Report, ReportOptions, ReportType};
 use futures::StreamExt;
 use std::io::Write;
 
@@ -12,15 +11,14 @@ pub enum ReportAction {
 
 /// CLI entry point to get the Newick file from the GoaT API.
 pub async fn fetch_report(
-    matches: &clap::ArgMatches,
+    options: &ReportOptions,
     unique_ids: Vec<String>,
     report_type: ReportType,
 ) -> Result<ReportAction> {
-    let report = Report::new(matches, report_type)?;
+    let report = Report::new(options, report_type)?;
     let url = report.make_url(unique_ids)?;
 
-    let print_url = *matches.opt_one::<bool>("url").expect("cli default false");
-    if print_url {
+    if options.url {
         crate::outln!("GoaT report API URL:\t{}", url)?;
         return Ok(ReportAction::PrintedAndExit);
     }

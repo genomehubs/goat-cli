@@ -1,7 +1,7 @@
 use crate::error::Result;
-use crate::utils::args::ArgMatchesExt;
+use crate::cli::LookupArgs;
 use crate::utils::url::percent_encode_query_value;
-use crate::utils::utils::{some_kind_of_uppercase_first_letter, taxa_from_matches};
+use crate::utils::utils::{some_kind_of_uppercase_first_letter, taxa_from_input};
 use crate::{IndexType, GOAT_URL, TAXONOMY};
 use url::Url;
 
@@ -45,10 +45,9 @@ pub struct Lookups {
 impl Lookups {
     /// Constructor which takes the CLI args and returns
     /// `Self`.
-    pub fn new(matches: &clap::ArgMatches, index_type: IndexType) -> Result<Self> {
-        // safe to unwrap, as default is defined.
-        let no_hits = *matches.opt_one::<u64>("size").expect("cli default = 10");
-        let tax_name_vector = taxa_from_matches(matches)?;
+    pub fn new(args: &LookupArgs, index_type: IndexType) -> Result<Self> {
+        let no_hits = args.size;
+        let tax_name_vector = taxa_from_input(args.taxon.as_deref(), args.file.as_deref(), false)?;
 
         let mut res = Vec::new();
 

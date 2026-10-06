@@ -18,6 +18,21 @@ Please consult the <b><a href="https://github.com/genomehubs/goat-cli/wiki">wiki
 
 For the full syntax of expressions (`-e`), including `OR`, lists, negation, functions and searching without a taxon, see <b><a href="EXPRESSIONS.md">EXPRESSIONS.md</a></b>.
 
+## Shell completions
+
+`goat-cli completions <shell>` prints a completion script for `bash`, `zsh`, `fish`, `elvish` or `powershell`, completing subcommands, flags and their values. For example:
+
+```bash
+# bash
+goat-cli completions bash > ~/.local/share/bash-completion/completions/goat-cli
+# zsh (with ~/.zfunc in your $fpath)
+goat-cli completions zsh > ~/.zfunc/_goat-cli
+# fish
+goat-cli completions fish > ~/.config/fish/completions/goat-cli.fish
+```
+
+Then start a new shell.
+
 ## `goat-cli` documentation
 
 If you fancy delving into the Rust code, I've had a first pass at documenting everything. Helped me iron out a few bugs too.

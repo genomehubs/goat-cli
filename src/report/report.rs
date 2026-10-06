@@ -1,11 +1,11 @@
 use crate::error::{Error, ErrorKind, Result};
-use crate::utils::args::ArgMatchesExt;
 use crate::utils::url::percent_encode_query_value;
 use crate::utils::variable_data;
 use crate::utils::{expression::CLIexpression, field_registry};
 use crate::utils::{tax_ranks::TaxRanks, utils, variables::Variables};
 use crate::{IndexType, TaxType, GOAT_URL, TAXONOMY};
 use std::fmt;
+use std::path::PathBuf;
 use url::Url;
 
 // | Implemented | Report        | Required             | Optional
@@ -267,6 +267,69 @@ fn parse_field_list(fields: &str) -> Result<Vec<String>> {
         .collect())
 }
 
+/// The options for a report, from whichever report subcommand was run.
+///
+/// Each report subcommand's arguments convert into this (see `cli.rs`);
+/// options a report doesn't take are left at their defaults.
+#[derive(Debug, Clone)]
+pub struct ReportOptions {
+    /// Taxa from `-t`, comma separated.
+    pub taxon: Option<String>,
+    /// Taxa from `-f`, one per line.
+    pub file: Option<PathBuf>,
+    /// The rank to aggregate at.
+    pub rank: String,
+    /// Newick: threshold for the number of nodes.
+    pub threshold: i32,
+    /// Histogram and scatter: the x variable.
+    pub x_variable: Option<String>,
+    /// Scatter: the y variable.
+    pub y_variable: Option<String>,
+    /// Arc: the numerator filter.
+    pub x_filter: Option<String>,
+    /// Arc: the denominator filter.
+    pub y_filter: Option<String>,
+    /// Arc: fields to exclude if missing.
+    pub exclude_missing: Option<String>,
+    /// Arc: fields to exclude if ancestral.
+    pub exclude_ancestral: Option<String>,
+    /// Histogram and scatter: a variable or rank to colour by.
+    pub category: Option<String>,
+    /// Histogram: the number of category levels.
+    pub size: Option<usize>,
+    /// Query `tax_name()` rather than `tax_tree()`.
+    pub no_descendents: bool,
+    /// x-axis options.
+    pub x_opts: Option<String>,
+    /// y-axis options.
+    pub y_opts: Option<String>,
+    /// Only print the URL.
+    pub url: bool,
+}
+
+impl Default for ReportOptions {
+    fn default() -> Self {
+        Self {
+            taxon: None,
+            file: None,
+            rank: "species".to_string(),
+            threshold: 2000,
+            x_variable: None,
+            y_variable: None,
+            x_filter: None,
+            y_filter: None,
+            exclude_missing: None,
+            exclude_ancestral: None,
+            category: None,
+            size: None,
+            no_descendents: false,
+            x_opts: None,
+            y_opts: None,
+            url: false,
+        }
+    }
+}
+
 /// The record struct to make URLs from.
 #[derive(Default)]
 pub struct Report {
@@ -303,7 +366,7 @@ pub struct Report {
 
 impl Report {
     /// Constructor function for [`Report`].
-    pub fn new(matches: &clap::ArgMatches, report_type: ReportType) -> Result<Self> {
+    pub fn new(options: &ReportOptions, report_type: ReportType) -> Result<Self> {
         // create the default struct
         let mut report: Report = Report {
             report_type,
@@ -311,78 +374,55 @@ impl Report {
         };
 
         // Taxon is optional for arc (global query), required for all other report types.
-        if let Some(search) = matches.opt_one::<String>("taxon") {
-            report.search = utils::parse_comma_separated(search);
+        if options.taxon.is_some() || options.file.is_some() {
+            report.search =
+                utils::taxa_from_input(options.taxon.as_deref(), options.file.as_deref(), false)?;
         }
 
-        // safe to unwrap, as default is defined.
-        report.rank = matches
-            .opt_one::<String>("rank")
-            .expect("cli default = species")
-            .to_string();
-        // taxon type will be by default tax_tree(). change this here
-        // for future reference. But will require a flag on the cli.
-
-        report.threshold = matches
-            .opt_one::<i32>("threshold")
-            .copied()
-            .unwrap_or(2000);
+        report.rank = options.rank.clone();
+        report.threshold = options.threshold;
 
         // Arc uses filter expressions; other reports use variable names.
         if report_type == ReportType::Arc {
-            if let Some(xf) = matches.opt_one::<String>("x-filter") {
+            if let Some(xf) = &options.x_filter {
                 report.x = Some(parse_report_filter(xf, "--x-filter")?);
             }
-            if let Some(yf) = matches.opt_one::<String>("y-filter") {
+            if let Some(yf) = &options.y_filter {
                 report.y = Some(parse_report_filter(yf, "--y-filter")?);
             }
-            if let Some(em) = matches.opt_one::<String>("exclude-missing") {
+            if let Some(em) = &options.exclude_missing {
                 report.exclude_missing = parse_field_list(em)?;
             }
-            if let Some(ea) = matches.opt_one::<String>("exclude-ancestral") {
+            if let Some(ea) = &options.exclude_ancestral {
                 report.exclude_ancestral = parse_field_list(ea)?;
             }
         } else {
-            let x_variable = matches.opt_one::<String>("x-variable");
-            if let Some(xvar) = x_variable {
+            if let Some(xvar) = &options.x_variable {
                 let inner_x =
                     Variables::new(xvar).parse_one(&variable_data::GOAT_TAXON_VARIABLE_DATA)?;
                 report.x = Some(inner_x);
             }
-
-            let y_variable = matches.opt_one::<String>("y-variable");
-            if let Some(y_var) = y_variable {
+            if let Some(y_var) = &options.y_variable {
                 let inner_y =
                     Variables::new(y_var).parse_one(&variable_data::GOAT_TAXON_VARIABLE_DATA)?;
                 report.y = Some(inner_y);
             }
         }
 
-        // parse size
-        let size = matches.opt_one::<usize>("size");
-        report.size = size.copied();
+        report.size = options.size;
 
         // descendents (default) or not?
-        let no_descendents = matches.opt_one::<bool>("no-descendents");
-
-        if let Some(desc) = no_descendents {
-            if *desc {
-                report.taxon_type = TaxType::Name;
-            }
+        if options.no_descendents {
+            report.taxon_type = TaxType::Name;
         }
-        // x options
-        let xopts = matches.opt_one::<String>("x-opts");
-        if let Some(x_opts) = xopts {
+        if let Some(x_opts) = &options.x_opts {
             report.x_opts = Some(Opts::try_from_string(x_opts)?);
         }
-        // y options
-        let yopts = matches.opt_one::<String>("y-opts");
-        if let Some(y_opts) = yopts {
+        if let Some(y_opts) = &options.y_opts {
             report.y_opts = Some(Opts::try_from_string(y_opts)?);
         }
         // category for histogram.
-        let category = matches.opt_one::<String>("category");
-        if let Some(cat) = category {
+        if let Some(cat) = &options.category {
             // FIXME: is this correct? Looks a bit wrong
 
             // check this variable against the various lists

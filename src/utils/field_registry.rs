@@ -25,7 +25,6 @@ use std::time::{Duration, SystemTime};
 use serde_json::Value;
 
 use crate::client::GoatClient;
-use crate::utils::args::ArgMatchesExt;
 use crate::utils::expression::{canonical_field, CLIexpression};
 use crate::utils::utils::parse_comma_separated;
 use crate::utils::variable_data::{GOAT_ASSEMBLY_VARIABLE_DATA, GOAT_TAXON_VARIABLE_DATA};
@@ -120,28 +119,25 @@ pub async fn init(index_type: IndexType) {
     let _ = cell.set(fields);
 }
 
-/// Load the registry for `index_type` if the expression (`-e`), variables
-/// (`-v`) or report filters (`arc -x/-y`) in `matches` name a field that the
-/// static data does not know.
+/// Load the registry for `index_type` if any of `expressions` (e.g. `-e`, or
+/// `arc -x/-y`) or `variables` (`-v`) name a field that the static data does
+/// not know.
 ///
 /// Call this before the arguments are parsed, so that parsing can accept
 /// fields added to GoaT since this binary was built.
-pub async fn prepare(matches: &clap::ArgMatches, index_type: IndexType) {
+pub async fn prepare(expressions: &[&str], variables: Option<&str>, index_type: IndexType) {
     let data = match index_type {
         IndexType::Taxon => &*GOAT_TAXON_VARIABLE_DATA,
         IndexType::Assembly => &*GOAT_ASSEMBLY_VARIABLE_DATA,
     };
-    let unknown_in_expression = ["expression", "x-filter", "y-filter"]
+    let unknown_in_expression = expressions
         .iter()
-        .filter_map(|id| matches.opt_one::<String>(id))
         .any(|e| CLIexpression::new(e).has_unknown_field(data));
-    let unknown_in_variables = matches
-        .opt_one::<String>("variables")
-        .map_or(false, |v| {
-            parse_comma_separated(v)
-                .iter()
-                .any(|field| canonical_field(field, data).is_none())
-        });
+    let unknown_in_variables = variables.map_or(false, |v| {
+        parse_comma_separated(v)
+            .iter()
+            .any(|field| canonical_field(field, data).is_none())
+    });
     if unknown_in_expression || unknown_in_variables {
         init(index_type).await;
     }
