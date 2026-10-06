@@ -32,7 +32,7 @@ async fn run() -> Result<()> {
     // If -e or -v name a field this binary doesn't know, load the live GoaT
     // field list (cached on disk) so newly added fields are still accepted.
     if let Some((index, index_matches)) = matches.subcommand() {
-        if let Some(("search" | "count", leaf)) = index_matches.subcommand() {
+        if let Some(("search" | "count" | "arc", leaf)) = index_matches.subcommand() {
             let index_type = match index {
                 "assembly" => IndexType::Assembly,
                 _ => IndexType::Taxon,

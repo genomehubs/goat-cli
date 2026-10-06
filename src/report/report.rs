@@ -2,8 +2,9 @@ use crate::error::{Error, ErrorKind, Result};
 use crate::utils::args::ArgMatchesExt;
 use crate::utils::url::percent_encode_query_value;
 use crate::utils::variable_data;
+use crate::utils::{expression::CLIexpression, field_registry};
 use crate::utils::{tax_ranks::TaxRanks, utils, variables::Variables};
-use crate::{TaxType, GOAT_URL, TAXONOMY};
+use crate::{IndexType, TaxType, GOAT_URL, TAXONOMY};
 use std::fmt;
 use url::Url;
 
@@ -237,6 +238,35 @@ impl fmt::Display for Opts {
     }
 }
 
+/// Validate a report filter expression (e.g. arc's `--x-filter`) with the
+/// same engine as `-e`, returning it in canonical form.
+///
+/// `OR` is rejected: unlike `/search`, the `/report` endpoint gives wrong
+/// results for it (inflated counts, or a server error for trees).
+fn parse_report_filter(filter: &str, flag: &str) -> Result<String> {
+    let dynamic_fields = field_registry::get_all_fields(IndexType::Taxon);
+    let extra = (!dynamic_fields.is_empty()).then_some(&dynamic_fields);
+    let parsed = CLIexpression::new(filter).parse(&variable_data::GOAT_TAXON_VARIABLE_DATA, extra)?;
+    let parsed = parsed.trim_start_matches(" AND ");
+    if parsed.contains(" OR ") {
+        return Err(Error::new(ErrorKind::Report(format!(
+            "OR is not supported in {flag}, as GoaT's report endpoint gives wrong results for it."
+        ))));
+    }
+    Ok(parsed.to_string())
+}
+
+/// Validate a comma separated list of field names, e.g. for
+/// `--exclude-missing`, returning their canonical names.
+fn parse_field_list(fields: &str) -> Result<Vec<String>> {
+    Ok(Variables::new(fields)
+        .parse(&variable_data::GOAT_TAXON_VARIABLE_DATA, false)?
+        .split(',')
+        .filter(|s| !s.is_empty())
+        .map(String::from)
+        .collect())
+}
+
 /// The record struct to make URLs from.
 #[derive(Default)]
 pub struct Report {
@@ -298,19 +328,19 @@ impl Report {
             .copied()
             .unwrap_or(2000);
 
-        // Arc uses raw filter expressions; other reports use validated variable names.
+        // Arc uses filter expressions; other reports use variable names.
         if report_type == ReportType::Arc {
             if let Some(xf) = matches.opt_one::<String>("x-filter") {
-                report.x = Some(xf.clone());
+                report.x = Some(parse_report_filter(xf, "--x-filter")?);
             }
             if let Some(yf) = matches.opt_one::<String>("y-filter") {
-                report.y = Some(yf.clone());
+                report.y = Some(parse_report_filter(yf, "--y-filter")?);
             }
             if let Some(em) = matches.opt_one::<String>("exclude-missing") {
-                report.exclude_missing = em.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
+                report.exclude_missing = parse_field_list(em)?;
             }
             if let Some(ea) = matches.opt_one::<String>("exclude-ancestral") {
-                report.exclude_ancestral = ea.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
+                report.exclude_ancestral = parse_field_list(ea)?;
             }
         } else {
             let x_variable = matches.opt_one::<String>("x-variable");
@@ -595,6 +625,36 @@ mod tests {
         assert!(result.unwrap_err().to_string().contains("x variable"));
     }
 
+
+    #[test]
+    fn test_report_filter_is_validated_and_canonical() {
+        assert_eq!(
+            parse_report_filter("Assembly_Level >= scaffold AND genome-size > 1e9", "--x-filter").unwrap(),
+            "assembly_level >= scaffold AND genome_size > 1e9"
+        );
+        assert_eq!(parse_report_filter("assembly_span", "--x-filter").unwrap(), "assembly_span");
+    }
+
+    #[test]
+    fn test_report_filter_rejects_typos() {
+        let err = parse_report_filter("assembly_spam", "--x-filter").unwrap_err();
+        assert!(err.to_string().contains("did you mean \"assembly_span\""), "{}", err);
+    }
+
+    #[test]
+    fn test_report_filter_rejects_or() {
+        let err = parse_report_filter("genome_size > 1e9 OR c_value > 1", "--y-filter").unwrap_err();
+        assert!(err.to_string().contains("OR is not supported in --y-filter"), "{}", err);
+    }
+
+    #[test]
+    fn test_field_list_is_validated_and_canonical() {
+        assert_eq!(
+            parse_field_list("assembly_span, ebp_metric_date").unwrap(),
+            vec!["assembly_span", "ebp_standard_date"]
+        );
+        assert!(parse_field_list("assembly_spam").is_err());
+    }
 
     #[test]
     fn test_arc_missing_x_returns_err() {

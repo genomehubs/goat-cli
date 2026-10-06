@@ -155,16 +155,9 @@ pub fn get_rank_vector(r: &str) -> Vec<String> {
 /// If multiple taxa are queried at once, headers will return for every new taxon.
 /// We can suppress this by storing the whole return as a string.
 pub fn format_tsv_output(awaited_fetches: Vec<Result<String>>) -> Result<()> {
-    // if there is a single element, return this.
-    // is there a way to get all the headers, and compare them...
-    let mut headers = Vec::new();
-    for el in &awaited_fetches {
-        let tsv = match el {
-            Ok(ref e) => e,
-            Err(e) => return Err(Error::new(ErrorKind::FormatTSV(e.to_string()))),
-        };
-        headers.push(tsv.split('\n').next());
-    }
+    // return the first failed request's error as is
+    let tsvs = awaited_fetches.into_iter().collect::<Result<Vec<String>>>()?;
+    let headers = tsvs.iter().map(|tsv| tsv.split('\n').next()).collect::<Vec<_>>();
 
     // mainly a guard - but Rich I think fixed this so shouldn't need to be done.
     let header = headers.iter().fold(headers[0], |acc, &item| {
@@ -188,12 +181,7 @@ pub fn format_tsv_output(awaited_fetches: Vec<Result<String>>) -> Result<()> {
         }
     }
 
-    for el in awaited_fetches {
-        let tsv = match el {
-            Ok(ref e) => e,
-            Err(e) => return Err(e),
-        };
-
+    for tsv in &tsvs {
         let tsv_iter = tsv.split('\n');
         for row in tsv_iter.skip(1) {
             writeln!(out, "{}", row)?;

@@ -120,8 +120,9 @@ pub async fn init(index_type: IndexType) {
     let _ = cell.set(fields);
 }
 
-/// Load the registry for `index_type` if the expression (`-e`) or variables
-/// (`-v`) in `matches` name a field that the static data does not know.
+/// Load the registry for `index_type` if the expression (`-e`), variables
+/// (`-v`) or report filters (`arc -x/-y`) in `matches` name a field that the
+/// static data does not know.
 ///
 /// Call this before the arguments are parsed, so that parsing can accept
 /// fields added to GoaT since this binary was built.
@@ -130,9 +131,10 @@ pub async fn prepare(matches: &clap::ArgMatches, index_type: IndexType) {
         IndexType::Taxon => &*GOAT_TAXON_VARIABLE_DATA,
         IndexType::Assembly => &*GOAT_ASSEMBLY_VARIABLE_DATA,
     };
-    let unknown_in_expression = matches
-        .opt_one::<String>("expression")
-        .map_or(false, |e| CLIexpression::new(e).has_unknown_field(data));
+    let unknown_in_expression = ["expression", "x-filter", "y-filter"]
+        .iter()
+        .filter_map(|id| matches.opt_one::<String>(id))
+        .any(|e| CLIexpression::new(e).has_unknown_field(data));
     let unknown_in_variables = matches
         .opt_one::<String>("variables")
         .map_or(false, |v| {

@@ -121,16 +121,20 @@ Taxon terms are set with flags rather than in the expression:
 | `tax_lineage(...)` | `-t` with `-l` |
 | `tax_rank(...)` | `--tax-rank` |
 
+## Report filters
+
+`goat-cli taxon arc` takes filters (`-x/--x-filter`, `-y/--y-filter`) in the
+same syntax, and they are checked the same way, except that `OR` is not
+allowed: GoaT's report endpoint gives wrong results for it (inflated counts,
+or a server error for trees), although `/search` handles it correctly.
+
 ## Known API limitations
 
-These appear in the API source but don't work, so `goat-cli` does not offer
-them:
-
-- `tax_depth(n)` returns no results.
-- `tax_tree(A,B)` with several taxa gives inconsistent results (0 hits from
-  `/search`; fewer than the equivalent `OR` from `/report`). `goat-cli`
-  sends one query per taxon for `search` and `count`. The report commands
-  (`hist`, `scatter`, `arc`, `sources`, `newick`) still join several taxa
-  into one `tax_tree(...)`, so prefer a single taxon there.
-- `collate(...)`, `variable.metadata = ...` paths and newline-separated batch
-  queries are accepted but don't return meaningful results.
+- Taxa at higher ranks (e.g. genera, or `tax_rank(class)`) usually have no
+  directly measured values, only estimates, so without `-i/--include-estimates`
+  queries for them return nothing.
+- The API also supports `tax_depth(n)` (descendants exactly `n` levels below
+  the taxon; needs `-i`), which `goat-cli` does not expose yet.
+- `collate(...)`, `variable.metadata = ...` paths and newline separated batch
+  queries appear in the API source, but did not return meaningful results
+  when tested, so `goat-cli` does not offer them.
