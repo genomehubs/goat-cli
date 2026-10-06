@@ -81,7 +81,7 @@ pub fn format_expression(exp: &str, index_type: IndexType) -> Result<String> {
 /// Boolean struct containing all of the CLI flag information
 /// passed from the user. This struct has been expanded to include
 /// both `taxon` and `assembly` indexes.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct FieldBuilder {
     /// Add only assembly level/span GoaT fields.
     ///

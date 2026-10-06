@@ -1,10 +1,7 @@
+use crate::cli::SearchRequest;
 use crate::error::{Error, ErrorKind, Result};
-use crate::utils::args::ArgMatchesExt;
-use crate::utils::{
-    expression, tax_ranks, url, utils,
-    variable_data::{GOAT_ASSEMBLY_VARIABLE_DATA, GOAT_TAXON_VARIABLE_DATA},
-};
-use crate::{IndexType, TaxType, GOAT_URL, TAXONOMY, UPPER_CLI_SIZE_LIMIT};
+use crate::utils::{tax_ranks, url, utils};
+use crate::{GOAT_URL, TAXONOMY, UPPER_CLI_SIZE_LIMIT};
 
 pub enum CliAction {
     Continue {
@@ -15,173 +12,29 @@ pub enum CliAction {
     PrintedAndExit,
 }
 
-/// Take CLI arguments and parse them. Return a tuple of:
+/// Build the GoaT API URLs for a `search` or `count` (`api`), one per taxon.
 ///
-/// (the size arg you passed, vector of taxon ID's, vector of URLs, and a vector
-/// of unique ID's).
+/// If `-u`/`-U` were given, prints the URLs and returns
+/// [`CliAction::PrintedAndExit`]; otherwise returns the size, the taxa and
+/// their URLs.
 pub fn process_cli_args(
-    matches: &clap::ArgMatches,
+    request: &SearchRequest,
     api: &str,
     unique_ids: Vec<String>,
-    index_type: IndexType,
 ) -> Result<CliAction> {
-    // command line args same between taxon/assembly
-    let print_url = matches.opt_one::<bool>("url").copied().unwrap_or(false);
-    let print_goat_ui_url = matches
-        .opt_one::<bool>("goat-ui-url")
-        .copied()
-        .unwrap_or(false);
-    let tax_tree_enum = match matches
-        .opt_one::<bool>("descendents")
-        .copied()
-        .unwrap_or(false)
-    {
-        true => TaxType::Tree,
-        false => TaxType::Name,
-    };
-    // I think lineage is of limited value for assembly? but keep here anyways
-    let tax_lineage_enum = match *matches.opt_one::<bool>("lineage").unwrap_or(&false) {
-        true => TaxType::Lineage,
-        false => TaxType::Name,
-    };
-    let include_estimates = matches
-        .opt_one::<bool>("include-estimates")
-        .copied()
-        .unwrap_or(false);
-    let expression = match matches.opt_one::<String>("expression") {
+    let query = &request.query;
+    let index_type = request.index_type;
+
+    let expression = match &query.expression {
         Some(s) => url::format_expression(s, index_type)?,
         None => "".to_string(),
     };
-    // map needed to convert Option<String> -> Option<&str>
-    let variable_string = matches.opt_one::<String>("variables").map(|x| &**x);
-    // this output will differ depending on taxon/assembly
-    // but keep cli arg the same
-    let print_expression = matches
-        .opt_one::<bool>("print-expression")
-        .copied()
-        .unwrap_or(false);
-
-    let tax_rank = match matches.opt_one::<String>("tax-rank") {
+    let tax_rank = match &query.tax_rank {
         Some(t) => tax_ranks::TaxRanks::init().parse(t, false)?,
         None => "".to_string(),
     };
-    let size = *matches.opt_one::<u64>("size").expect("cli default = 50");
-    let ranks = matches
-        .opt_one::<String>("ranks")
-        .expect("cli default = none");
-    let result = index_type.to_string();
-    let summarise_values_by = "count";
-    // add in exclusion of missing and ancestral values by default, but allow the user
-    // to toggle this on the command line
-    let exclude = *matches.opt_one::<bool>("exclude").unwrap_or(&false);
 
-    // command line args unique to taxon
-    let taxon_include_raw_values = *matches.opt_one::<bool>("taxon-raw").unwrap_or(&false);
-    let taxon_tidy = match taxon_include_raw_values {
-        true => true,
-        false => *matches.opt_one::<bool>("taxon-tidy").unwrap_or(&false),
-    };
-    let taxon_assembly = *matches.opt_one::<bool>("taxon-assembly").unwrap_or(&false);
-    let taxon_cvalues = *matches.opt_one::<bool>("taxon-c-values").unwrap_or(&false);
-    let taxon_karyotype = *matches.opt_one::<bool>("taxon-karyotype").unwrap_or(&false);
-    let taxon_gs = *matches
-        .opt_one::<bool>("taxon-genome-size")
-        .unwrap_or(&false);
-    let taxon_busco = *matches.opt_one::<bool>("taxon-busco").unwrap_or(&false);
-    let taxon_gc_percent = *matches
-        .opt_one::<bool>("taxon-gc-percent")
-        .unwrap_or(&false);
-    let taxon_mitochondrion = *matches
-        .opt_one::<bool>("taxon-mitochondria")
-        .unwrap_or(&false);
-    let taxon_plastid = *matches.opt_one::<bool>("taxon-plastid").unwrap_or(&false);
-    let taxon_ploidy = *matches.opt_one::<bool>("taxon-ploidy").unwrap_or(&false);
-    let taxon_sex_determination = *matches
-        .opt_one::<bool>("taxon-sex-determination")
-        .unwrap_or(&false);
-    let taxon_legislation = *matches
-        .opt_one::<bool>("taxon-legislation")
-        .unwrap_or(&false);
-    let taxon_names = *matches.opt_one::<bool>("taxon-names").unwrap_or(&false);
-    let taxon_target_lists = *matches
-        .opt_one::<bool>("taxon-target-lists")
-        .unwrap_or(&false);
-    let taxon_n50 = *matches.opt_one::<bool>("taxon-n50").unwrap_or(&false);
-    let taxon_bioproject = *matches
-        .opt_one::<bool>("taxon-bioproject")
-        .unwrap_or(&false);
-    let taxon_gene_count = *matches
-        .opt_one::<bool>("taxon-gene-count")
-        .unwrap_or(&false);
-    let taxon_date = *matches.opt_one::<bool>("taxon-date").unwrap_or(&false);
-    let taxon_country_list = *matches
-        .opt_one::<bool>("taxon-country-list")
-        .unwrap_or(&false);
-    let taxon_status = *matches.opt_one::<bool>("taxon-status").unwrap_or(&false);
-    let taxon_toggle_direct = *matches.opt_one::<bool>("toggle-direct").unwrap_or(&false);
-
-    // command line args unique to assembly
-    let assembly_assembly = *matches
-        .opt_one::<bool>("assembly-assembly")
-        .unwrap_or(&false);
-    let assembly_karyotype = *matches
-        .opt_one::<bool>("assembly-karyotype")
-        .unwrap_or(&false);
-    let assembly_contig = *matches.opt_one::<bool>("assembly-contig").unwrap_or(&false);
-    let assembly_scaffold = *matches
-        .opt_one::<bool>("assembly-scaffold")
-        .unwrap_or(&false);
-    let assembly_gc = *matches
-        .opt_one::<bool>("assembly-gc-percent")
-        .unwrap_or(&false);
-    let assembly_gene = *matches
-        .opt_one::<bool>("assembly-gene-count")
-        .unwrap_or(&false);
-    let assembly_busco = *matches.opt_one::<bool>("assembly-busco").unwrap_or(&false);
-    let assembly_btk = *matches.opt_one::<bool>("assembly-btk").unwrap_or(&false);
-
-    if print_expression {
-        match index_type {
-            IndexType::Taxon => expression::print_variable_data(&GOAT_TAXON_VARIABLE_DATA)?,
-            IndexType::Assembly => expression::print_variable_data(&GOAT_ASSEMBLY_VARIABLE_DATA)?,
-        }
-        return Ok(CliAction::PrintedAndExit);
-    }
-
-    // merge the field flags
-    let fields = url::FieldBuilder {
-        taxon_assembly,
-        taxon_bioproject,
-        taxon_busco,
-        taxon_country_list,
-        taxon_cvalues,
-        taxon_date,
-        taxon_gc_percent,
-        taxon_gene_count,
-        taxon_gs,
-        taxon_karyotype,
-        taxon_legislation,
-        taxon_mitochondrion,
-        taxon_names,
-        taxon_n50,
-        taxon_plastid,
-        taxon_ploidy,
-        taxon_sex_determination,
-        taxon_status,
-        taxon_target_lists,
-        taxon_tidy,
-        taxon_toggle_direct,
-        assembly_assembly,
-        assembly_karyotype,
-        assembly_contig,
-        assembly_scaffold,
-        assembly_gc,
-        assembly_gene,
-        assembly_busco,
-        assembly_btk,
-    };
-
-    if size as usize > *UPPER_CLI_SIZE_LIMIT {
+    if query.size as usize > *UPPER_CLI_SIZE_LIMIT {
         let limit_string = utils::pretty_print_usize(*UPPER_CLI_SIZE_LIMIT);
         return Err(Error::new(ErrorKind::GenericCli(format!(
             "searches with more than {} results are not currently supported.",
@@ -189,45 +42,49 @@ pub fn process_cli_args(
         ))));
     }
 
-    // tree includes all descendents of a node
-    let tax_tree = match (tax_tree_enum, tax_lineage_enum) {
-        (TaxType::Tree, TaxType::Name) => "tree",
-        (TaxType::Name, TaxType::Lineage) => "lineage",
-        (TaxType::Name, TaxType::Name) => "name",
-        (_, _) => return Err(Error::new(ErrorKind::GenericCli("if we get here, I've done something wrong in the `TaxType` enum logic. Please file an issue.".to_string()))),
+    // tree includes all descendents of a node; clap ensures -d and -l
+    // aren't both given.
+    let tax_tree = if query.descendents {
+        "tree"
+    } else if query.lineage {
+        "lineage"
+    } else {
+        "name"
     };
 
-    let url_vector = utils::taxa_from_matches(matches)?;
+    let url_vector = utils::taxa_from_input(
+        query.taxon.as_deref(),
+        query.file.as_deref(),
+        query.expression.is_some(),
+    )?;
 
     let url_vector_api = url::make_goat_urls(
         api,
         &url_vector,
         &GOAT_URL,
         tax_tree,
-        include_estimates,
-        // check again whether to include
-        // raw values in `assembly` index.
-        taxon_include_raw_values,
-        exclude,
-        summarise_values_by,
-        &result,
+        request.include_estimates,
+        request.include_raw_values,
+        query.exclude,
+        "count",
+        &index_type.to_string(),
         &TAXONOMY,
-        size,
-        ranks,
-        fields,
-        variable_string,
+        query.size,
+        &query.ranks,
+        request.fields,
+        query.variables.as_deref(),
         &expression,
         &tax_rank,
         unique_ids,
         index_type,
     )?;
 
-    if print_url {
+    if request.output.url {
         for (index, url) in url_vector_api.iter().enumerate() {
             crate::outln!("{}.\tGoaT API URL: {}", index, url)?;
         }
         return Ok(CliAction::PrintedAndExit);
-    } else if print_goat_ui_url {
+    } else if request.output.goat_ui_url {
         for (index, url) in url_vector_api.iter().enumerate() {
             let new_url = url.replace("api/v2/", "");
             crate::outln!("{}.\tGoaT UI URL: {}", index, new_url)?;
@@ -236,7 +93,7 @@ pub fn process_cli_args(
     }
 
     Ok(CliAction::Continue {
-        size,
+        size: query.size,
         taxa: url_vector,
         urls: url_vector_api,
     })

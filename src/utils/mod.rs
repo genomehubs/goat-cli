@@ -1,5 +1,3 @@
-/// Lenient access to clap argument matches.
-pub mod args;
 /// Parse the command line arguments
 /// for `goat-cli search` and `goat-cli count`.
 pub mod cli_matches;

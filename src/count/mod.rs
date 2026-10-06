@@ -7,8 +7,8 @@ use crate::error::{Error, ErrorKind, Result};
 use futures::StreamExt;
 use std::io::{BufWriter, Write};
 
+use crate::cli::SearchRequest;
 use crate::utils::cli_matches::{self, CliAction};
-use crate::IndexType;
 
 /// How to show a search query to the user; an empty one (no `-t`/`-f`)
 /// searches all taxa.
@@ -23,14 +23,13 @@ fn query_label(search_query: &str) -> &str {
 /// `goat-cli count` presents an identical CLI to `goat-cli search` but prints
 /// to the console in the CLI call here, and to the stderr in the `goat-cli search` call.
 pub async fn count(
-    matches: &clap::ArgMatches,
+    request: &SearchRequest,
     cli: bool,
     print_warning: bool,
     unique_ids: Vec<String>,
-    index_type: IndexType,
 ) -> Result<Option<u64>> {
     let (size_int, url_vector, url_vector_api) =
-        match cli_matches::process_cli_args(matches, "count", unique_ids, index_type)? {
+        match cli_matches::process_cli_args(request, "count", unique_ids)? {
             CliAction::Continue { size, taxa, urls } => (size, taxa, urls),
             CliAction::PrintedAndExit => return Ok(None),
         };

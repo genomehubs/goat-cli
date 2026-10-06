@@ -1,11 +1,10 @@
 use std::{
     fs::File,
     io::{BufRead, BufReader, BufWriter, Write},
-    path::{Path, PathBuf},
+    path::Path,
 };
 
 use crate::error::{Error, ErrorKind, Result};
-use crate::utils::args::ArgMatchesExt;
 use crate::{
     utils::expression,
     utils::variable_data::{GOAT_ASSEMBLY_VARIABLE_DATA, GOAT_TAXON_VARIABLE_DATA},
@@ -14,54 +13,23 @@ use crate::{
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 
-pub enum UniqueIdAction {
-    Continue(Vec<String>),
-    PrintedAndExit,
+/// Generate a random query ID for each of `n` requests, so their progress
+/// can be tracked through the GoaT `progress` endpoint.
+pub fn generate_unique_ids(n: usize) -> Vec<String> {
+    (0..n).map(|_| generate_one_unique_id()).collect()
 }
 
-/// Determine from the CLI matches how many URLs
-/// are needing to be generated, and return a
-/// vector of random character strings to use as
-/// unique identifiers.
-pub fn generate_unique_strings(
-    matches: &clap::ArgMatches,
-    index_type: IndexType,
-) -> Result<UniqueIdAction> {
-    // print expression table
-    // got to include this here, otherwise we error.
-    // reports don't include this.
-    let print_expression = matches.opt_one::<bool>("print-expression");
-
-    if let Some(p) = print_expression {
-        if *p {
-            match index_type {
-                IndexType::Taxon => expression::print_variable_data(&GOAT_TAXON_VARIABLE_DATA)?,
-                IndexType::Assembly => {
-                    expression::print_variable_data(&GOAT_ASSEMBLY_VARIABLE_DATA)?
-                }
-            }
-            return Ok(UniqueIdAction::PrintedAndExit);
-        }
-    }
-
-    let url_vector_len = taxa_from_matches(matches)?.len();
-
-    let mut chars_vec = vec![];
-    for _ in 0..url_vector_len {
-        let mut rng = thread_rng();
-        let chars: String = (0..15).map(|_| rng.sample(Alphanumeric) as char).collect();
-        chars_vec.push(chars.clone());
-    }
-
-    Ok(UniqueIdAction::Continue(chars_vec))
-}
-
-/// The taxa to query, from `-t` (comma separated) or `-f` (one per line).
+/// The taxa to query, from `taxon` (`-t`, comma separated) or `file` (`-f`,
+/// one per line).
 ///
-/// If neither is given but an expression (`-e`) is, returns a single empty
-/// string, meaning a query across all taxa.
-pub fn taxa_from_matches(matches: &clap::ArgMatches) -> Result<Vec<String>> {
-    let taxa = if let Some(taxon) = matches.opt_one::<String>("taxon") {
+/// If neither is given and `allow_all` is set (e.g. an expression was given),
+/// returns a single empty string, meaning a query across all taxa.
+pub fn taxa_from_input(
+    taxon: Option<&str>,
+    file: Option<&Path>,
+    allow_all: bool,
+) -> Result<Vec<String>> {
+    let taxa = if let Some(taxon) = taxon {
         let taxa = parse_comma_separated(taxon);
         if taxa.is_empty() {
             return Err(Error::new(ErrorKind::GenericCli(
@@ -69,7 +37,7 @@ pub fn taxa_from_matches(matches: &clap::ArgMatches) -> Result<Vec<String>> {
             )));
         }
         taxa
-    } else if let Some(file) = matches.opt_one::<PathBuf>("file") {
+    } else if let Some(file) = file {
         let taxa = lines_from_file(file)?;
         if taxa.is_empty() {
             return Err(Error::new(ErrorKind::GenericCli(format!(
@@ -78,7 +46,7 @@ pub fn taxa_from_matches(matches: &clap::ArgMatches) -> Result<Vec<String>> {
             ))));
         }
         taxa
-    } else if matches.opt_one::<String>("expression").is_some() {
+    } else if allow_all {
         return Ok(vec![String::new()]);
     } else {
         return Err(Error::new(ErrorKind::GenericCli(
@@ -93,6 +61,14 @@ pub fn taxa_from_matches(matches: &clap::ArgMatches) -> Result<Vec<String>> {
         ))));
     }
     Ok(taxa)
+}
+
+/// Print the table of variables for `index_type` (`--print-expression`).
+pub fn print_variables(index_type: IndexType) -> Result<()> {
+    match index_type {
+        IndexType::Taxon => expression::print_variable_data(&GOAT_TAXON_VARIABLE_DATA),
+        IndexType::Assembly => expression::print_variable_data(&GOAT_ASSEMBLY_VARIABLE_DATA),
+    }
 }
 
 /// Generate a single random query ID, for use when no taxon input is needed.

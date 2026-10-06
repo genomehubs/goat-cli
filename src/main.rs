@@ -1,16 +1,16 @@
+use clap::Parser;
 use futures::try_join;
 use std::process::ExitCode;
-use goat_cli::error::Result;
-use goat_cli::utils::args::ArgMatchesExt;
 
-use goat_cli::report::fetch::ReportAction;
-use goat_cli::{
-    cli, count, lookup, progress,
-    report::{self, report::ReportType},
-    search,
-    utils::{field_registry, utils::{generate_one_unique_id, generate_unique_strings, UniqueIdAction}},
-    IndexType,
+use goat_cli::cli::{AssemblyCommand, Cli, Index, SearchRequest, TaxonCommand};
+use goat_cli::error::Result;
+use goat_cli::report::fetch::fetch_report;
+use goat_cli::report::report::{ReportOptions, ReportType};
+use goat_cli::utils::field_registry;
+use goat_cli::utils::utils::{
+    generate_one_unique_id, generate_unique_ids, print_variables, taxa_from_input,
 };
+use goat_cli::{count, lookup, progress, search, IndexType};
 
 #[tokio::main]
 async fn main() -> ExitCode {
@@ -27,275 +27,97 @@ async fn main() -> ExitCode {
 }
 
 async fn run() -> Result<()> {
-    let matches = cli::build_cli().get_matches();
-
-    // If -e or -v name a field this binary doesn't know, load the live GoaT
-    // field list (cached on disk) so newly added fields are still accepted.
-    if let Some((index, index_matches)) = matches.subcommand() {
-        if let Some(("search" | "count" | "arc", leaf)) = index_matches.subcommand() {
-            let index_type = match index {
-                "assembly" => IndexType::Assembly,
-                _ => IndexType::Taxon,
-            };
-            field_registry::prepare(leaf, index_type).await;
-        }
-    }
-
-    // nested matching on subcommands
-    match matches.subcommand() {
-        // outer == taxon/assembly
-        Some(("taxon", taxon_matches)) => match taxon_matches.subcommand() {
-            // inner are all the taxon matches here.
-            Some(("search", taxon_search_matches)) => {
-                let progress_bar = *taxon_search_matches
-                    .opt_one::<bool>("progress-bar")
-                    .expect("cli default false");
-                let unique_ids =
-                    match generate_unique_strings(taxon_search_matches, IndexType::Taxon)? {
-                        UniqueIdAction::Continue(ids) => ids,
-                        UniqueIdAction::PrintedAndExit => return Ok(()),
-                    };
-
-                match progress_bar {
-                    true => {
-                        try_join!(
-                            search::search(
-                                taxon_search_matches,
-                                unique_ids.clone(),
-                                IndexType::Taxon
-                            ),
-                            progress::progress_bar(
-                                taxon_search_matches,
-                                "search",
-                                unique_ids,
-                                IndexType::Taxon
-                            )
-                        )?;
-                    }
-                    false => {
-                        search::search(taxon_search_matches, unique_ids, IndexType::Taxon).await?;
-                    }
-                }
+    match Cli::parse().index {
+        Index::Taxon { command } => match command {
+            TaxonCommand::Search(args) => run_search(&SearchRequest::from(&args)).await,
+            TaxonCommand::Count(args) => run_count(&SearchRequest::from(&args)).await,
+            TaxonCommand::Lookup(args) => lookup::lookup(&args, true, IndexType::Taxon)
+                .await
+                .map(|_| ()),
+            TaxonCommand::Sources(args) => {
+                run_report(&ReportOptions::from(&args), ReportType::Sources).await
             }
-            Some(("sources", taxon_sources_matches)) => {
-                let unique_ids =
-                    match generate_unique_strings(taxon_sources_matches, IndexType::Taxon)? {
-                        UniqueIdAction::Continue(ids) => ids,
-                        UniqueIdAction::PrintedAndExit => return Ok(()),
-                    };
-
-                match report::fetch::fetch_report(
-                    taxon_sources_matches,
-                    unique_ids,
-                    ReportType::Sources,
-                )
-                .await?
-                {
-                    ReportAction::Continue => {}
-                    ReportAction::PrintedAndExit => return Ok(()),
-                };
-            }
-            Some(("count", taxon_count_matches)) => {
-                let unique_ids =
-                    match generate_unique_strings(taxon_count_matches, IndexType::Taxon)? {
-                        UniqueIdAction::Continue(ids) => ids,
-                        UniqueIdAction::PrintedAndExit => return Ok(()),
-                    };
-
-                count::count(
-                    taxon_count_matches,
-                    true,
-                    false,
-                    unique_ids,
-                    IndexType::Taxon,
-                )
-                .await?;
-            }
-            Some(("lookup", taxon_lookup_matches)) => {
-                match lookup::lookup(taxon_lookup_matches, true, IndexType::Taxon).await? {
-                    lookup::LookupAction::Continue => {}
-                    lookup::LookupAction::PrintedAndExit => return Ok(()),
-                }
-            }
-            Some(("hist", taxon_hist_matches)) => {
-                let unique_ids =
-                    match generate_unique_strings(taxon_hist_matches, IndexType::Taxon)? {
-                        UniqueIdAction::Continue(ids) => ids,
-                        UniqueIdAction::PrintedAndExit => return Ok(()),
-                    };
-
-                match report::fetch::fetch_report(
-                    taxon_hist_matches,
-                    unique_ids,
-                    ReportType::Histogram,
-                )
-                .await?
-                {
-                    ReportAction::Continue => {}
-                    ReportAction::PrintedAndExit => return Ok(()),
-                };
-            }
-            Some(("scatter", scatter_matches)) => {
-                let unique_ids = match generate_unique_strings(scatter_matches, IndexType::Taxon)? {
-                    UniqueIdAction::Continue(ids) => ids,
-                    UniqueIdAction::PrintedAndExit => return Ok(()),
-                };
-
-                match report::fetch::fetch_report(
-                    scatter_matches,
-                    unique_ids,
-                    ReportType::Scatterplot,
-                )
-                .await?
-                {
-                    ReportAction::Continue => {}
-                    ReportAction::PrintedAndExit => return Ok(()),
-                };
-            }
-            Some(("arc", arc_matches)) => {
-                // Arc may have no taxon (global query), so only call generate_unique_strings
-                // when a taxon or file is present; otherwise generate a single ID.
-                let unique_ids =
-                    if arc_matches.opt_one::<String>("taxon").is_some()
-                        || arc_matches.opt_one::<std::path::PathBuf>("file").is_some()
-                    {
-                        match generate_unique_strings(arc_matches, IndexType::Taxon)? {
-                            UniqueIdAction::Continue(ids) => ids,
-                            UniqueIdAction::PrintedAndExit => return Ok(()),
-                        }
-                    } else {
-                        vec![generate_one_unique_id()]
-                    };
-
-                match report::fetch::fetch_report(arc_matches, unique_ids, ReportType::Arc).await? {
-                    ReportAction::Continue => {}
-                    ReportAction::PrintedAndExit => return Ok(()),
-                };
-            }
-            Some(("newick", taxon_newick_matches)) => {
-                let progress_bar = *taxon_newick_matches
-                    .opt_one::<bool>("progress-bar")
-                    .expect("cli default false");
-                // TODO: check that the CLI has a 'url' option
-                let print_url = taxon_newick_matches
-                    .opt_one::<bool>("url")
-                    .copied()
-                    .unwrap_or(false);
-
-                let unique_ids =
-                    match generate_unique_strings(taxon_newick_matches, IndexType::Taxon)? {
-                        UniqueIdAction::Continue(ids) => ids,
-                        UniqueIdAction::PrintedAndExit => return Ok(()),
-                    };
-
-                if print_url {
-                    match report::fetch::fetch_report(
-                        taxon_newick_matches,
-                        unique_ids,
-                        ReportType::Newick,
-                    )
-                    .await?
-                    {
-                        ReportAction::Continue => {}
-                        ReportAction::PrintedAndExit => return Ok(()),
-                    }
-                } else if progress_bar {
-                    let (report_action, _) = try_join!(
-                        report::fetch::fetch_report(
-                            taxon_newick_matches,
-                            unique_ids.clone(),
-                            ReportType::Newick
-                        ),
-                        progress::progress_bar(
-                            taxon_newick_matches,
-                            "newick",
-                            unique_ids,
-                            IndexType::Taxon
-                        )
+            TaxonCommand::Newick(args) => {
+                let options = ReportOptions::from(&args);
+                if args.progress_bar && !args.url {
+                    let ids = vec![generate_one_unique_id()];
+                    try_join!(
+                        fetch_report(&options, ids.clone(), ReportType::Newick),
+                        progress::progress_bar(None, ids)
                     )?;
-
-                    match report_action {
-                        ReportAction::Continue => {}
-                        ReportAction::PrintedAndExit => return Ok(()),
-                    }
+                    Ok(())
                 } else {
-                    match report::fetch::fetch_report(
-                        taxon_newick_matches,
-                        unique_ids,
-                        ReportType::Newick,
-                    )
-                    .await?
-                    {
-                        ReportAction::Continue => {}
-                        ReportAction::PrintedAndExit => return Ok(()),
-                    }
+                    run_report(&options, ReportType::Newick).await
                 }
             }
-            _ => {
-                unreachable!()
+            TaxonCommand::Hist(args) => {
+                run_report(&ReportOptions::from(&args), ReportType::Histogram).await
+            }
+            TaxonCommand::Scatter(args) => {
+                run_report(&ReportOptions::from(&args), ReportType::Scatterplot).await
+            }
+            TaxonCommand::Arc(args) => {
+                let filters = [Some(args.x_filter.as_str()), args.y_filter.as_deref()];
+                let filters = filters.into_iter().flatten().collect::<Vec<_>>();
+                field_registry::prepare(&filters, None, IndexType::Taxon).await;
+                run_report(&ReportOptions::from(&args), ReportType::Arc).await
             }
         },
-        // and now assembly
-        Some(("assembly", assembly_matches)) => match assembly_matches.subcommand() {
-            // and the three implemented subcommands currently.
-            Some(("search", assembly_search_matches)) => {
-                let progress_bar = *assembly_search_matches
-                    .opt_one::<bool>("progress-bar")
-                    .expect("cli default false");
-                let unique_ids =
-                    match generate_unique_strings(assembly_search_matches, IndexType::Assembly)? {
-                        UniqueIdAction::Continue(ids) => ids,
-                        UniqueIdAction::PrintedAndExit => return Ok(()),
-                    };
-
-                match progress_bar {
-                    true => {
-                        try_join!(
-                            search::search(
-                                assembly_search_matches,
-                                unique_ids.clone(),
-                                IndexType::Assembly
-                            ),
-                            progress::progress_bar(
-                                assembly_search_matches,
-                                "search",
-                                unique_ids,
-                                IndexType::Assembly
-                            )
-                        )?;
-                    }
-                    false => {
-                        search::search(assembly_search_matches, unique_ids, IndexType::Assembly)
-                            .await?;
-                    }
-                }
-            }
-            Some(("count", assembly_count_matches)) => {
-                let unique_ids =
-                    match generate_unique_strings(assembly_count_matches, IndexType::Assembly)? {
-                        UniqueIdAction::Continue(ids) => ids,
-                        UniqueIdAction::PrintedAndExit => return Ok(()),
-                    };
-
-                count::count(
-                    assembly_count_matches,
-                    true,
-                    false,
-                    unique_ids,
-                    IndexType::Assembly,
-                )
-                .await?;
-            }
-            Some(("lookup", assembly_lookup_matches)) => {
-                match lookup::lookup(assembly_lookup_matches, true, IndexType::Assembly).await? {
-                    lookup::LookupAction::Continue => {}
-                    lookup::LookupAction::PrintedAndExit => return Ok(()),
-                }
-            }
-            _ => unreachable!(),
+        Index::Assembly { command } => match command {
+            AssemblyCommand::Search(args) => run_search(&SearchRequest::from(&args)).await,
+            AssemblyCommand::Count(args) => run_count(&SearchRequest::from(&args)).await,
+            AssemblyCommand::Lookup(args) => lookup::lookup(&args, true, IndexType::Assembly)
+                .await
+                .map(|_| ()),
         },
-        _ => unreachable!(),
     }
+}
 
+/// Common set up for `search` and `count`: handle `--print-expression`, load
+/// the live field registry if `-e`/`-v` need it, and make a query ID per
+/// taxon. Returns `None` if there is nothing more to do.
+async fn prepare_search(request: &SearchRequest) -> Result<Option<Vec<String>>> {
+    if request.output.print_expression {
+        print_variables(request.index_type)?;
+        return Ok(None);
+    }
+    let query = &request.query;
+    let expressions = query.expression.as_deref().into_iter().collect::<Vec<_>>();
+    field_registry::prepare(&expressions, query.variables.as_deref(), request.index_type).await;
+
+    let taxa = taxa_from_input(
+        query.taxon.as_deref(),
+        query.file.as_deref(),
+        query.expression.is_some(),
+    )?;
+    Ok(Some(generate_unique_ids(taxa.len())))
+}
+
+async fn run_search(request: &SearchRequest) -> Result<()> {
+    let Some(unique_ids) = prepare_search(request).await? else {
+        return Ok(());
+    };
+    if request.output.progress_bar {
+        try_join!(
+            search::search(request, unique_ids.clone()),
+            progress::progress_bar(Some(request), unique_ids)
+        )?;
+    } else {
+        search::search(request, unique_ids).await?;
+    }
+    Ok(())
+}
+
+async fn run_count(request: &SearchRequest) -> Result<()> {
+    let Some(unique_ids) = prepare_search(request).await? else {
+        return Ok(());
+    };
+    count::count(request, true, false, unique_ids).await?;
+    Ok(())
+}
+
+/// Reports make a single request, so need a single query ID.
+async fn run_report(options: &ReportOptions, report_type: ReportType) -> Result<()> {
+    fetch_report(options, vec![generate_one_unique_id()], report_type).await?;
     Ok(())
 }
