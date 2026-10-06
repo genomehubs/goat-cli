@@ -27,8 +27,6 @@ pub fn generate_unique_strings(
     matches: &clap::ArgMatches,
     index_type: IndexType,
 ) -> Result<UniqueIdAction> {
-    let tax_name_op = matches.opt_one::<String>("taxon");
-    let filename_op = matches.opt_one::<PathBuf>("file");
     // print expression table
     // got to include this here, otherwise we error.
     // reports don't include this.
@@ -46,39 +44,7 @@ pub fn generate_unique_strings(
         }
     }
 
-    let url_vector: Vec<String>;
-    // if -t use this
-    match tax_name_op {
-        Some(s) => {
-            // catch empty string hanging here.
-            if s.is_empty() {
-                return Err(Error::new(ErrorKind::GenericCli(
-                    "Empty string found, please specify a taxon.".to_string(),
-                )));
-            }
-            url_vector = parse_comma_separated(s);
-        }
-        None => match filename_op {
-            Some(s) => {
-                url_vector = lines_from_file(s)?;
-                // check length of vector and bail if > 1000
-                if url_vector.len() > *UPPER_CLI_FILE_LIMIT {
-                    let limit_string = pretty_print_usize(*UPPER_CLI_FILE_LIMIT);
-                    return Err(Error::new(ErrorKind::GenericCli(format!(
-                        "Number of taxa specified cannot exceed {}.",
-                        limit_string
-                    ))));
-                }
-            }
-            None => {
-                return Err(Error::new(ErrorKind::GenericCli(
-                    "One of -f (--file) or -t (--taxon) should be specified.".to_string(),
-                )))
-            }
-        },
-    }
-
-    let url_vector_len = url_vector.len();
+    let url_vector_len = taxa_from_matches(matches)?.len();
 
     let mut chars_vec = vec![];
     for _ in 0..url_vector_len {
@@ -90,6 +56,45 @@ pub fn generate_unique_strings(
     Ok(UniqueIdAction::Continue(chars_vec))
 }
 
+/// The taxa to query, from `-t` (comma separated) or `-f` (one per line).
+///
+/// If neither is given but an expression (`-e`) is, returns a single empty
+/// string, meaning a query across all taxa.
+pub fn taxa_from_matches(matches: &clap::ArgMatches) -> Result<Vec<String>> {
+    let taxa = if let Some(taxon) = matches.opt_one::<String>("taxon") {
+        let taxa = parse_comma_separated(taxon);
+        if taxa.is_empty() {
+            return Err(Error::new(ErrorKind::GenericCli(
+                "no taxa found in -t (--taxon), please specify a taxon.".to_string(),
+            )));
+        }
+        taxa
+    } else if let Some(file) = matches.opt_one::<PathBuf>("file") {
+        let taxa = lines_from_file(file)?;
+        if taxa.is_empty() {
+            return Err(Error::new(ErrorKind::GenericCli(format!(
+                "no taxa found in {}.",
+                file.display()
+            ))));
+        }
+        taxa
+    } else if matches.opt_one::<String>("expression").is_some() {
+        return Ok(vec![String::new()]);
+    } else {
+        return Err(Error::new(ErrorKind::GenericCli(
+            "one of -f (--file) or -t (--taxon) should be specified.".to_string(),
+        )));
+    };
+
+    if taxa.len() > *UPPER_CLI_FILE_LIMIT {
+        return Err(Error::new(ErrorKind::GenericCli(format!(
+            "number of taxa specified cannot exceed {}.",
+            pretty_print_usize(*UPPER_CLI_FILE_LIMIT)
+        ))));
+    }
+    Ok(taxa)
+}
+
 /// Generate a single random query ID, for use when no taxon input is needed.
 pub fn generate_one_unique_id() -> String {
     let mut rng = thread_rng();
@@ -98,11 +103,19 @@ pub fn generate_one_unique_id() -> String {
 
 /// Read NCBI taxon ID's or binomial names of species,
 /// or higher order taxa from a file.
+///
+/// Lines are trimmed, and blank lines and `#` comments are skipped.
 pub fn lines_from_file(filename: impl AsRef<Path>) -> Result<Vec<String>> {
     let file = File::open(&filename)?;
-    let buf = BufReader::new(file);
-    let buf_res = buf.lines().collect::<std::result::Result<Vec<_>, _>>();
-    buf_res.map_err(|e| Error::new(ErrorKind::IO(e)))
+    let mut lines = Vec::new();
+    for line in BufReader::new(file).lines() {
+        let line = line?;
+        let line = line.trim();
+        if !line.is_empty() && !line.starts_with('#') {
+            lines.push(line.to_string());
+        }
+    }
+    Ok(lines)
 }
 
 // taxids should be comma separated
@@ -328,7 +341,7 @@ fn levenshtein_distance(a: &str, b: &str) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use super::{parse_comma_separated, pretty_print_usize};
+    use super::{lines_from_file, parse_comma_separated, pretty_print_usize};
     #[test]
     fn test_parse_comma_separated_trims_and_preserves_order() {
         let parsed = parse_comma_separated(" Mammalia, Aves ,Reptilia ");
@@ -351,6 +364,15 @@ mod tests {
     fn test_parse_comma_separated_drops_empty_entries() {
         let parsed = parse_comma_separated("Mammalia,,Aves,   ,Reptilia");
         assert_eq!(parsed, vec!["Mammalia", "Aves", "Reptilia"]);
+    }
+
+    #[test]
+    fn test_lines_from_file_trims_and_skips_blanks_and_comments() {
+        let path = std::env::temp_dir().join(format!("goat_cli_taxa_{}.txt", std::process::id()));
+        std::fs::write(&path, "# my taxa\nMammalia\n\n  Aves  \r\n   \nReptilia\n").unwrap();
+        let lines = lines_from_file(&path).unwrap();
+        std::fs::remove_file(&path).unwrap();
+        assert_eq!(lines, vec!["Mammalia", "Aves", "Reptilia"]);
     }
 
     #[test]

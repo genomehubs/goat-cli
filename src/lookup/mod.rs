@@ -54,7 +54,7 @@ pub async fn lookup(
                                 Some(s) => {
                                     if size < *s {
                                         eprintln!(
-                                            "For seach query {}, size specified ({}) was less than the number of results returned, ({}).",
+                                            "For search query {}, size specified ({}) was less than the number of results returned, ({}).",
                                             search_query, size, s
                                         )
                                     }
@@ -109,11 +109,16 @@ pub async fn lookup(
 
     ordered_results.sort_by_key(|(idx, _)| *idx);
 
-    for (index, (_original_idx, collector)) in ordered_results.into_iter().enumerate() {
-        if cli {
+    if cli {
+        let header = match index_type {
+            IndexType::Taxon => TaxonCollector::HEADER,
+            IndexType::Assembly => AssemblyCollector::HEADER,
+        };
+        crate::outln!("{}", header)?;
+        for (_original_idx, collector) in ordered_results {
             match collector {
-                Collector::Taxon(e) => e.print_result(index)?,
-                Collector::Assembly(e) => e.print_result(index)?,
+                Collector::Taxon(e) => e.print_result()?,
+                Collector::Assembly(e) => e.print_result()?,
             }
         }
     }

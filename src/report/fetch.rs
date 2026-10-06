@@ -21,7 +21,7 @@ pub async fn fetch_report(
 
     let print_url = *matches.opt_one::<bool>("url").expect("cli default false");
     if print_url {
-        crate::outln!("GoaT lookup API URL:\t{}", url)?;
+        crate::outln!("GoaT report API URL:\t{}", url)?;
         return Ok(ReportAction::PrintedAndExit);
     }
 

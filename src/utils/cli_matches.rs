@@ -4,8 +4,7 @@ use crate::utils::{
     expression, tax_ranks, url, utils,
     variable_data::{GOAT_ASSEMBLY_VARIABLE_DATA, GOAT_TAXON_VARIABLE_DATA},
 };
-use crate::{IndexType, TaxType, GOAT_URL, TAXONOMY, UPPER_CLI_FILE_LIMIT, UPPER_CLI_SIZE_LIMIT};
-use std::path::PathBuf;
+use crate::{IndexType, TaxType, GOAT_URL, TAXONOMY, UPPER_CLI_SIZE_LIMIT};
 
 pub enum CliAction {
     Continue {
@@ -70,8 +69,6 @@ pub fn process_cli_args(
     let ranks = matches
         .opt_one::<String>("ranks")
         .expect("cli default = none");
-    let tax_name_op = matches.opt_one::<String>("taxon");
-    let filename_op = matches.opt_one::<PathBuf>("file");
     let result = index_type.to_string();
     let summarise_values_by = "count";
     // add in exclusion of missing and ancestral values by default, but allow the user
@@ -200,37 +197,7 @@ pub fn process_cli_args(
         (_, _) => return Err(Error::new(ErrorKind::GenericCli("if we get here, I've done something wrong in the `TaxType` enum logic. Please file an issue.".to_string()))),
     };
 
-    let url_vector: Vec<String>;
-    // if -t use this
-    match tax_name_op {
-        Some(s) => {
-            // catch empty string hanging here.
-            if s.is_empty() {
-                return Err(Error::new(ErrorKind::GenericCli(
-                    "empty string found, please specify a taxon.".to_string(),
-                )));
-            }
-            url_vector = utils::parse_comma_separated(s)
-        }
-        None => match filename_op {
-            Some(s) => {
-                url_vector = utils::lines_from_file(s)?;
-                // check length of vector and bail if > 1000
-                if url_vector.len() > *UPPER_CLI_FILE_LIMIT {
-                    let limit_string = utils::pretty_print_usize(*UPPER_CLI_FILE_LIMIT);
-                    return Err(Error::new(ErrorKind::GenericCli(format!(
-                        "number of taxa specified cannot exceed {}.",
-                        limit_string
-                    ))));
-                }
-            }
-            None => {
-                return Err(Error::new(ErrorKind::GenericCli(
-                    "one of -f (--file) or -t (--taxon) should be specified.".to_string(),
-                )))
-            }
-        },
-    }
+    let url_vector = utils::taxa_from_matches(matches)?;
 
     let url_vector_api = url::make_goat_urls(
         api,
@@ -263,7 +230,7 @@ pub fn process_cli_args(
     } else if print_goat_ui_url {
         for (index, url) in url_vector_api.iter().enumerate() {
             let new_url = url.replace("api/v2/", "");
-            crate::outln!("{}.\tGoaT API URL: {}", index, new_url)?;
+            crate::outln!("{}.\tGoaT UI URL: {}", index, new_url)?;
         }
         return Ok(CliAction::PrintedAndExit);
     }

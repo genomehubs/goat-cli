@@ -5,7 +5,7 @@
 use goat_cli::cli::build_cli;
 use goat_cli::report::report::{Report, ReportType};
 use goat_cli::utils::cli_matches::{process_cli_args, CliAction};
-use goat_cli::utils::utils::{generate_unique_strings, UniqueIdAction};
+use goat_cli::utils::utils::{generate_unique_strings, taxa_from_matches, UniqueIdAction};
 use goat_cli::IndexType;
 
 /// Parse `args` and return the matches of the innermost subcommand.
@@ -99,4 +99,43 @@ fn test_unique_ids_for_report_subcommands() {
         let matches = leaf_matches(args);
         assert_eq!(unique_ids(&matches, IndexType::Taxon).len(), 2);
     }
+}
+
+fn search_urls(args: &[&str], index_type: IndexType) -> Vec<String> {
+    let matches = leaf_matches(args);
+    let ids = unique_ids(&matches, index_type);
+    match process_cli_args(&matches, "search", ids, index_type).unwrap() {
+        CliAction::Continue { urls, .. } => urls,
+        CliAction::PrintedAndExit => panic!("unexpected PrintedAndExit"),
+    }
+}
+
+#[test]
+fn test_expression_without_taxon_searches_all_taxa() {
+    let urls = search_urls(&["taxon", "search", "-e", "genome_size > 1e11"], IndexType::Taxon);
+    assert_eq!(urls.len(), 1);
+    assert!(urls[0].contains("query=genome_size%20%3E%201e11&"), "{}", urls[0]);
+}
+
+#[test]
+fn test_neither_taxon_nor_expression_is_rejected_by_clap() {
+    let result = build_cli().try_get_matches_from(["goat-cli", "taxon", "search", "-v", "genome_size"]);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_or_expression_applies_taxon_to_each_branch() {
+    let urls = search_urls(
+        &["assembly", "search", "-t", "Hominidae", "-d", "-e", "assembly_level = chromosome OR assembly_span > 3e9"],
+        IndexType::Assembly,
+    );
+    let query = urls[0].split("query=").nth(1).unwrap().split('&').next().unwrap();
+    assert_eq!(query.matches("tax_tree%28Hominidae%29").count(), 2, "{}", query);
+}
+
+#[test]
+fn test_empty_taxon_list_is_an_error() {
+    let matches = leaf_matches(&["taxon", "search", "-t", " , "]);
+    let err = taxa_from_matches(&matches).unwrap_err();
+    assert!(err.to_string().contains("no taxa found"), "{}", err);
 }

@@ -1,11 +1,8 @@
-use crate::error::{Error, ErrorKind, Result};
+use crate::error::Result;
 use crate::utils::args::ArgMatchesExt;
 use crate::utils::url::percent_encode_query_value;
-use crate::utils::utils::{
-    lines_from_file, parse_comma_separated, some_kind_of_uppercase_first_letter,
-};
-use crate::{IndexType, GOAT_URL, TAXONOMY, UPPER_CLI_FILE_LIMIT};
-use std::path::PathBuf;
+use crate::utils::utils::{some_kind_of_uppercase_first_letter, taxa_from_matches};
+use crate::{IndexType, GOAT_URL, TAXONOMY};
 use url::Url;
 
 /// The lookup struct
@@ -49,32 +46,9 @@ impl Lookups {
     /// Constructor which takes the CLI args and returns
     /// `Self`.
     pub fn new(matches: &clap::ArgMatches, index_type: IndexType) -> Result<Self> {
-        let tax_name_op = matches.opt_one::<String>("taxon");
-        let filename_op = matches.opt_one::<PathBuf>("file");
         // safe to unwrap, as default is defined.
         let no_hits = *matches.opt_one::<u64>("size").expect("cli default = 10");
-
-        let tax_name_vector: Vec<String>;
-        match tax_name_op {
-            Some(s) => tax_name_vector = parse_comma_separated(s),
-            None => match filename_op {
-                Some(s) => {
-                    tax_name_vector = lines_from_file(s)?;
-                    // check length of vector and bail if > 1000
-                    if tax_name_vector.len() > *UPPER_CLI_FILE_LIMIT {
-                        return Err(Error::new(ErrorKind::GenericCli(format!(
-                            "number of taxa specified cannot exceed {}.",
-                            *UPPER_CLI_FILE_LIMIT
-                        ))));
-                    }
-                }
-                None => {
-                    return Err(Error::new(ErrorKind::GenericCli(format!(
-                        "one of -f (--file) or -t (--taxon) should be specified."
-                    ))))
-                }
-            },
-        }
+        let tax_name_vector = taxa_from_matches(matches)?;
 
         let mut res = Vec::new();
 
@@ -103,29 +77,22 @@ impl Lookups {
     }
 }
 
-/// Took this out of `print_result` as
-fn format_suggestion_string(suggestions: &[Option<String>]) -> Result<()> {
-    let mut suggestion_str = String::new();
-    for el in suggestions {
-        match el {
-            Some(s) => {
-                suggestion_str += &some_kind_of_uppercase_first_letter(&s[..]);
-                suggestion_str += ", ";
-            }
-            None => {}
-        }
-    }
-    // remove last comma
-    if suggestion_str.len() > 2 {
-        suggestion_str.drain(suggestion_str.len() - 2..);
-        return Err(Error::new(ErrorKind::GenericCli(format!(
-            "did you mean: {}?",
-            suggestion_str
-        ))));
+/// Tell the user (on stderr) that a search had no hits, with any
+/// suggestions, so the rest of a batch can carry on.
+fn print_no_results(search: &str, suggestions: &[Option<String>]) {
+    let suggestions = suggestions
+        .iter()
+        .flatten()
+        .map(|s| some_kind_of_uppercase_first_letter(s))
+        .collect::<Vec<_>>();
+    if suggestions.is_empty() {
+        eprintln!("No results for \"{}\".", search);
     } else {
-        return Err(Error::new(ErrorKind::GenericCli(format!(
-            "there are no results."
-        ))));
+        eprintln!(
+            "No results for \"{}\" - did you mean: {}?",
+            search,
+            suggestions.join(", ")
+        );
     }
 }
 
@@ -152,85 +119,45 @@ pub struct TaxonCollector {
 }
 
 impl TaxonCollector {
-    /// Print the result from a collector struct.
-    /// add an index, so we don't repeat headers
-    pub fn print_result(&self, index: usize) -> Result<()> {
-        // if we got a hit
-        match &self.search {
-            Some(search) => {
-                // if we got a suggestion
-                match &self.suggestions {
-                    // we end up here even if there are no *actual* suggestions.
-                    Some(suggestions) => format_suggestion_string(suggestions),
-                    // no suggestion, so we got a hit
-                    None => {
-                        // Vec<Option<String>> -> Option<Vec<String>>
-                        // these vecs should all be the same length?
-                        let taxon_id = self.taxon_id.clone();
-                        let taxon_rank = self.taxon_rank.clone();
-                        let taxon_names = self.taxon_names.clone();
+    /// The TSV header for [`TaxonCollector::print_result`].
+    pub const HEADER: &'static str = "taxon\trank\tsearch_query\tname\ttype";
 
-                        let taxon_ids_op: Option<Vec<String>> = taxon_id.into_iter().collect();
-                        let taxon_ranks_op: Option<Vec<String>> = taxon_rank.into_iter().collect();
-                        // same but for nested vec.
-                        let taxon_names_op: Option<Vec<Vec<(String, String)>>> =
-                            taxon_names.into_iter().collect();
-
-                        // print headers for first result only.
-                        if index == 0 {
-                            crate::outln!("taxon\trank\tsearch_query\tname\ttype")?;
-                        }
-                        match taxon_names_op {
-                            Some(n) => {
-                                // get taxon_ids and taxon_ranks
-                                let taxon_ids = match taxon_ids_op {
-                                    Some(t) => t,
-                                    // empty vec
-                                    None => vec![],
-                                };
-                                let taxon_ranks = match taxon_ranks_op {
-                                    Some(t) => t,
-                                    // empty vec
-                                    None => vec![],
-                                };
-                                // zip these vectors together
-                                let zipped_taxon_vectors =
-                                    taxon_ids.iter().zip(taxon_ranks.iter()).zip(n.iter());
-
-                                // this may not be the best way to print
-                                // as everything has to be loaded into mem
-                                // however, each result string should be small.
-                                let mut whole_res_string = String::new();
-
-                                for ((taxon_id, taxon_rank), taxon_ranks) in zipped_taxon_vectors {
-                                    for el in taxon_ranks {
-                                        let row = format!(
-                                            "{}\t{}\t{}\t{}\t{}\n",
-                                            taxon_id, taxon_rank, search, el.0, el.1
-                                        );
-                                        whole_res_string += &row;
-                                    }
-                                }
-                                // remove trailing newline
-                                whole_res_string.pop();
-                                crate::outln!("{}", whole_res_string)?;
-                                Ok(())
-                            }
-                            None => {
-                                return Err(Error::new(ErrorKind::GenericCli(format!(
-                                    "there were no taxon names."
-                                ))))
-                            }
-                        }
-                    }
-                }
-            }
-            None => return Err(Error::new(ErrorKind::GenericCli(format!("no results.")))),
+    /// Print the rows for this result. A search without hits is reported
+    /// on stderr, rather than as an error, so other searches still print.
+    pub fn print_result(&self) -> Result<()> {
+        let search = self.search.as_deref().unwrap_or_default();
+        // GoaT only returns suggestions when there are no hits
+        if let Some(suggestions) = &self.suggestions {
+            print_no_results(search, suggestions);
+            return Ok(());
         }
+
+        let mut rows = String::new();
+        for ((taxon_id, taxon_rank), taxon_names) in self
+            .taxon_id
+            .iter()
+            .zip(self.taxon_rank.iter())
+            .zip(self.taxon_names.iter())
+        {
+            let (Some(taxon_id), Some(taxon_rank), Some(taxon_names)) =
+                (taxon_id, taxon_rank, taxon_names)
+            else {
+                continue;
+            };
+            for (name, class) in taxon_names {
+                rows += &format!("{}\t{}\t{}\t{}\t{}\n", taxon_id, taxon_rank, search, name, class);
+            }
+        }
+        if rows.is_empty() {
+            print_no_results(search, &[]);
+            return Ok(());
+        }
+        crate::outln!("{}", rows.trim_end_matches('\n'))?;
+        Ok(())
     }
 }
 
-/// Collect the results from concurrent `goat-cli taxon lookup`
+/// Collect the results from concurrent `goat-cli assembly lookup`
 /// queries.
 #[derive(Clone)]
 pub struct AssemblyCollector {
@@ -247,77 +174,34 @@ pub struct AssemblyCollector {
 }
 
 impl AssemblyCollector {
-    /// Print the result from a collector struct.
-    /// add an index, so we don't repeat headers
-    pub fn print_result(&self, index: usize) -> Result<()> {
-        // if we got a hit
-        match &self.search {
-            Some(search) => {
-                // if we got a suggestion
-                match &self.suggestions {
-                    // we end up here even if there are no *actual* suggestions.
-                    Some(suggestions) => format_suggestion_string(suggestions),
-                    // no suggestion, so we got a hit
-                    None => {
-                        // Vec<Option<String>> -> Option<Vec<String>>
-                        // these vecs should all be the same length?
-                        let taxon_id = self.taxon_id.clone();
-                        let assembly_identifiers = self.identifiers.clone();
+    /// The TSV header for [`AssemblyCollector::print_result`].
+    pub const HEADER: &'static str = "taxon\tsearch_query\tidentifier\ttype";
 
-                        let taxon_ids_op: Option<Vec<String>> = taxon_id.into_iter().collect();
-                        // same but for nested vec.
-                        let assembly_identifiers_op: Option<Vec<Vec<(String, String)>>> =
-                            assembly_identifiers.into_iter().collect();
+    /// Print the rows for this result. A search without hits is reported
+    /// on stderr, rather than as an error, so other searches still print.
+    pub fn print_result(&self) -> Result<()> {
+        let search = self.search.as_deref().unwrap_or_default();
+        // GoaT only returns suggestions when there are no hits
+        if let Some(suggestions) = &self.suggestions {
+            print_no_results(search, suggestions);
+            return Ok(());
+        }
 
-                        // print headers for first result only.
-                        if index == 0 {
-                            crate::outln!("taxon\tsearch_query\tidentifier\ttype")?;
-                        }
-                        match assembly_identifiers_op {
-                            Some(n) => {
-                                // get taxon_ids and taxon_ranks
-                                let taxon_ids = match taxon_ids_op {
-                                    Some(t) => t,
-                                    // empty vec
-                                    None => vec![],
-                                };
-                                // zip these vectors together
-                                let zipped_taxon_vectors = taxon_ids.iter().zip(n.iter());
-
-                                // this may not be the best way to print
-                                // as everything has to be loaded into mem
-                                // however, each result string should be small.
-                                let mut whole_res_string = String::new();
-
-                                for (taxon_id, taxon_ranks) in zipped_taxon_vectors {
-                                    for el in taxon_ranks {
-                                        let row = format!(
-                                            "{}\t{}\t{}\t{}\n",
-                                            taxon_id, search, el.0, el.1
-                                        );
-                                        whole_res_string += &row;
-                                    }
-                                }
-                                // remove trailing newline
-                                whole_res_string.pop();
-                                crate::outln!("{}", whole_res_string)?;
-                                Ok(())
-                            }
-                            None => {
-                                return Err(Error::new(ErrorKind::GenericCli(format!(
-                                    "there were no taxon names."
-                                ))))
-                            }
-                        }
-                    }
-                }
-            }
-            None => {
-                return Err(Error::new(ErrorKind::GenericCli(format!(
-                    "there are no results."
-                ))))
+        let mut rows = String::new();
+        for (taxon_id, identifiers) in self.taxon_id.iter().zip(self.identifiers.iter()) {
+            let (Some(taxon_id), Some(identifiers)) = (taxon_id, identifiers) else {
+                continue;
+            };
+            for (identifier, class) in identifiers {
+                rows += &format!("{}\t{}\t{}\t{}\n", taxon_id, search, identifier, class);
             }
         }
+        if rows.is_empty() {
+            print_no_results(search, &[]);
+            return Ok(());
+        }
+        crate::outln!("{}", rows.trim_end_matches('\n'))?;
+        Ok(())
     }
 }
 

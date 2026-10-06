@@ -1,6 +1,6 @@
 use crate::error::{Error, ErrorKind, Result};
 use crate::utils::{
-    expression::Variable,
+    expression::{canonical_field, Variable},
     utils::{did_you_mean, parse_comma_separated},
 };
 use std::collections::BTreeMap;
@@ -25,23 +25,7 @@ impl<'a> Variables<'a> {
         &self,
         reference_data: &BTreeMap<&'static str, Variable<'static>>,
     ) -> Result<String> {
-        let variable = self.variables;
-
-        let var_vec_check = reference_data
-            .iter()
-            .map(|(e, _)| e.to_string())
-            .collect::<Vec<String>>();
-
-        if !var_vec_check.contains(&variable.to_string()) {
-            let var_vec_mean = did_you_mean(&var_vec_check, variable);
-            if let Some(value) = var_vec_mean {
-                return Err(Error::new(ErrorKind::Variable(format!(
-                    "you typed \"{}\" - did you mean \"{}\"?",
-                    variable, value
-                ))));
-            }
-        }
-        Ok(variable.to_string())
+        resolve(self.variables.trim(), reference_data)
     }
 
     /// Simple parsing of a comma separated string,
@@ -56,25 +40,10 @@ impl<'a> Variables<'a> {
         // this is a pretty hacky way of adding this in.
         taxon_toggle_direct: bool,
     ) -> Result<String> {
-        let split_vec = parse_comma_separated(self.variables);
-        // check that all the strings in split_vec are real
-        let var_vec_check = reference_data
+        let split_vec = parse_comma_separated(self.variables)
             .iter()
-            .map(|(e, _)| e.to_string())
-            .collect::<Vec<String>>();
-
-        for variable in &split_vec {
-            // only if we find something which does not match...
-            if !var_vec_check.contains(variable) {
-                let var_vec_mean = did_you_mean(&var_vec_check, variable);
-                if let Some(value) = var_vec_mean {
-                    return Err(Error::new(ErrorKind::Variable(format!(
-                        "you typed \"{}\" - did you mean \"{}\"?",
-                        variable, value
-                    ))));
-                }
-            }
-        }
+            .map(|variable| resolve(variable, reference_data))
+            .collect::<Result<Vec<_>>>()?;
 
         let mut fields: Vec<String> = Vec::new();
         for el in split_vec {
@@ -96,25 +65,10 @@ impl<'a> Variables<'a> {
         &self,
         reference_data: &BTreeMap<&'static str, Variable<'static>>,
     ) -> Result<Vec<(String, String)>> {
-        let split_vec = parse_comma_separated(self.variables);
-        // check that all the strings in split_vec are real
-        let var_vec_check = reference_data
+        let split_vec = parse_comma_separated(self.variables)
             .iter()
-            .map(|(e, _)| e.to_string())
-            .collect::<Vec<String>>();
-
-        for variable in &split_vec {
-            // only if we find something which does not match...
-            if !var_vec_check.contains(variable) {
-                let var_vec_mean = did_you_mean(&var_vec_check, variable);
-                if let Some(value) = var_vec_mean {
-                    return Err(Error::new(ErrorKind::Variable(format!(
-                        "you typed \"{}\" - did you mean \"{}\"?",
-                        variable, value
-                    ))));
-                }
-            }
-        }
+            .map(|variable| resolve(variable, reference_data))
+            .collect::<Result<Vec<_>>>()?;
 
         let mut pairs = Vec::new();
         for (exclude_index, field) in split_vec.into_iter().enumerate() {
@@ -124,6 +78,28 @@ impl<'a> Variables<'a> {
 
         Ok(pairs)
     }
+}
+
+/// Resolve a variable name to its canonical form (see
+/// [`canonical_field`]), or error with a suggestion.
+fn resolve(
+    variable: &str,
+    reference_data: &BTreeMap<&'static str, Variable<'static>>,
+) -> Result<String> {
+    if let Some(canonical) = canonical_field(variable, reference_data) {
+        return Ok(canonical.to_string());
+    }
+    let possibilities = reference_data
+        .keys()
+        .map(|k| k.to_string())
+        .collect::<Vec<String>>();
+    let hint = did_you_mean(&possibilities, variable)
+        .map(|value| format!(" - did you mean \"{}\"?", value))
+        .unwrap_or_default();
+    Err(Error::new(ErrorKind::Variable(format!(
+        "unknown variable \"{}\"{}",
+        variable, hint
+    ))))
 }
 
 #[cfg(test)]
@@ -190,6 +166,13 @@ mod tests {
     }
 
     // ── parse_exclude ────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_parse_accepts_synonyms_hyphens_and_case() {
+        let v = Variables::new("ebp_metric_date,Genome-Size");
+        let result = v.parse(&GOAT_TAXON_VARIABLE_DATA, false).unwrap();
+        assert_eq!(result, "ebp_standard_date,genome_size");
+    }
 
     #[test]
     fn test_parse_exclude_contains_ancestral_and_missing_segments() {

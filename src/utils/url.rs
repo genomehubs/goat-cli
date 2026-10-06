@@ -382,6 +382,35 @@ fn combine_variable_string(v: String, fb: String) -> String {
     }
 }
 
+/// Build the `query` value from its parts.
+///
+/// An empty `taxon` makes a query across all taxa. `tax_rank` and
+/// `expression` are as returned by [`crate::utils::tax_ranks::TaxRanks::parse`]
+/// and [`format_expression`], i.e. starting with `" AND "`. As `OR` binds
+/// more loosely than `AND` in the API, the taxon and rank are repeated in
+/// each `OR` branch of the expression, so they apply to all of them.
+pub fn build_query(taxon: &str, tax_tree: &str, tax_rank: &str, expression: &str) -> String {
+    let taxon_term = if taxon.is_empty() {
+        String::new()
+    } else {
+        format!("tax_{}({})", tax_tree, taxon)
+    };
+    let tax_rank = tax_rank.trim_start_matches(" AND ");
+    let expression = expression.trim_start_matches(" AND ");
+
+    expression
+        .split(" OR ")
+        .map(|group| {
+            [taxon_term.as_str(), tax_rank, group]
+                .into_iter()
+                .filter(|part| !part.is_empty())
+                .collect::<Vec<_>>()
+                .join(" AND ")
+        })
+        .collect::<Vec<_>>()
+        .join(" OR ")
+}
+
 /// The function which creats the GoaT API URLs
 /// which are then used as GET requests.
 pub fn make_goat_urls(
@@ -445,13 +474,7 @@ pub fn make_goat_urls(
     let mut res = Vec::new();
     for (taxon, query_id_suffix) in taxids.iter().zip(unique_ids.iter()) {
         // Build the GoaT query language value (plain text; encoded below)
-        let mut query_value = format!("tax_{}({})", tax_tree, taxon);
-        if !tax_rank.is_empty() {
-            query_value.push_str(tax_rank);
-        }
-        if !expression.is_empty() {
-            query_value.push_str(expression);
-        }
+        let query_value = build_query(taxon, tax_tree, tax_rank, expression);
 
         // Build the raw query string manually so that spaces are encoded as
         // %20 (not +).  url::query_pairs_mut uses form-encoding which GoaT rejects.
