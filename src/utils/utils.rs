@@ -1,10 +1,11 @@
 use std::{
     fs::File,
-    io::{BufRead, BufReader},
+    io::{BufRead, BufReader, BufWriter, Write},
     path::{Path, PathBuf},
 };
 
 use crate::error::{Error, ErrorKind, Result};
+use crate::utils::args::ArgMatchesExt;
 use crate::{
     utils::expression,
     utils::variable_data::{GOAT_ASSEMBLY_VARIABLE_DATA, GOAT_TAXON_VARIABLE_DATA},
@@ -26,19 +27,19 @@ pub fn generate_unique_strings(
     matches: &clap::ArgMatches,
     index_type: IndexType,
 ) -> Result<UniqueIdAction> {
-    let tax_name_op = matches.get_one::<String>("taxon");
-    let filename_op = matches.get_one::<PathBuf>("file");
+    let tax_name_op = matches.opt_one::<String>("taxon");
+    let filename_op = matches.opt_one::<PathBuf>("file");
     // print expression table
     // got to include this here, otherwise we error.
     // reports don't include this.
-    let print_expression = matches.get_one::<bool>("print-expression");
+    let print_expression = matches.opt_one::<bool>("print-expression");
 
     if let Some(p) = print_expression {
         if *p {
             match index_type {
-                IndexType::Taxon => expression::print_variable_data(&GOAT_TAXON_VARIABLE_DATA),
+                IndexType::Taxon => expression::print_variable_data(&GOAT_TAXON_VARIABLE_DATA)?,
                 IndexType::Assembly => {
-                    expression::print_variable_data(&GOAT_ASSEMBLY_VARIABLE_DATA)
+                    expression::print_variable_data(&GOAT_ASSEMBLY_VARIABLE_DATA)?
                 }
             }
             return Ok(UniqueIdAction::PrintedAndExit);
@@ -163,8 +164,10 @@ pub fn format_tsv_output(awaited_fetches: Vec<Result<String>>) -> Result<()> {
         }
     });
 
+    let mut out = BufWriter::new(std::io::stdout().lock());
+
     match header {
-        Some(h) => println!("{}", h),
+        Some(h) => writeln!(out, "{}", h)?,
         None => {
             return Err(Error::new(ErrorKind::FormatTSV(
                 "no header found (please report if you get this error!)".to_string(),
@@ -180,10 +183,11 @@ pub fn format_tsv_output(awaited_fetches: Vec<Result<String>>) -> Result<()> {
 
         let tsv_iter = tsv.split('\n');
         for row in tsv_iter.skip(1) {
-            println!("{}", row)
+            writeln!(out, "{}", row)?;
         }
     }
 
+    out.flush()?;
     Ok(())
 }
 

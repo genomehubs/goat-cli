@@ -5,6 +5,7 @@
 use crate::client::GoatClient;
 use crate::error::{Error, ErrorKind, Result};
 use futures::StreamExt;
+use std::io::{BufWriter, Write};
 
 use crate::utils::cli_matches::{self, CliAction};
 use crate::IndexType;
@@ -54,15 +55,17 @@ pub async fn count(
         true => {
             // print to console
             let mut outer_count = 0;
-            println!("search_query\tcount");
+            let mut out = BufWriter::new(std::io::stdout().lock());
+            writeln!(out, "search_query\tcount")?;
             for el in awaited_fetches {
                 let (search_query, count) = match el {
                     Ok(e) => e,
                     Err(e) => return Err(e),
                 };
-                println!("{}\t{}", search_query, count);
+                writeln!(out, "{}\t{}", search_query, count)?;
                 outer_count += count;
             }
+            out.flush()?;
             Ok(Some(outer_count))
         }
         false => {

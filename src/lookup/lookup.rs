@@ -1,4 +1,5 @@
 use crate::error::{Error, ErrorKind, Result};
+use crate::utils::args::ArgMatchesExt;
 use crate::utils::url::percent_encode_query_value;
 use crate::utils::utils::{
     lines_from_file, parse_comma_separated, some_kind_of_uppercase_first_letter,
@@ -48,10 +49,10 @@ impl Lookups {
     /// Constructor which takes the CLI args and returns
     /// `Self`.
     pub fn new(matches: &clap::ArgMatches, index_type: IndexType) -> Result<Self> {
-        let tax_name_op = matches.get_one::<String>("taxon");
-        let filename_op = matches.get_one::<PathBuf>("file");
+        let tax_name_op = matches.opt_one::<String>("taxon");
+        let filename_op = matches.opt_one::<PathBuf>("file");
         // safe to unwrap, as default is defined.
-        let no_hits = *matches.get_one::<u64>("size").expect("cli default = 10");
+        let no_hits = *matches.opt_one::<u64>("size").expect("cli default = 10");
 
         let tax_name_vector: Vec<String>;
         match tax_name_op {
@@ -177,7 +178,7 @@ impl TaxonCollector {
 
                         // print headers for first result only.
                         if index == 0 {
-                            println!("taxon\trank\tsearch_query\tname\ttype");
+                            crate::outln!("taxon\trank\tsearch_query\tname\ttype")?;
                         }
                         match taxon_names_op {
                             Some(n) => {
@@ -212,7 +213,8 @@ impl TaxonCollector {
                                 }
                                 // remove trailing newline
                                 whole_res_string.pop();
-                                Ok(println!("{}", whole_res_string))
+                                crate::outln!("{}", whole_res_string)?;
+                                Ok(())
                             }
                             None => {
                                 return Err(Error::new(ErrorKind::GenericCli(format!(
@@ -269,7 +271,7 @@ impl AssemblyCollector {
 
                         // print headers for first result only.
                         if index == 0 {
-                            println!("taxon\tsearch_query\tidentifier\ttype");
+                            crate::outln!("taxon\tsearch_query\tidentifier\ttype")?;
                         }
                         match assembly_identifiers_op {
                             Some(n) => {
@@ -298,7 +300,8 @@ impl AssemblyCollector {
                                 }
                                 // remove trailing newline
                                 whole_res_string.pop();
-                                Ok(println!("{}", whole_res_string))
+                                crate::outln!("{}", whole_res_string)?;
+                                Ok(())
                             }
                             None => {
                                 return Err(Error::new(ErrorKind::GenericCli(format!(

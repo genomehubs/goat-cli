@@ -1,4 +1,5 @@
 use crate::error::{Error, ErrorKind, Result};
+use crate::utils::args::ArgMatchesExt;
 use crate::utils::{
     expression, tax_ranks, url, utils,
     variable_data::{GOAT_ASSEMBLY_VARIABLE_DATA, GOAT_TAXON_VARIABLE_DATA},
@@ -26,13 +27,13 @@ pub fn process_cli_args(
     index_type: IndexType,
 ) -> Result<CliAction> {
     // command line args same between taxon/assembly
-    let print_url = matches.get_one::<bool>("url").copied().unwrap_or(false);
+    let print_url = matches.opt_one::<bool>("url").copied().unwrap_or(false);
     let print_goat_ui_url = matches
-        .get_one::<bool>("goat-ui-url")
+        .opt_one::<bool>("goat-ui-url")
         .copied()
         .unwrap_or(false);
     let tax_tree_enum = match matches
-        .get_one::<bool>("descendents")
+        .opt_one::<bool>("descendents")
         .copied()
         .unwrap_or(false)
     {
@@ -40,112 +41,112 @@ pub fn process_cli_args(
         false => TaxType::Name,
     };
     // I think lineage is of limited value for assembly? but keep here anyways
-    let tax_lineage_enum = match *matches.get_one::<bool>("lineage").unwrap_or(&false) {
+    let tax_lineage_enum = match *matches.opt_one::<bool>("lineage").unwrap_or(&false) {
         true => TaxType::Lineage,
         false => TaxType::Name,
     };
     let include_estimates = matches
-        .get_one::<bool>("include-estimates")
+        .opt_one::<bool>("include-estimates")
         .copied()
         .unwrap_or(false);
-    let expression = match matches.get_one::<String>("expression") {
+    let expression = match matches.opt_one::<String>("expression") {
         Some(s) => url::format_expression(s, index_type)?,
         None => "".to_string(),
     };
     // map needed to convert Option<String> -> Option<&str>
-    let variable_string = matches.get_one::<String>("variables").map(|x| &**x);
+    let variable_string = matches.opt_one::<String>("variables").map(|x| &**x);
     // this output will differ depending on taxon/assembly
     // but keep cli arg the same
     let print_expression = matches
-        .get_one::<bool>("print-expression")
+        .opt_one::<bool>("print-expression")
         .copied()
         .unwrap_or(false);
 
-    let tax_rank = match matches.get_one::<String>("tax-rank") {
+    let tax_rank = match matches.opt_one::<String>("tax-rank") {
         Some(t) => tax_ranks::TaxRanks::init().parse(t, false)?,
         None => "".to_string(),
     };
-    let size = *matches.get_one::<u64>("size").expect("cli default = 50");
+    let size = *matches.opt_one::<u64>("size").expect("cli default = 50");
     let ranks = matches
-        .get_one::<String>("ranks")
+        .opt_one::<String>("ranks")
         .expect("cli default = none");
-    let tax_name_op = matches.get_one::<String>("taxon");
-    let filename_op = matches.get_one::<PathBuf>("file");
+    let tax_name_op = matches.opt_one::<String>("taxon");
+    let filename_op = matches.opt_one::<PathBuf>("file");
     let result = index_type.to_string();
     let summarise_values_by = "count";
     // add in exclusion of missing and ancestral values by default, but allow the user
     // to toggle this on the command line
-    let exclude = *matches.get_one::<bool>("exclude").unwrap_or(&false);
+    let exclude = *matches.opt_one::<bool>("exclude").unwrap_or(&false);
 
     // command line args unique to taxon
-    let taxon_include_raw_values = *matches.get_one::<bool>("taxon-raw").unwrap_or(&false);
+    let taxon_include_raw_values = *matches.opt_one::<bool>("taxon-raw").unwrap_or(&false);
     let taxon_tidy = match taxon_include_raw_values {
         true => true,
-        false => *matches.get_one::<bool>("taxon-tidy").unwrap_or(&false),
+        false => *matches.opt_one::<bool>("taxon-tidy").unwrap_or(&false),
     };
-    let taxon_assembly = *matches.get_one::<bool>("taxon-assembly").unwrap_or(&false);
-    let taxon_cvalues = *matches.get_one::<bool>("taxon-c-values").unwrap_or(&false);
-    let taxon_karyotype = *matches.get_one::<bool>("taxon-karyotype").unwrap_or(&false);
+    let taxon_assembly = *matches.opt_one::<bool>("taxon-assembly").unwrap_or(&false);
+    let taxon_cvalues = *matches.opt_one::<bool>("taxon-c-values").unwrap_or(&false);
+    let taxon_karyotype = *matches.opt_one::<bool>("taxon-karyotype").unwrap_or(&false);
     let taxon_gs = *matches
-        .get_one::<bool>("taxon-genome-size")
+        .opt_one::<bool>("taxon-genome-size")
         .unwrap_or(&false);
-    let taxon_busco = *matches.get_one::<bool>("taxon-busco").unwrap_or(&false);
+    let taxon_busco = *matches.opt_one::<bool>("taxon-busco").unwrap_or(&false);
     let taxon_gc_percent = *matches
-        .get_one::<bool>("taxon-gc-percent")
+        .opt_one::<bool>("taxon-gc-percent")
         .unwrap_or(&false);
     let taxon_mitochondrion = *matches
-        .get_one::<bool>("taxon-mitochondria")
+        .opt_one::<bool>("taxon-mitochondria")
         .unwrap_or(&false);
-    let taxon_plastid = *matches.get_one::<bool>("taxon-plastid").unwrap_or(&false);
-    let taxon_ploidy = *matches.get_one::<bool>("taxon-ploidy").unwrap_or(&false);
+    let taxon_plastid = *matches.opt_one::<bool>("taxon-plastid").unwrap_or(&false);
+    let taxon_ploidy = *matches.opt_one::<bool>("taxon-ploidy").unwrap_or(&false);
     let taxon_sex_determination = *matches
-        .get_one::<bool>("taxon-sex-determination")
+        .opt_one::<bool>("taxon-sex-determination")
         .unwrap_or(&false);
     let taxon_legislation = *matches
-        .get_one::<bool>("taxon-legislation")
+        .opt_one::<bool>("taxon-legislation")
         .unwrap_or(&false);
-    let taxon_names = *matches.get_one::<bool>("taxon-names").unwrap_or(&false);
+    let taxon_names = *matches.opt_one::<bool>("taxon-names").unwrap_or(&false);
     let taxon_target_lists = *matches
-        .get_one::<bool>("taxon-target-lists")
+        .opt_one::<bool>("taxon-target-lists")
         .unwrap_or(&false);
-    let taxon_n50 = *matches.get_one::<bool>("taxon-n50").unwrap_or(&false);
+    let taxon_n50 = *matches.opt_one::<bool>("taxon-n50").unwrap_or(&false);
     let taxon_bioproject = *matches
-        .get_one::<bool>("taxon-bioproject")
+        .opt_one::<bool>("taxon-bioproject")
         .unwrap_or(&false);
     let taxon_gene_count = *matches
-        .get_one::<bool>("taxon-gene-count")
+        .opt_one::<bool>("taxon-gene-count")
         .unwrap_or(&false);
-    let taxon_date = *matches.get_one::<bool>("taxon-date").unwrap_or(&false);
+    let taxon_date = *matches.opt_one::<bool>("taxon-date").unwrap_or(&false);
     let taxon_country_list = *matches
-        .get_one::<bool>("taxon-country-list")
+        .opt_one::<bool>("taxon-country-list")
         .unwrap_or(&false);
-    let taxon_status = *matches.get_one::<bool>("taxon-status").unwrap_or(&false);
-    let taxon_toggle_direct = *matches.get_one::<bool>("toggle-direct").unwrap_or(&false);
+    let taxon_status = *matches.opt_one::<bool>("taxon-status").unwrap_or(&false);
+    let taxon_toggle_direct = *matches.opt_one::<bool>("toggle-direct").unwrap_or(&false);
 
     // command line args unique to assembly
     let assembly_assembly = *matches
-        .get_one::<bool>("assembly-assembly")
+        .opt_one::<bool>("assembly-assembly")
         .unwrap_or(&false);
     let assembly_karyotype = *matches
-        .get_one::<bool>("assembly-karyotype")
+        .opt_one::<bool>("assembly-karyotype")
         .unwrap_or(&false);
-    let assembly_contig = *matches.get_one::<bool>("assembly-contig").unwrap_or(&false);
+    let assembly_contig = *matches.opt_one::<bool>("assembly-contig").unwrap_or(&false);
     let assembly_scaffold = *matches
-        .get_one::<bool>("assembly-scaffold")
+        .opt_one::<bool>("assembly-scaffold")
         .unwrap_or(&false);
     let assembly_gc = *matches
-        .get_one::<bool>("assembly-gc-percent")
+        .opt_one::<bool>("assembly-gc-percent")
         .unwrap_or(&false);
     let assembly_gene = *matches
-        .get_one::<bool>("assembly-gene-count")
+        .opt_one::<bool>("assembly-gene-count")
         .unwrap_or(&false);
-    let assembly_busco = *matches.get_one::<bool>("assembly-busco").unwrap_or(&false);
-    let assembly_btk = *matches.get_one::<bool>("assembly-btk").unwrap_or(&false);
+    let assembly_busco = *matches.opt_one::<bool>("assembly-busco").unwrap_or(&false);
+    let assembly_btk = *matches.opt_one::<bool>("assembly-btk").unwrap_or(&false);
 
     if print_expression {
         match index_type {
-            IndexType::Taxon => expression::print_variable_data(&GOAT_TAXON_VARIABLE_DATA),
-            IndexType::Assembly => expression::print_variable_data(&GOAT_ASSEMBLY_VARIABLE_DATA),
+            IndexType::Taxon => expression::print_variable_data(&GOAT_TAXON_VARIABLE_DATA)?,
+            IndexType::Assembly => expression::print_variable_data(&GOAT_ASSEMBLY_VARIABLE_DATA)?,
         }
         return Ok(CliAction::PrintedAndExit);
     }
@@ -256,13 +257,13 @@ pub fn process_cli_args(
 
     if print_url {
         for (index, url) in url_vector_api.iter().enumerate() {
-            println!("{}.\tGoaT API URL: {}", index, url);
+            crate::outln!("{}.\tGoaT API URL: {}", index, url)?;
         }
         return Ok(CliAction::PrintedAndExit);
     } else if print_goat_ui_url {
         for (index, url) in url_vector_api.iter().enumerate() {
             let new_url = url.replace("api/v2/", "");
-            println!("{}.\tGoaT API URL: {}", index, new_url);
+            crate::outln!("{}.\tGoaT API URL: {}", index, new_url)?;
         }
         return Ok(CliAction::PrintedAndExit);
     }

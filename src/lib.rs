@@ -7,6 +7,17 @@
 use lazy_static::lazy_static;
 use std::fmt;
 
+/// Like `println!`, but returns the [`std::io::Result`] rather than
+/// panicking, so a closed stdout (e.g. `goat-cli ... | head`) can be
+/// handled gracefully.
+#[macro_export]
+macro_rules! outln {
+    ($($arg:tt)*) => {{
+        use std::io::Write as _;
+        writeln!(std::io::stdout().lock(), $($arg)*)
+    }};
+}
+
 /// The cli itself
 pub mod cli;
 /// Shared HTTP client for all GoaT API requests.

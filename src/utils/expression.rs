@@ -208,9 +208,9 @@ pub struct Variable<'a> {
 struct ColHeader(#[tabled(rename = "Expression Name")] &'static str);
 
 /// Print the table of GoaT variable data.
-pub fn print_variable_data(data: &BTreeMap<&'static str, Variable<'static>>) {
+pub fn print_variable_data(data: &BTreeMap<&'static str, Variable<'static>>) -> Result<()> {
     // for some space
-    println!();
+    crate::outln!()?;
     // map the header to a tuple combination
     // see https://github.com/zhiburt/tabled/blob/master/README.md
     let table_data = data
@@ -230,7 +230,8 @@ pub fn print_variable_data(data: &BTreeMap<&'static str, Variable<'static>>) {
         .with(Modify::new(Rows::new(table_data.len()..)).with(Width::wrap(30 * 4).keep_words()))
         .to_string();
 
-    println!("{}", table_string);
+    crate::outln!("{}", table_string)?;
+    Ok(())
 }
 
 /// The CLI expression which needs to be parsed.

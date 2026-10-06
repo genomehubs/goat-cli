@@ -1,5 +1,6 @@
 use crate::client::GoatClient;
 use crate::error::{Error, ErrorKind, Result};
+use crate::utils::args::ArgMatchesExt;
 use crate::report::report::{Report, ReportType};
 use futures::StreamExt;
 use std::io::Write;
@@ -18,9 +19,9 @@ pub async fn fetch_report(
     let report = Report::new(matches, report_type)?;
     let url = report.make_url(unique_ids)?;
 
-    let print_url = *matches.get_one::<bool>("url").expect("cli default false");
+    let print_url = *matches.opt_one::<bool>("url").expect("cli default false");
     if print_url {
-        println!("GoaT lookup API URL:\t{}", url);
+        crate::outln!("GoaT lookup API URL:\t{}", url)?;
         return Ok(ReportAction::PrintedAndExit);
     }
 
