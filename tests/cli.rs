@@ -2,7 +2,9 @@
 //! to the URLs that would be requested. No network requests are made.
 
 use clap::Parser;
-use goat_cli::cli::{build_cli, AssemblyCommand, Cli, Index, SearchRequest, TaxonCommand};
+use goat_cli::cli::{
+    build_cli, write_completions, AssemblyCommand, Cli, Index, SearchRequest, TaxonCommand,
+};
 use goat_cli::report::report::{Report, ReportOptions, ReportType};
 use goat_cli::utils::cli_matches::{process_cli_args, CliAction};
 use goat_cli::utils::utils::{generate_unique_ids, taxa_from_input};
@@ -189,4 +191,27 @@ fn test_or_expression_applies_taxon_to_each_branch() {
 fn test_empty_taxon_list_is_an_error() {
     let err = taxa_from_input(Some(" , "), None, false).unwrap_err();
     assert!(err.to_string().contains("no taxa found"), "{}", err);
+}
+
+#[test]
+fn test_completions_for_every_shell() {
+    use clap::ValueEnum;
+    for shell in clap_complete::Shell::value_variants() {
+        let mut script = Vec::new();
+        write_completions(*shell, &mut script).unwrap();
+        let script = String::from_utf8(script).unwrap();
+        // completes nested subcommands and their flags
+        for word in ["taxon", "assembly", "search", "include-estimates", "x-filter"] {
+            assert!(script.contains(word), "{:?} completions lack {}", shell, word);
+        }
+    }
+}
+
+#[test]
+fn test_completions_subcommand_parses() {
+    match parse(&["completions", "zsh"]).index {
+        Index::Completions { shell } => assert_eq!(shell, clap_complete::Shell::Zsh),
+        other => panic!("{:?}", other),
+    }
+    assert!(Cli::try_parse_from(["goat-cli", "completions", "tcsh"]).is_err());
 }

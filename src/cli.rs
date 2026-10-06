@@ -95,6 +95,20 @@ pub enum Index {
         #[command(subcommand)]
         command: AssemblyCommand,
     },
+    #[command(about = "Print a shell completion script (see the README to install it).")]
+    Completions {
+        #[arg(value_enum, value_name = "shell", help = "The shell to generate completions for.")]
+        shell: clap_complete::Shell,
+    },
+}
+
+/// Write the completion script for `shell` to `out`.
+pub fn write_completions(shell: clap_complete::Shell, out: &mut impl std::io::Write) -> std::io::Result<()> {
+    // clap_complete panics on a write error (e.g. a closed pipe), so generate
+    // into memory and write that.
+    let mut script = Vec::new();
+    clap_complete::generate(shell, &mut Cli::command(), "goat-cli", &mut script);
+    out.write_all(&script)
 }
 
 // `goat-cli taxon <command>`

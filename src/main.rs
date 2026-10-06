@@ -2,7 +2,9 @@ use clap::Parser;
 use futures::try_join;
 use std::process::ExitCode;
 
-use goat_cli::cli::{AssemblyCommand, Cli, Index, SearchRequest, TaxonCommand};
+use goat_cli::cli::{
+    write_completions, AssemblyCommand, Cli, Index, SearchRequest, TaxonCommand,
+};
 use goat_cli::error::Result;
 use goat_cli::report::fetch::fetch_report;
 use goat_cli::report::report::{ReportOptions, ReportType};
@@ -63,6 +65,10 @@ async fn run() -> Result<()> {
                 run_report(&ReportOptions::from(&args), ReportType::Arc).await
             }
         },
+        Index::Completions { shell } => {
+            write_completions(shell, &mut std::io::stdout().lock())?;
+            Ok(())
+        }
         Index::Assembly { command } => match command {
             AssemblyCommand::Search(args) => run_search(&SearchRequest::from(&args)).await,
             AssemblyCommand::Count(args) => run_count(&SearchRequest::from(&args)).await,
