@@ -2,7 +2,7 @@
 //! Invoked by calling:
 //! `goat-cli search <args>`
 
-use futures::StreamExt;
+use futures::{FutureExt, StreamExt};
 
 use crate::client::GoatClient;
 use crate::error::Result;
@@ -24,18 +24,20 @@ pub async fn search(
 
     let concurrent_requests = url_vector_api.len();
 
-    // print count warnings.
-    count::count(matches, false, true, unique_ids, index_type).await?;
-
     let client = GoatClient::new();
     let fetches = futures::stream::iter(url_vector_api.into_iter().map(|path| {
         let client = client.clone();
         async move { client.get_text(&path, "text/tab-separated-values").await }
     }))
-    .buffered(concurrent_requests)
+    .buffered(crate::client::concurrency(concurrent_requests))
     .collect::<Vec<_>>();
 
-    let awaited_fetches = fetches.await;
+    // the count is only used to print warnings, so fetch it alongside the
+    // search rather than before it.
+    let (_, awaited_fetches) = futures::try_join!(
+        count::count(matches, false, true, unique_ids, index_type),
+        fetches.map(Ok)
+    )?;
 
     utils::format_tsv_output(awaited_fetches)?;
 

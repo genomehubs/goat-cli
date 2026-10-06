@@ -319,6 +319,27 @@ impl<'a> CLIexpression<'a> {
         }
         Ok(format!(" AND {}", groups.join(" OR ")))
     }
+
+    /// Whether any clause names a field that `reference_data` does not know,
+    /// which is when the live field registry is worth loading. Unlike
+    /// [`CLIexpression::parse`], this prints no warnings.
+    pub fn has_unknown_field(
+        &self,
+        reference_data: &BTreeMap<&'static str, Variable<'static>>,
+    ) -> bool {
+        OR_SPLIT
+            .split(self.inner.trim())
+            .flat_map(|group| AND_SPLIT.split(strip_outer_parens(group.trim())))
+            .any(|clause| {
+                let clause = clause.replace(['"', '\''], "");
+                let clause = clause.trim();
+                let lhs = CLAUSE
+                    .captures(clause)
+                    .map_or(clause, |caps| caps.name("lhs").unwrap().as_str());
+                !lhs.trim().to_lowercase().starts_with("tax_")
+                    && resolve_lhs(lhs, reference_data, None).is_err()
+            })
+    }
 }
 
 /// Remove parentheses wrapping a whole `OR` branch, e.g. `(a AND b)`.
