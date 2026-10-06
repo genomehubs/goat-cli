@@ -10,6 +10,16 @@ use std::io::{BufWriter, Write};
 use crate::utils::cli_matches::{self, CliAction};
 use crate::IndexType;
 
+/// How to show a search query to the user; an empty one (no `-t`/`-f`)
+/// searches all taxa.
+fn query_label(search_query: &str) -> &str {
+    if search_query.is_empty() {
+        "<all taxa>"
+    } else {
+        search_query
+    }
+}
+
 /// `goat-cli count` presents an identical CLI to `goat-cli search` but prints
 /// to the console in the CLI call here, and to the stderr in the `goat-cli search` call.
 pub async fn count(
@@ -62,7 +72,7 @@ pub async fn count(
                     Ok(e) => e,
                     Err(e) => return Err(e),
                 };
-                writeln!(out, "{}\t{}", search_query, count)?;
+                writeln!(out, "{}\t{}", query_label(&search_query), count)?;
                 outer_count += count;
             }
             out.flush()?;
@@ -78,10 +88,12 @@ pub async fn count(
                     Ok(e) => e,
                     Err(e) => return Err(e),
                 };
-                if print_warning && size_int < count {
+                if print_warning && count == 0 {
+                    eprintln!("No results for search query {}.", query_label(&search_query));
+                } else if print_warning && size_int < count {
                     eprintln!(
                         "For search query {}, size specified ({}) was less than the number of results returned, ({}).",
-                        search_query, size_int, count
+                        query_label(&search_query), size_int, count
                     );
                 }
                 outer_count += count;

@@ -12,6 +12,7 @@ use tokio::time::sleep;
 
 use crate::client::GoatClient;
 use crate::error::Result;
+use crate::utils::args::ArgMatchesExt;
 use crate::utils::cli_matches::{self, CliAction};
 use crate::{count, IndexType};
 use crate::{GOAT_URL, UPPER_CLI_SIZE_LIMIT};
@@ -26,6 +27,10 @@ pub async fn progress_bar(
     unique_ids: Vec<String>,
     index_type: IndexType,
 ) -> Result<()> {
+    // nothing is fetched when only printing the URLs
+    if matches.flag("url") || matches.flag("goat-ui-url") {
+        return Ok(());
+    }
     // wait briefly before submitting
     // so we are sure the API has recieved and set the queryId
     sleep(Duration::from_secs(2)).await;

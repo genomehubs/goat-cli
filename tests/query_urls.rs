@@ -436,3 +436,40 @@ fn test_invalid_variable_returns_err() {
     );
     assert!(result.is_err());
 }
+
+// ── build_query ──────────────────────────────────────────────────────────────
+
+use goat_cli::utils::url::build_query;
+
+#[test]
+fn test_build_query_taxon_rank_and_expression() {
+    assert_eq!(
+        build_query("Mammalia", "tree", " AND tax_rank(species)", " AND genome_size > 1"),
+        "tax_tree(Mammalia) AND tax_rank(species) AND genome_size > 1"
+    );
+}
+
+#[test]
+fn test_build_query_taxon_only() {
+    assert_eq!(build_query("Mammalia", "name", "", ""), "tax_name(Mammalia)");
+}
+
+#[test]
+fn test_build_query_repeats_taxon_and_rank_in_each_or_branch() {
+    let expression = format_expression("genome_size > 1e9 OR c_value > 5", IndexType::Taxon)
+        .expect("expression parsed");
+    assert_eq!(
+        build_query("Mammalia", "tree", " AND tax_rank(species)", &expression),
+        "tax_tree(Mammalia) AND tax_rank(species) AND genome_size > 1e9 \
+         OR tax_tree(Mammalia) AND tax_rank(species) AND c_value > 5"
+    );
+}
+
+#[test]
+fn test_build_query_without_taxon_is_global() {
+    assert_eq!(
+        build_query("", "tree", " AND tax_rank(species)", " AND genome_size > 1e9"),
+        "tax_rank(species) AND genome_size > 1e9"
+    );
+    assert_eq!(build_query("", "tree", "", " AND genome_size > 1e9"), "genome_size > 1e9");
+}

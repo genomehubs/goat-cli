@@ -8,6 +8,7 @@ pub fn build_cli() -> clap::Command {
     let upper_cli_limit = pretty_print_usize(*UPPER_CLI_SIZE_LIMIT);
     let taxon_file_or_lookup_help = format!("A file of NCBI taxonomy ID's (tips) and/or binomial names.\nEach line should contain a single entry.\nFile size is limited to {} entries.", upper_file_limit);
     let taxon_size_help = format!("The number of results to return. Max {} currently.", upper_cli_limit);
+    let expression_help = "Use an expression to filter results server-side, e.g.\n  'genome_size > 1e9 AND assembly_level = chromosome,complete genome'\nClauses are <variable> <operator> <value>, joined by AND / OR (OR binds loosest).\nSee --print-expression for variables, and EXPRESSIONS.md for the full syntax.";
 
     let taxon_search_and_count = |name, about| {
         Command::new(name) 
@@ -16,22 +17,21 @@ pub fn build_cli() -> clap::Command {
                 Arg::new("taxon")
                     .short('t')
                     .long("taxon")
-                    .required_unless_present_any(["file", "print-expression", "variables"])
-                    .help("The taxon to search. An NCBI taxon ID, or the name of a taxon at any rank."),
+                    .required_unless_present_any(["file", "print-expression", "expression"])
+                    .help("The taxon to search. An NCBI taxon ID, or the name of a taxon at any rank.\nMay be omitted if an expression (-e) is given, to search across all taxa."),
             )
             .arg(
                 Arg::new("file")
                     .short('f')
                     .long("file")
                     .value_parser(value_parser!(PathBuf))
-                    .required_unless_present_any(["taxon", "print-expression", "variables"])
+                    .required_unless_present_any(["taxon", "print-expression", "expression"])
                     .help(taxon_file_or_lookup_help.clone()),
             )
             .arg(
                 Arg::new("variables")
                     .short('v')
                     .long("variables")
-                    .required_unless_present_any(["file", "print-expression", "taxon"])
                     .help("Variable parser. Input a comma separated string of variables.")
             )
             .arg(
@@ -54,7 +54,7 @@ pub fn build_cli() -> clap::Command {
                     .short('e')
                     .long("expression")
                     .required(false)
-                    .help("Use an expression to filter results server-side.")
+                    .help(expression_help)
             )
             .arg(
                 Arg::new("tax-rank")
@@ -279,15 +279,15 @@ pub fn build_cli() -> clap::Command {
                 Arg::new("taxon")
                     .short('t')
                     .long("taxon")
-                    .required_unless_present_any(["file", "print-expression", "variables"])
-                    .help("The taxon to search. An NCBI taxon ID, or the name of a taxon at any rank."),
+                    .required_unless_present_any(["file", "print-expression", "expression"])
+                    .help("The taxon to search. An NCBI taxon ID, or the name of a taxon at any rank.\nMay be omitted if an expression (-e) is given, to search across all taxa."),
             )
             .arg(
                 Arg::new("file")
                     .short('f')
                     .long("file")
                     .value_parser(value_parser!(PathBuf))
-                    .required_unless_present_any(["taxon", "print-expression", "variables"])
+                    .required_unless_present_any(["taxon", "print-expression", "expression"])
                     .help(taxon_file_or_lookup_help.clone()),
             )
             .arg(
@@ -295,7 +295,6 @@ pub fn build_cli() -> clap::Command {
                 Arg::new("variables")
                     .short('v')
                     .long("variables")
-                    .required_unless_present_any(["file", "print-expression", "taxon"])
                     .help("Variable parser. Input a comma separated string of variables.")
             )
             .arg(
@@ -319,7 +318,7 @@ pub fn build_cli() -> clap::Command {
                     .short('e')
                     .long("expression")
                     .required(false)
-                    .help("Use an expression to filter results server-side.")
+                    .help(expression_help)
             )
             .arg(
                 Arg::new("tax-rank")

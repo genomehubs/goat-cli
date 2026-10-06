@@ -16,6 +16,8 @@ The CLI here builds URLs to query the <b><a href="https://goat.genomehubs.org/ap
 
 Please consult the <b><a href="https://github.com/genomehubs/goat-cli/wiki">wiki</a></b> for more information, tutorials, and examples.
 
+For the full syntax of expressions (`-e`), including `OR`, lists, negation, functions and searching without a taxon, see <b><a href="EXPRESSIONS.md">EXPRESSIONS.md</a></b>.
+
 ## `goat-cli` documentation
 
 If you fancy delving into the Rust code, I've had a first pass at documenting everything. Helped me iron out a few bugs too.

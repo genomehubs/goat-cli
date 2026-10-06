@@ -1,18 +1,47 @@
 use crate::utils::tax_ranks::TaxRanks;
 use crate::utils::utils::did_you_mean;
+use crate::utils::variable_data::GOAT_VARIABLE_SYNONYMS;
 
 use crate::error::{Error, ErrorKind, Result};
-use regex::{CaptureMatches, Captures, Regex};
+use regex::Regex;
 use std::collections::{BTreeMap, HashSet};
 use std::fmt;
+use std::sync::LazyLock;
 use tabled::{object::Rows, Modify, Panel, Table, Tabled, Width};
 
-/// Summary/aggregate functions that are valid in a GoaT expression.
+/// Summary functions that can wrap a field in an expression, e.g.
+/// `max(genome_size)`. Mirrors the API's own list (`functions/summaries.js`),
+/// minus its internal `metadata` and `hexbin*` summaries.
 pub const VALID_EXPRESSION_FUNCTIONS: &[&str] =
-    &["min", "max", "count", "length", "sp_count", "range"];
+    &["min", "max", "count", "length", "sp_count", "range", "value"];
+
+/// Functions which return a count, whatever the type of the field.
+const COUNT_FUNCTIONS: &[&str] = &["count", "length", "sp_count"];
 
 /// Aggregation subset specifiers that may follow a field name with a colon.
 const VALID_SUBSETS: &[&str] = &["direct", "ancestor", "descendant", "estimate"];
+
+/// The type checked against the value of a count function.
+static COUNT_TYPE: TypeOf<'static> = TypeOf::Long;
+
+/// The API splits on `or`, then `and`, case-insensitively and only where
+/// surrounded by whitespace (so values such as `island` are safe).
+static OR_SPLIT: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?i)\s+or\s+").unwrap());
+static AND_SPLIT: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?i)\s+and\s+").unwrap());
+/// `<lhs> <operator> <rhs>`. Two character operators must come first.
+static CLAUSE: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"^(?P<lhs>[^!<>=]+?)\s*(?P<op>!=|<=|>=|==|<|>|=)\s*(?P<rhs>.*)$").unwrap()
+});
+/// A summary function wrapping a field, e.g. `max(genome_size:direct)`.
+static FUNCTION: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^(?P<func>[a-z_]+)\(\s*(?P<field>[^()]*?)\s*\)$").unwrap());
+/// A number with a size suffix, e.g. `1G`, which the API does not accept.
+static NUMBER_WITH_SUFFIX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?i)^-?\d+(\.\d+)?\s*[kmgtp]b?$").unwrap());
+
+fn expression_error(message: String) -> Error {
+    Error::new(ErrorKind::Expression(message))
+}
 
 /// Serialize GoaT variables into their types.
 ///
@@ -34,84 +63,111 @@ pub enum TypeOf<'a> {
     Date,
     /// Half precision 16 bit float.
     HalfFloat,
-    /// A variable which itself is an enumeration.
+    /// A keyword. If the list of values is not empty, the API rejects
+    /// any other value.
     Keyword(Vec<&'a str>),
-    /// None to catch parsing errors
+    /// A keyword with a list of known values, which the API does not
+    /// enforce; other values are allowed but may match nothing.
+    KeywordSuggest(Vec<&'a str>),
+    /// Not usable in expressions (e.g. `geo_point`), so not checked.
     None,
 }
 
 impl<'a> TypeOf<'a> {
-    /// Check the values input by a user, so `goat-cli` displays meaningful help.
-    fn check(&self, other: &str, variable: &str) -> Result<()> {
-        // Allow null / not-null queries for any type.
-        if other == "null" || other == "!null" {
-            return Ok(());
-        }
-        // we will have to parse the `other` conditionally on what the
-        // `TypeOf` is.
-        match self {
-            TypeOf::Long => match other.parse::<i64>() {
-                Ok(_) => (),
-                Err(_) => return Err(Error::new(ErrorKind::Expression(format!("for variable \"{variable}\", an input error was found. Pass an integer as a value.") ))),
-            },
-            TypeOf::Short => match other.parse::<i16>() {
-                Ok(_) => (),
-                Err(_) => return Err(Error::new(ErrorKind::Expression(format!("for variable \"{variable}\", an input error was found. Pass an integer as a value.")))),
-            },
-            TypeOf::OneDP => match other.parse::<f32>() {
-                Ok(_) => (),
-                Err(_) => return Err(Error::new(ErrorKind::Expression(format!("for variable \"{variable}\", an input error was found. Pass a float as a value.")))),
-            },
-            TypeOf::TwoDP => match other.parse::<f32>() {
-                Ok(_) => (),
-                Err(_) => return Err(Error::new(ErrorKind::Expression(format!("for variable \"{variable}\", an input error was found. Pass a float as a value.")))),
-            },
-            TypeOf::Integer => match other.parse::<i32>() {
-                Ok(_) => (),
-                Err(_) => return Err(Error::new(ErrorKind::Expression(format!("for variable \"{variable}\", an input error was found. Pass an integer as a value.")))),
-            },
-            // dates should be in a specified format
-            // yyyy-mm-dd OR yyyy
-            TypeOf::Date => {
-                let tokens = other.split('-').collect::<Vec<_>>();
-
-                match tokens.len() {
-                    1 => {
-                        if tokens[0].len() != 4 || !tokens[0].chars().all(|c| c.is_ascii_digit()) {
-                            return Err(Error::new(ErrorKind::Expression(
-                                "improperly formatted date. Please make sure date is in the format yyyy-mm-dd, or yyyy.".to_string(),
-                            )));
-                        }
-                    }
-                    3 => {
-                        let year_ok = tokens[0].len() == 4 && tokens[0].chars().all(|c| c.is_ascii_digit());
-                        let month_ok = tokens[1].len() == 2 && tokens[1].chars().all(|c| c.is_ascii_digit());
-                        let day_ok = tokens[2].len() == 2 && tokens[2].chars().all(|c| c.is_ascii_digit());
-
-                        if !(year_ok && month_ok && day_ok) {
-                            return Err(Error::new(ErrorKind::Expression(
-                                "improperly formatted date. Please make sure date is in the format yyyy-mm-dd, or yyyy.".to_string(),
-                            )));
-                        }
-                    }
-                    _ => {
-                        return Err(Error::new(ErrorKind::Expression(
-                            "improperly formatted date. Please make sure date is in the format yyyy-mm-dd, or yyyy.".to_string(),
+    /// Check the right hand side of a clause, so `goat-cli` displays
+    /// meaningful help before the query is sent.
+    ///
+    /// `rhs` may be a comma separated list, each value may be negated with a
+    /// leading `!`, and `null` is allowed for any type.
+    fn check(&self, rhs: &str, variable: &str) -> Result<()> {
+        for value in rhs.split(',') {
+            let value = value.trim().trim_start_matches('!').trim();
+            if value.is_empty() {
+                return Err(expression_error(format!(
+                    "missing value for \"{variable}\" in \"{rhs}\"."
+                )));
+            }
+            if value.eq_ignore_ascii_case("null") {
+                continue;
+            }
+            match self {
+                TypeOf::Long
+                | TypeOf::Short
+                | TypeOf::OneDP
+                | TypeOf::TwoDP
+                | TypeOf::Integer
+                | TypeOf::HalfFloat => check_number(value, variable)?,
+                TypeOf::Date => check_date(value, variable)?,
+                TypeOf::Keyword(allowed) if !allowed.is_empty() => {
+                    if let Some(suggestion) = unknown_keyword(value, allowed) {
+                        return Err(expression_error(format!(
+                            "\"{value}\" is not a valid value for \"{variable}\" - did you mean \"{suggestion}\"?"
                         )));
                     }
                 }
+                TypeOf::KeywordSuggest(known) => {
+                    if let Some(suggestion) = unknown_keyword(value, known) {
+                        eprintln!(
+                            "warning: \"{value}\" is not a known value for \"{variable}\" (did you mean \"{suggestion}\"?), so may match nothing."
+                        );
+                    }
+                }
+                TypeOf::Keyword(_) | TypeOf::None => (),
             }
-            TypeOf::HalfFloat => match other.parse::<f32>() {
-                Ok(_) => (),
-                Err(_) => return Err(Error::new(ErrorKind::Expression(format!("for variable \"{variable}\", an input error was found. Pass a float as a value.")))),
-            },
-            // keywords handled elsewhere
-            TypeOf::Keyword(_) => (),
-            // None to catch errors.
-            TypeOf::None => (),
-        };
+        }
         Ok(())
     }
+}
+
+/// The API accepts anything JavaScript parses as a number, including
+/// scientific notation (`1e9`) and negative numbers.
+fn check_number(value: &str, variable: &str) -> Result<()> {
+    if value
+        .replace('−', "-")
+        .parse::<f64>()
+        .map_or(false, f64::is_finite)
+    {
+        return Ok(());
+    }
+    let hint = if NUMBER_WITH_SUFFIX.is_match(value) {
+        " Size suffixes are not supported; use scientific notation instead, e.g. 1e9."
+    } else {
+        ""
+    };
+    Err(expression_error(format!(
+        "for variable \"{variable}\", \"{value}\" is not a number.{hint}"
+    )))
+}
+
+/// Dates may be given as `yyyy`, `yyyy-mm` or `yyyy-mm-dd`.
+fn check_date(value: &str, variable: &str) -> Result<()> {
+    let digits = |s: &str, n: usize| s.len() == n && s.chars().all(|c| c.is_ascii_digit());
+    let in_range = |s: &str, max: u32| s.parse::<u32>().map_or(false, |v| (1..=max).contains(&v));
+    let valid = match value.split('-').collect::<Vec<_>>().as_slice() {
+        [y] => digits(y, 4),
+        [y, m] => digits(y, 4) && digits(m, 2) && in_range(m, 12),
+        [y, m, d] => {
+            digits(y, 4) && digits(m, 2) && in_range(m, 12) && digits(d, 2) && in_range(d, 31)
+        }
+        _ => false,
+    };
+    if valid {
+        Ok(())
+    } else {
+        Err(expression_error(format!(
+            "for variable \"{variable}\", \"{value}\" is not a date. Use yyyy, yyyy-mm or yyyy-mm-dd."
+        )))
+    }
+}
+
+/// If `value` is not (case-insensitively) one of `allowed`, return the
+/// closest match.
+fn unknown_keyword(value: &str, allowed: &[&str]) -> Option<String> {
+    if allowed.iter().any(|a| a.eq_ignore_ascii_case(value)) {
+        return None;
+    }
+    let possibilities = allowed.iter().map(|a| a.to_string()).collect::<Vec<_>>();
+    Some(did_you_mean(&possibilities, value).unwrap_or_default())
 }
 
 impl<'a> fmt::Display for TypeOf<'a> {
@@ -119,60 +175,38 @@ impl<'a> fmt::Display for TypeOf<'a> {
         match self {
             // do nothing with None at the moment.
             TypeOf::None => write!(f, "Please don't use yet! This variable needs fixing."),
-            TypeOf::Long => write!(f, "!=, <, <=, =, ==, >, >="),
-            TypeOf::Short => write!(f, "!=, <, <=, =, ==, >, >="),
-            TypeOf::OneDP => write!(f, "!=, <, <=, =, ==, >, >="),
-            TypeOf::TwoDP => write!(f, "!=, <, <=, =, ==, >, >="),
-            TypeOf::Integer => write!(f, "!=, <, <=, =, ==, >, >="),
-            TypeOf::Date => write!(f, "!=, <, <=, =, ==, >, >="),
-            TypeOf::HalfFloat => write!(f, "!=, <, <=, =, ==, >, >="),
-            TypeOf::Keyword(k) => match k[0] {
-                "" => write!(f, ""),
-                _ => write!(f, "== {}", k.join(", ")),
-            },
+            TypeOf::Long
+            | TypeOf::Short
+            | TypeOf::OneDP
+            | TypeOf::TwoDP
+            | TypeOf::Integer
+            | TypeOf::Date
+            | TypeOf::HalfFloat => write!(f, "!=, <, <=, =, ==, >, >="),
+            TypeOf::Keyword(k) | TypeOf::KeywordSuggest(k) if k.is_empty() => write!(f, ""),
+            TypeOf::Keyword(k) | TypeOf::KeywordSuggest(k) => write!(f, "== {}", k.join(", ")),
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Operator {
-    NotEq,  // !=
-    Lt,     // <
-    LtEq,   // <=
-    Eq,     // =
-    EqEq,   // ==
-    Gt,     // >
-    GtEq,   // >=
-}
-
-impl Operator {
-    fn parse(s: &str) -> Result<Self> {
-        match s.trim() {
-            "!=" => Ok(Self::NotEq),
-            "<" => Ok(Self::Lt),
-            "<=" => Ok(Self::LtEq),
-            "=" => Ok(Self::Eq),
-            "==" => Ok(Self::EqEq),
-            ">" => Ok(Self::Gt),
-            ">=" => Ok(Self::GtEq),
-            _ => Err(Error::new(ErrorKind::GenericCli(format!(
-                "unrecognised operator: {}",
-                s
-            )))),
-        }
-    }
-
-    fn as_str(self) -> &'static str {
-        match self {
-            Self::NotEq => "!=",
-            Self::Lt => "<",
-            Self::LtEq => "<=",
-            Self::Eq => "=",
-            Self::EqEq => "==",
-            Self::Gt => ">",
-            Self::GtEq => ">=",
-        }
-    }
+/// Resolve a field name as the API does: case-insensitively, accepting
+/// synonyms (e.g. `ebp_metric_date`) and `-` in place of `_`.
+pub fn canonical_field(
+    name: &str,
+    reference_data: &BTreeMap<&'static str, Variable<'static>>,
+) -> Option<&'static str> {
+    let lookup = |n: &str| {
+        reference_data
+            .keys()
+            .find(|k| k.eq_ignore_ascii_case(n))
+            .copied()
+    };
+    lookup(name)
+        .or_else(|| lookup(&name.replace('-', "_")))
+        .or_else(|| {
+            GOAT_VARIABLE_SYNONYMS
+                .get(name.to_lowercase().as_str())
+                .and_then(|canonical| lookup(canonical))
+        })
 }
 
 /// Kind of an option alias. Does a
@@ -235,404 +269,205 @@ pub fn print_variable_data(data: &BTreeMap<&'static str, Variable<'static>>) -> 
 }
 
 /// The CLI expression which needs to be parsed.
+///
+/// See `EXPRESSIONS.md` for the syntax.
 #[derive(Debug)]
 pub struct CLIexpression<'a> {
     pub inner: &'a str,
-    pub length: usize, // these queries can't be crazy long.
-    pub expression: Vec<&'a str>,
 }
 
 impl<'a> CLIexpression<'a> {
     /// Constructor for [`CLIexpression`].
     pub fn new(string: &'a str) -> Self {
-        Self {
-            inner: string,
-            length: string.len(),
-            expression: Vec::new(),
-        }
+        Self { inner: string }
     }
 
-    /// The initial split on the keyword `AND`.
-    fn split(&self) -> Self {
-        let mut res_vec = Vec::new();
-        let re = Regex::new("AND").unwrap();
-        let splitter = SplitCaptures::new(&re, self.inner);
-        for state in splitter {
-            let el = match state {
-                SplitState::Unmatched(s) => s,
-                SplitState::Captured(s) => s.get(0).map_or("", |m| m.as_str()),
-            };
-            res_vec.push(el);
-        }
-        Self {
-            inner: self.inner,
-            length: self.length,
-            expression: res_vec,
-        }
-    }
-
-    /// The main function which parses a [`CLIexpression`]. A bit of a
-    /// monster of a function. Might need cleaning up at some point.
-    // FIXME: this function can also be used in reports for the -x
-    // so let's make it more general.
+    /// Validate an expression and return it in canonical form, as
+    /// `" AND <clause> AND <clause> OR <clause> ..."`, ready to follow a
+    /// taxon term.
+    ///
+    /// As in the API, `OR` binds more loosely than `AND`, so the result is a
+    /// list of `AND` groups joined by `" OR "`. The taxon and rank must apply
+    /// to every group; [`crate::utils::url::make_goat_urls`] does that.
     pub fn parse(
         &mut self,
         reference_data: &BTreeMap<&'static str, Variable<'static>>,
         extra_fields: Option<&HashSet<String>>,
     ) -> Result<String> {
-        // TODO: what's an acceptable limit here?
-        let expression_length_limit = 100;
-        if self.length > expression_length_limit {
-            return Err(Error::new(ErrorKind::Expression(format!(
-                "the query provided is greater than {} chars.",
-                expression_length_limit
-            ))));
+        let input = self.inner.trim();
+        if input.is_empty() {
+            return Err(expression_error("the expression is empty.".to_string()));
         }
-        // we don't use &&
-        if self.inner.contains("&&") {
-            return Err(Error::new(ErrorKind::Expression(
-                "use AND keyword, not && for queries.".to_string(),
-            )));
+        if input.contains("&&") {
+            return Err(expression_error(
+                "use the AND keyword, not &&, between clauses.".to_string(),
+            ));
         }
-        // we don't use 'contains'
-        if self.inner.contains(" contains") {
-            return Err(Error::new(ErrorKind::Expression(
-                "using the \"contains\" keyword is not yet supported.".to_string(),
-            )));
-        }
-        // we don't allow OR
-        if self.inner.contains("||") || self.inner.contains("OR") {
-            return Err(Error::new(ErrorKind::Expression("OR (or ||) keyword is not supported. Commas between categories operate like the OR keyword.".to_string())));
-        }
-        // for the more general expression case, we want to include this
-        if self.inner.contains("tax_name")
-            || self.inner.contains("tax_tree")
-            || self.inner.contains("tax_lineage")
-        {
-            return Err(Error::new(ErrorKind::Expression("set tax_name through -t <taxon_name>, tax_tree by -d flag, and tax_lineage by -l flag.".to_string())));
-        }
-        // tax_rank is dealt with elsewhere
-        if self.inner.contains("tax_rank") {
-            return Err(Error::new(ErrorKind::Expression(
-                "set tax_rank through --tax-rank <taxon_rank>.".to_string(),
-            )));
+        if input.contains("||") {
+            return Err(expression_error(
+                "use the OR keyword, not ||, between clauses.".to_string(),
+            ));
         }
 
-        // essentially splitting on AND
-        let split_vec = &self.split();
-
-        let exp_vec = &split_vec.expression;
-
-        // split the expression vector into parts
-        let mut index = 0;
-        let exp_vec_len = exp_vec.len();
-        // parse into clauses
-        let mut clauses: Vec<String> = Vec::new();
-
-        // regular expression splitter
-        // precedence here matters
-        let re = Regex::new(r"!=|<=|<|==|=|>=|>").unwrap();
-        if !re.is_match(self.inner) {
-            return Err(Error::new(ErrorKind::Expression(
-                "no operators were found in the expression.".to_string(),
-            )));
+        let mut groups = Vec::new();
+        for group in OR_SPLIT.split(input) {
+            let clauses = AND_SPLIT
+                .split(strip_outer_parens(group.trim()))
+                .map(|clause| parse_clause(clause, reference_data, extra_fields))
+                .collect::<Result<Vec<_>>>()?;
+            groups.push(clauses.join(" AND "));
         }
-
-        // vector of variables to check against
-        let var_vec_check = &reference_data
-            .iter()
-            .map(|(e, _)| *e)
-            .collect::<Vec<&str>>();
-        // we can also create another vector of variables
-        // with the appropriate max/min attached.
-        let var_vec_functions_check = {
-            let mut collector = Vec::new();
-            for (goat_var, el) in reference_data {
-                let specific_funcs: &[&str] = match &el.functions {
-                    Function::None => &[],
-                    Function::Some(f) => f.as_slice(),
-                };
-                for pos in specific_funcs.iter().chain(VALID_EXPRESSION_FUNCTIONS.iter()) {
-                    let entry = format!("{}({})", pos, goat_var);
-                    if !collector.contains(&entry) {
-                        collector.push(entry);
-                    }
-                }
-            }
-            collector
-        };
-
-        // loop over the expression vector
-        // splitting into further vectors
-        // to evaluate each argument.
-        loop {
-            if index == exp_vec_len {
-                break;
-            }
-            // expected to be in format
-            // variable <operator> number/enum
-            // OR a plain variable
-            let curr_el = exp_vec[index];
-
-            let mut curr_el_vec = Vec::new();
-            // split this on the operator
-            // do we need to check whether this operator actually exists?
-            // I can imagine that this will break down otherwise...
-            let splitter = SplitCaptures::new(&re, curr_el);
-
-            for state in splitter {
-                match state {
-                    SplitState::Unmatched(s) => {
-                        curr_el_vec.push(s);
-                    }
-                    SplitState::Captured(s) => {
-                        curr_el_vec.push(s.get(0).map_or("", |m| m.as_str()));
-                    }
-                };
-            }
-
-            match curr_el_vec.len() {
-                3 => {
-                    // trim strings; strip rogue quotes
-                    let variable = &curr_el_vec[0].trim().replace('\"', "").replace('\'', "")[..];
-                    let operator = Operator::parse(curr_el_vec[1])?;
-                    let operator_str = operator.as_str();
-
-                    let value = &curr_el_vec[2].trim().replace('\"', "").replace('\'', "")[..];
-
-                    // Extract field name and optional subset specifier, e.g. "genome_size:direct".
-                    let (field_name, subset_opt) = if let Some(colon_pos) = variable.rfind(':') {
-                        (&variable[..colon_pos], Some(&variable[colon_pos + 1..]))
-                    } else {
-                        (variable, None)
-                    };
-
-                    // Validate the subset specifier if present.
-                    if let Some(sub) = subset_opt {
-                        if !VALID_SUBSETS.contains(&sub) {
-                            return Err(Error::new(ErrorKind::Expression(format!(
-                                "unknown field subset \":{}\" — valid subsets are: {}",
-                                sub,
-                                VALID_SUBSETS.join(", ")
-                            ))));
-                        }
-                    }
-
-                    let is_known_plain = var_vec_check.contains(&field_name);
-                    let is_known_func = var_vec_functions_check.contains(&variable.to_string());
-                    let is_dynamic = extra_fields.map_or(false, |ef| ef.contains(field_name));
-
-                    if !is_known_plain && !is_known_func && !is_dynamic {
-                        let combined_checks = var_vec_check
-                            .iter()
-                            .map(|e| String::from(*e))
-                            .collect::<Vec<String>>()
-                            .iter()
-                            .chain(
-                                var_vec_functions_check
-                                    .iter()
-                                    .map(String::from)
-                                    .collect::<Vec<String>>()
-                                    .iter(),
-                            )
-                            .map(String::from)
-                            .collect::<Vec<String>>();
-
-                        let suggestion = did_you_mean(&combined_checks, field_name);
-                        if let Some(s) = suggestion {
-                            return Err(Error::new(ErrorKind::Expression(format!(
-                                "in LHS you typed \"{}\" - did you mean \"{}\"?",
-                                variable, s
-                            ))));
-                        }
-                    }
-
-                    // Dynamic fields not in reference_data: skip type checking.
-                    if is_dynamic && !is_known_plain && !is_known_func {
-                        let clause = format!("{} {} {}", variable, operator_str, value);
-                        clauses.push(clause);
-                        index += 1;
-                        continue;
-                    }
-
-                    // If a function wrapper is present, extract the inner variable name.
-                    let re = Regex::new(r"\((.*?)\)").unwrap();
-                    let keyword_enums = if is_known_func {
-                        let extract_var = re
-                            .captures(variable)
-                            .and_then(|c| c.get(1))
-                            .map(|m| m.as_str())
-                            .ok_or_else(|| {
-                                Error::new(ErrorKind::Expression(format!(
-                                    "failed to extract variable name from function expression: {}",
-                                    variable
-                                )))
-                            })?;
-                        // Strip any subset from the inner variable name.
-                        let inner_field = if let Some(p) = extract_var.rfind(':') {
-                            &extract_var[..p]
-                        } else {
-                            extract_var
-                        };
-                        reference_data
-                            .get(inner_field)
-                            .ok_or_else(|| {
-                                Error::new(ErrorKind::Expression(format!(
-                                    "variable \"{}\" not found in reference data",
-                                    inner_field
-                                )))
-                            })
-                            .map(|v| &v.type_of)?
-                    } else {
-                        reference_data
-                            .get(field_name)
-                            .ok_or_else(|| {
-                                Error::new(ErrorKind::Expression(format!(
-                                    "variable \"{}\" not found in reference data",
-                                    field_name
-                                )))
-                            })
-                            .map(|v| &v.type_of)?
-                    };
-
-                    // if there are keywords, make sure they are a match
-                    match keyword_enums {
-                        TypeOf::Keyword(k) => {
-                            // split on commas here and trim (strip ! prefix for validation)
-                            let value_split_commas = value
-                                .split(',')
-                                .map(|e| {
-                                    let trimmed = e.trim();
-                                    trimmed.replace('!', "")
-                                })
-                                .collect::<Vec<String>>();
-
-                            // now check our keyword enums
-                            for val in &value_split_commas {
-                                // if 'val' starts with PRJEB, continue
-                                // as these are project identifiers and there are too many to enumerate.
-                                // or if val is numeric
-                                if val.starts_with("PRJEB") || val.parse::<i64>().is_ok() {
-                                    continue;
-                                }
-
-                                let possibilities =
-                                    k.iter().map(|e| String::from(*e)).collect::<Vec<_>>();
-                                let did_you_mean_str = did_you_mean(&possibilities, val);
-
-                                if let Some(value) = did_you_mean_str {
-                                    if value != *val {
-                                        return Err(Error::new(ErrorKind::Expression(format!(
-                                            "in (RHS you typed \"{}\" - did you mean \"{}\"?",
-                                            val, value
-                                        ))));
-                                    }
-                                }
-                            }
-
-                            // build clause — pass values as-is; the URL builder handles encoding
-                            let trimmed_values = value
-                                .split(',')
-                                .map(|e| e.trim().to_string())
-                                .collect::<Vec<String>>();
-                            let clause = format!(
-                                "{} {} {}",
-                                variable,
-                                operator_str,
-                                trimmed_values.join(",")
-                            );
-                            clauses.push(clause);
-                        }
-                        t => {
-                            // here can we type check input
-                            TypeOf::check(t, value, variable)?;
-
-                            // build clause — pass values as-is; the URL builder handles encoding
-                            let clause = format!("{} {} {}", variable, operator_str, value);
-                            clauses.push(clause);
-                        }
-                    }
-                }
-                1 => {
-                    // if this is AND, don't do anything
-                    if curr_el_vec[0].trim() != "AND" {
-                        let variable = curr_el_vec[0].trim().replace('\"', "").replace('\'', "");
-                        clauses.push(variable);
-                    }
-                }
-                _ => {
-                    return Err(Error::new(ErrorKind::Expression(
-                        "are the input variables or operands correct?".to_string(),
-                    )))
-                }
-            }
-
-            index += 1;
-        }
-        // remove trailing AND%20
-        if clauses.is_empty() {
-            Err(Error::new(ErrorKind::Expression(
-                "must be in the format: <variable> <operator> <value> AND ...".to_string(),
-            )))
-        } else {
-            Ok(format!(" AND {}", clauses.join(" AND ")))
-        }
+        Ok(format!(" AND {}", groups.join(" OR ")))
     }
 }
 
-/// Split a string and keep the delimiter.
-/// Thanks [`BurntSushi`](https://github.com/rust-lang/regex/issues/330)
-#[derive(Debug)]
-struct SplitCaptures<'r, 't> {
-    finder: CaptureMatches<'r, 't>,
-    text: &'t str,
-    last: usize,
-    caps: Option<Captures<'t>>,
-}
-
-impl<'r, 't> SplitCaptures<'r, 't> {
-    pub fn new(re: &'r Regex, text: &'t str) -> SplitCaptures<'r, 't> {
-        SplitCaptures {
-            finder: re.captures_iter(text),
-            text,
-            last: 0,
-            caps: None,
+/// Remove parentheses wrapping a whole `OR` branch, e.g. `(a AND b)`.
+fn strip_outer_parens(group: &str) -> &str {
+    let Some(inner) = group.strip_prefix('(').and_then(|g| g.strip_suffix(')')) else {
+        return group;
+    };
+    // make sure the first `(` closes at the very end, not e.g. `(a) AND (b)`
+    let mut depth = 0i32;
+    for c in inner.chars() {
+        match c {
+            '(' => depth += 1,
+            ')' => depth -= 1,
+            _ => (),
+        }
+        if depth < 0 {
+            return group;
         }
     }
+    inner.trim()
 }
 
-#[derive(Debug)]
-enum SplitState<'t> {
-    Unmatched(&'t str),
-    Captured(Captures<'t>),
-}
+/// Validate a single clause, returning it in canonical form.
+fn parse_clause(
+    clause: &str,
+    reference_data: &BTreeMap<&'static str, Variable<'static>>,
+    extra_fields: Option<&HashSet<String>>,
+) -> Result<String> {
+    // quotes are not needed by the API, even for values containing spaces
+    let clause = clause.replace(['"', '\''], "");
+    let clause = clause.trim();
+    if clause.is_empty() {
+        return Err(expression_error(
+            "found an empty clause - check for a doubled or trailing AND/OR.".to_string(),
+        ));
+    }
+    if clause.matches('(').count() != clause.matches(')').count() {
+        return Err(expression_error(format!(
+            "unbalanced parentheses in \"{clause}\". Parentheses may only wrap a whole OR branch, as GoaT does not support nesting: write \"a AND (b OR c)\" as \"a AND b OR a AND c\"."
+        )));
+    }
+    let lower = clause.to_lowercase();
+    if lower.starts_with("tax_rank") {
+        return Err(expression_error(
+            "set tax_rank through --tax-rank <taxon_rank>.".to_string(),
+        ));
+    }
+    if lower.starts_with("tax_") {
+        return Err(expression_error("set tax_name through -t <taxon_name>, tax_tree by -d flag, and tax_lineage by -l flag.".to_string()));
+    }
 
-impl<'r, 't> Iterator for SplitCaptures<'r, 't> {
-    type Item = SplitState<'t>;
-
-    fn next(&mut self) -> Option<SplitState<'t>> {
-        if let Some(caps) = self.caps.take() {
-            return Some(SplitState::Captured(caps));
+    let Some(caps) = CLAUSE.captures(clause) else {
+        // a bare field, which means "has a value"
+        if clause.contains(char::is_whitespace) {
+            return Err(expression_error(format!(
+                "\"{clause}\" is not a valid clause. Expected <field> <operator> <value>, e.g. \"long_list = dtol\", or a bare field name."
+            )));
         }
-        match self.finder.next() {
-            None => {
-                if self.last >= self.text.len() {
-                    None
-                } else {
-                    let s = &self.text[self.last..];
-                    self.last = self.text.len();
-                    Some(SplitState::Unmatched(s))
-                }
-            }
-            Some(caps) => {
-                let m = caps.get(0).unwrap();
-                let unmatched = &self.text[self.last..m.start()];
-                self.last = m.end();
-                self.caps = Some(caps);
-                Some(SplitState::Unmatched(unmatched))
-            }
+        let (lhs, _) = resolve_lhs(clause, reference_data, extra_fields)?;
+        return Ok(lhs);
+    };
+
+    let (lhs, type_of) = resolve_lhs(&caps["lhs"], reference_data, extra_fields)?;
+    let rhs = caps["rhs"].trim();
+    if rhs.is_empty() {
+        return Err(expression_error(format!("missing value in \"{clause}\".")));
+    }
+    if let Some(type_of) = type_of {
+        type_of.check(rhs, &lhs)?;
+    }
+    let values = rhs.split(',').map(str::trim).collect::<Vec<_>>().join(",");
+    Ok(format!("{} {} {}", lhs, &caps["op"], values))
+}
+
+/// Validate the left hand side of a clause: a field, optionally with a
+/// `:subset` and/or wrapped in a summary function. Returns the canonical
+/// form, and the type to check values against (`None` for fields only known
+/// from the live registry, and identifiers such as `taxon_id`).
+fn resolve_lhs<'d>(
+    lhs: &str,
+    reference_data: &'d BTreeMap<&'static str, Variable<'static>>,
+    extra_fields: Option<&HashSet<String>>,
+) -> Result<(String, Option<&'d TypeOf<'static>>)> {
+    let lhs = lhs.trim().to_lowercase();
+    let (function, field) = match FUNCTION.captures(&lhs) {
+        Some(caps) => (Some(caps["func"].to_string()), caps["field"].to_string()),
+        None => (None, lhs.clone()),
+    };
+    if let Some(f) = &function {
+        if !VALID_EXPRESSION_FUNCTIONS.contains(&f.as_str()) {
+            return Err(expression_error(format!(
+                "unknown function \"{f}\" in \"{lhs}\" - valid functions are: {}.",
+                VALID_EXPRESSION_FUNCTIONS.join(", ")
+            )));
         }
     }
+
+    let (name, subset) = match field.split_once(':') {
+        Some((name, subset)) => (name.trim(), Some(subset.trim())),
+        None => (field.as_str(), None),
+    };
+    if let Some(subset) = subset {
+        if !VALID_SUBSETS.contains(&subset) {
+            return Err(expression_error(format!(
+                "unknown field subset \":{}\" - valid subsets are: {}",
+                subset,
+                VALID_SUBSETS.join(", ")
+            )));
+        }
+    }
+    if name.is_empty() || name.contains(|c: char| c.is_whitespace() || c == '(' || c == ')') {
+        return Err(expression_error(format!(
+            "\"{lhs}\" is not a valid field name."
+        )));
+    }
+
+    let is_dynamic = extra_fields.map_or(false, |fields| fields.contains(name));
+    let (name, type_of) = match canonical_field(name, reference_data) {
+        Some(canonical) => (canonical.to_string(), Some(&reference_data[canonical].type_of)),
+        // identifiers are matched by the API, e.g. taxon_id = 9606
+        None if is_dynamic || name.ends_with("_id") => (name.to_string(), None),
+        None => {
+            let possibilities = reference_data
+                .keys()
+                .map(|k| k.to_string())
+                .chain(GOAT_VARIABLE_SYNONYMS.keys().map(|k| k.to_string()))
+                .collect::<Vec<_>>();
+            let hint = did_you_mean(&possibilities, name)
+                .map(|s| format!(" - did you mean \"{s}\"?"))
+                .unwrap_or_default();
+            return Err(expression_error(format!(
+                "unknown variable \"{name}\"{hint}"
+            )));
+        }
+    };
+
+    let type_of = match function.as_deref() {
+        Some(f) if COUNT_FUNCTIONS.contains(&f) => Some(&COUNT_TYPE),
+        _ => type_of,
+    };
+    let field = match subset {
+        Some(subset) => format!("{name}:{subset}"),
+        None => name,
+    };
+    let lhs = match function {
+        Some(f) => format!("{f}({field})"),
+        None => field,
+    };
+    Ok((lhs, type_of))
 }
 
 #[cfg(test)]
@@ -663,9 +498,10 @@ mod tests {
         let mut cli_exp = CLIexpression::new(expression);
         let result = cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA, None);
 
+        // ebp_metric_date is a synonym of ebp_standard_date
         assert_eq!(
             result.unwrap(),
-            " AND bioproject = !PRJEB40665 AND long_list = dtol AND ebp_metric_date AND genome_size > 1000"
+            " AND bioproject = !PRJEB40665 AND long_list = dtol AND ebp_standard_date AND genome_size > 1000"
         );
     }
 
@@ -776,15 +612,15 @@ mod tests {
     }
 
     #[test]
-    fn test_operator_parse_gt() {
-        let op = Operator::parse(">").unwrap();
-        assert_eq!(op.as_str(), ">");
-    }
-
-    #[test]
-    fn test_operator_parse_lte() {
-        let op = Operator::parse("<=").unwrap();
-        assert_eq!(op.as_str(), "<=");
+    fn test_all_operators_without_spaces() {
+        for op in ["!=", "<", "<=", "=", "==", ">", ">="] {
+            let expression = format!("genome_size{op}1000");
+            let mut cli_exp = CLIexpression::new(&expression);
+            assert_eq!(
+                cli_exp.parse(&GOAT_TAXON_VARIABLE_DATA, None).unwrap(),
+                format!(" AND genome_size {op} 1000")
+            );
+        }
     }
 
     #[test]
@@ -800,9 +636,21 @@ mod tests {
     }
 
     #[test]
+    fn test_date_check_accepts_year_month() {
+        let t = TypeOf::Date;
+        assert!(t.check("2024-03", "assembly_date").is_ok());
+    }
+
+    #[test]
     fn test_date_check_rejects_bad_token_count() {
         let t = TypeOf::Date;
-        assert!(t.check("2024-03", "assembly_date").is_err());
+        assert!(t.check("2024-03-10-01", "assembly_date").is_err());
+    }
+
+    #[test]
+    fn test_date_check_rejects_bad_month() {
+        let t = TypeOf::Date;
+        assert!(t.check("2024-13", "assembly_date").is_err());
     }
 
     #[test]
@@ -815,5 +663,166 @@ mod tests {
     fn test_date_check_rejects_bad_full_date_shape() {
         let t = TypeOf::Date;
         assert!(t.check("2024-3-10", "assembly_date").is_err());
+    }
+
+    fn parse(expression: &str) -> Result<String> {
+        CLIexpression::new(expression).parse(&GOAT_TAXON_VARIABLE_DATA, None)
+    }
+
+    #[test]
+    fn test_lowercase_and() {
+        assert_eq!(
+            parse("genome_size > 1000 and c_value < 5").unwrap(),
+            " AND genome_size > 1000 AND c_value < 5"
+        );
+    }
+
+    #[test]
+    fn test_and_inside_a_value_does_not_split() {
+        // "island" contains "and", but not surrounded by whitespace
+        assert!(parse("country_list = island").is_ok());
+    }
+
+    #[test]
+    fn test_or_groups() {
+        assert_eq!(
+            parse("genome_size > 1e9 AND c_value > 1 OR assembly_level = chromosome").unwrap(),
+            " AND genome_size > 1e9 AND c_value > 1 OR assembly_level = chromosome"
+        );
+    }
+
+    #[test]
+    fn test_or_lowercase_with_parentheses() {
+        assert_eq!(
+            parse("(genome_size > 1e9 AND c_value > 1) or (assembly_level = chromosome)").unwrap(),
+            " AND genome_size > 1e9 AND c_value > 1 OR assembly_level = chromosome"
+        );
+    }
+
+    #[test]
+    fn test_nested_parentheses_rejected() {
+        let err = parse("genome_size > 1 AND (c_value > 1 OR c_value < 0)").unwrap_err();
+        assert!(err.to_string().contains("nesting"), "{}", err);
+    }
+
+    #[test]
+    fn test_symbolic_boolean_operators_rejected() {
+        assert!(parse("genome_size > 1 && c_value > 1").is_err());
+        assert!(parse("genome_size > 1 || c_value > 1").is_err());
+    }
+
+    #[test]
+    fn test_scientific_notation_and_negative_numbers() {
+        assert!(parse("genome_size > 1e9").is_ok());
+        assert!(parse("genome_size > 1.5E9").is_ok());
+        assert!(parse("c_value > -1").is_ok());
+    }
+
+    #[test]
+    fn test_size_suffix_rejected_with_hint() {
+        let err = parse("genome_size > 1G").unwrap_err();
+        assert!(err.to_string().contains("scientific notation"), "{}", err);
+    }
+
+    #[test]
+    fn test_enforced_keyword_is_case_insensitive() {
+        assert_eq!(
+            parse("assembly_level = Chromosome").unwrap(),
+            " AND assembly_level = Chromosome"
+        );
+    }
+
+    #[test]
+    fn test_enforced_keyword_rejects_unknown_value() {
+        let err = parse("assembly_level = chromosom").unwrap_err();
+        assert!(err.to_string().contains("did you mean \"chromosome\""), "{}", err);
+    }
+
+    #[test]
+    fn test_unenforced_keyword_accepts_unknown_value() {
+        // long_list has known values, but the API accepts any value
+        assert!(parse("long_list = DTOL").is_ok());
+        assert!(parse("long_list = some_new_project").is_ok());
+    }
+
+    #[test]
+    fn test_free_text_keyword_accepts_any_value() {
+        assert!(parse("bioproject = PRJNA533106").is_ok());
+    }
+
+    #[test]
+    fn test_multi_word_values_and_quotes() {
+        assert_eq!(
+            parse("assembly_level = chromosome, \"complete genome\"").unwrap(),
+            " AND assembly_level = chromosome,complete genome"
+        );
+    }
+
+    #[test]
+    fn test_negated_list_values() {
+        assert_eq!(
+            parse("assembly_level = chromosome,!scaffold").unwrap(),
+            " AND assembly_level = chromosome,!scaffold"
+        );
+    }
+
+    #[test]
+    fn test_keyword_range_operator() {
+        assert_eq!(
+            parse("assembly_level >= scaffold").unwrap(),
+            " AND assembly_level >= scaffold"
+        );
+    }
+
+    #[test]
+    fn test_field_synonym_and_hyphen_and_case() {
+        assert_eq!(parse("ebp_metric_date >= 2023").unwrap(), " AND ebp_standard_date >= 2023");
+        assert_eq!(parse("genome-size > 1").unwrap(), " AND genome_size > 1");
+        assert_eq!(parse("Genome_Size > 1").unwrap(), " AND genome_size > 1");
+    }
+
+    #[test]
+    fn test_hyphenated_field_name() {
+        assert!(parse("marhabreg-2017 = yes").is_ok());
+    }
+
+    #[test]
+    fn test_identifier_terms() {
+        assert_eq!(parse("taxon_id = 9606,9598").unwrap(), " AND taxon_id = 9606,9598");
+    }
+
+    #[test]
+    fn test_bare_field_is_validated() {
+        let err = parse("genome_sizee").unwrap_err();
+        assert!(err.to_string().contains("did you mean \"genome_size\""), "{}", err);
+    }
+
+    #[test]
+    fn test_contains_rejected_with_hint() {
+        let err = parse("long_list contains dtol").unwrap_err();
+        assert!(err.to_string().contains("long_list = dtol"), "{}", err);
+    }
+
+    #[test]
+    fn test_count_function_takes_integer() {
+        assert!(parse("count(assembly_level) > 1").is_ok());
+        assert!(parse("length(long_list) > x").is_err());
+    }
+
+    #[test]
+    fn test_unknown_function_rejected() {
+        let err = parse("mean(genome_size) > 1").unwrap_err();
+        assert!(err.to_string().contains("unknown function"), "{}", err);
+    }
+
+    #[test]
+    fn test_long_expressions_allowed() {
+        let expression = vec!["genome_size > 1"; 20].join(" AND ");
+        assert!(parse(&expression).is_ok());
+    }
+
+    #[test]
+    fn test_trailing_and_rejected() {
+        assert!(parse("genome_size > 1 AND ").is_err());
     }
 }

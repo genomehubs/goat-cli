@@ -322,7 +322,9 @@ impl Report {
 
             let y_variable = matches.opt_one::<String>("y-variable");
             if let Some(y_var) = y_variable {
-                report.y = Some(y_var.to_string());
+                let inner_y =
+                    Variables::new(y_var).parse_one(&variable_data::GOAT_TAXON_VARIABLE_DATA)?;
+                report.y = Some(inner_y);
             }
         }
 

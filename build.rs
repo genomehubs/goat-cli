@@ -32,6 +32,7 @@ fn main() {
     writeln!(code, "lazy_static! {{").unwrap();
     generate_map(&mut code, &taxon_json, "GOAT_TAXON_VARIABLE_DATA");
     generate_map(&mut code, &assembly_json, "GOAT_ASSEMBLY_VARIABLE_DATA");
+    generate_synonyms(&mut code, &[&taxon_json, &assembly_json]);
     writeln!(code, "}}").unwrap();
 
     std::fs::write(Path::new(&out_dir).join("variable_data.rs"), code)
@@ -95,17 +96,58 @@ fn map_type(field: &Value) -> String {
     }
 }
 
+/// Keywords with a `constraint.enum` are only validated against it by the
+/// API when `summary` includes `"enum"`; otherwise the list is just the
+/// known values, and anything else is a legal (if fruitless) query.
 fn map_keyword(field: &Value) -> String {
-    if let Some(enums) = field["constraint"]["enum"].as_array() {
-        let values: Vec<String> = enums
-            .iter()
-            .filter_map(|v| v.as_str())
-            .map(|s| format!("{s:?}"))
-            .collect();
-        format!("TypeOf::Keyword(vec![{}])", values.join(", "))
+    let values: Vec<String> = field["constraint"]["enum"]
+        .as_array()
+        .map(|enums| {
+            enums
+                .iter()
+                .filter_map(|v| v.as_str())
+                .map(|s| format!("{s:?}"))
+                .collect()
+        })
+        .unwrap_or_default();
+    let enforced = match &field["summary"] {
+        Value::String(s) => s == "enum",
+        Value::Array(arr) => arr.iter().any(|v| v.as_str() == Some("enum")),
+        _ => false,
+    };
+    let variant = if enforced || values.is_empty() {
+        "Keyword"
     } else {
-        r#"TypeOf::Keyword(vec![""])"#.into()
+        "KeywordSuggest"
+    };
+    format!("TypeOf::{variant}(vec![{}])", values.join(", "))
+}
+
+/// Map each field synonym (e.g. `ebp_metric_date`) to its canonical name,
+/// as the API accepts either.
+fn generate_synonyms(out: &mut String, jsons: &[&Value]) {
+    let mut synonyms = std::collections::BTreeMap::new();
+    for json in jsons {
+        let fields = json["fields"].as_object().expect("no 'fields' object in JSON");
+        for (name, data) in fields {
+            for synonym in data["synonyms"].as_array().into_iter().flatten() {
+                if let Some(synonym) = synonym.as_str() {
+                    synonyms.insert(synonym.to_string(), name.clone());
+                }
+            }
+        }
     }
+    writeln!(
+        out,
+        "    pub static ref GOAT_VARIABLE_SYNONYMS: BTreeMap<&'static str, &'static str> = {{"
+    )
+    .unwrap();
+    writeln!(out, "        let mut m = BTreeMap::new();").unwrap();
+    for (synonym, name) in &synonyms {
+        writeln!(out, "        m.insert({synonym:?}, {name:?});").unwrap();
+    }
+    writeln!(out, "        m").unwrap();
+    writeln!(out, "    }};").unwrap();
 }
 
 /// Map a `resultFields` `summary` array to a `Function` variant.
