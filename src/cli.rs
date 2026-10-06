@@ -235,7 +235,7 @@ pub fn build_cli() -> clap::Command {
                     .short('i')
                     .long("include-estimates")
                     .action(SetTrue)
-                    .conflicts_with("raw")
+                    .conflicts_with("taxon-raw")
                     .help("Include ancestral estimates. Omitting this flag includes only direct estimates from a taxon. Cannot be used with --raw.")
             )
             .arg(
@@ -331,6 +331,7 @@ pub fn build_cli() -> clap::Command {
                 Arg::new("lineage")
                     .short('l')
                     .long("lineage")
+                    .action(SetTrue)
                     .conflicts_with("descendents")
                     .help("Displays lineage information. I.e. from this node in the tree go back and give all the nodes to the root. Conflicts with descendents."),
             )
@@ -408,8 +409,7 @@ pub fn build_cli() -> clap::Command {
                     .short('i')
                     .long("include-estimates")
                     .action(SetTrue)
-                    .conflicts_with("raw")
-                    .help("Include ancestral estimates. Omitting this flag includes only direct estimates from a taxon. Cannot be used with --raw.")
+                    .help("Include ancestral estimates. Omitting this flag includes only direct estimates from a taxon.")
             )
             .arg(
                 Arg::new("print-expression")

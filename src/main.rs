@@ -1,5 +1,7 @@
 use futures::try_join;
+use std::process::ExitCode;
 use goat_cli::error::Result;
+use goat_cli::utils::args::ArgMatchesExt;
 
 use goat_cli::report::fetch::ReportAction;
 use goat_cli::{
@@ -11,12 +13,16 @@ use goat_cli::{
 };
 
 #[tokio::main]
-async fn main() {
-    let result = run().await;
-    match result {
-        Ok(_) => (),
+async fn main() -> ExitCode {
+    match run().await {
+        Ok(_) => ExitCode::SUCCESS,
+        // stdout was closed early (e.g. piped into `head`), which is fine.
+        Err(e) if e.is_broken_pipe() => ExitCode::SUCCESS,
         // format the errors nicely
-        Err(e) => eprintln!("{}", e),
+        Err(e) => {
+            eprintln!("{}", e);
+            ExitCode::FAILURE
+        }
     }
 }
 
@@ -38,7 +44,7 @@ async fn run() -> Result<()> {
             // inner are all the taxon matches here.
             Some(("search", taxon_search_matches)) => {
                 let progress_bar = *taxon_search_matches
-                    .get_one::<bool>("progress-bar")
+                    .opt_one::<bool>("progress-bar")
                     .expect("cli default false");
                 let unique_ids =
                     match generate_unique_strings(taxon_search_matches, IndexType::Taxon)? {
@@ -146,8 +152,8 @@ async fn run() -> Result<()> {
                 // Arc may have no taxon (global query), so only call generate_unique_strings
                 // when a taxon or file is present; otherwise generate a single ID.
                 let unique_ids =
-                    if arc_matches.get_one::<String>("taxon").is_some()
-                        || arc_matches.get_one::<std::path::PathBuf>("file").is_some()
+                    if arc_matches.opt_one::<String>("taxon").is_some()
+                        || arc_matches.opt_one::<std::path::PathBuf>("file").is_some()
                     {
                         match generate_unique_strings(arc_matches, IndexType::Taxon)? {
                             UniqueIdAction::Continue(ids) => ids,
@@ -164,11 +170,11 @@ async fn run() -> Result<()> {
             }
             Some(("newick", taxon_newick_matches)) => {
                 let progress_bar = *taxon_newick_matches
-                    .get_one::<bool>("progress-bar")
+                    .opt_one::<bool>("progress-bar")
                     .expect("cli default false");
                 // TODO: check that the CLI has a 'url' option
                 let print_url = taxon_newick_matches
-                    .get_one::<bool>("url")
+                    .opt_one::<bool>("url")
                     .copied()
                     .unwrap_or(false);
 
@@ -230,7 +236,7 @@ async fn run() -> Result<()> {
             // and the three implemented subcommands currently.
             Some(("search", assembly_search_matches)) => {
                 let progress_bar = *assembly_search_matches
-                    .get_one::<bool>("progress-bar")
+                    .opt_one::<bool>("progress-bar")
                     .expect("cli default false");
                 let unique_ids =
                     match generate_unique_strings(assembly_search_matches, IndexType::Assembly)? {

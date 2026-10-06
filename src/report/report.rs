@@ -1,4 +1,5 @@
 use crate::error::{Error, ErrorKind, Result};
+use crate::utils::args::ArgMatchesExt;
 use crate::utils::url::percent_encode_query_value;
 use crate::utils::variable_data;
 use crate::utils::{tax_ranks::TaxRanks, utils, variables::Variables};
@@ -280,57 +281,57 @@ impl Report {
         };
 
         // Taxon is optional for arc (global query), required for all other report types.
-        if let Some(search) = matches.get_one::<String>("taxon") {
+        if let Some(search) = matches.opt_one::<String>("taxon") {
             report.search = utils::parse_comma_separated(search);
         }
 
         // safe to unwrap, as default is defined.
         report.rank = matches
-            .get_one::<String>("rank")
+            .opt_one::<String>("rank")
             .expect("cli default = species")
             .to_string();
         // taxon type will be by default tax_tree(). change this here
         // for future reference. But will require a flag on the cli.
 
         report.threshold = matches
-            .get_one::<i32>("threshold")
+            .opt_one::<i32>("threshold")
             .copied()
             .unwrap_or(2000);
 
         // Arc uses raw filter expressions; other reports use validated variable names.
         if report_type == ReportType::Arc {
-            if let Some(xf) = matches.get_one::<String>("x-filter") {
+            if let Some(xf) = matches.opt_one::<String>("x-filter") {
                 report.x = Some(xf.clone());
             }
-            if let Some(yf) = matches.get_one::<String>("y-filter") {
+            if let Some(yf) = matches.opt_one::<String>("y-filter") {
                 report.y = Some(yf.clone());
             }
-            if let Some(em) = matches.get_one::<String>("exclude-missing") {
+            if let Some(em) = matches.opt_one::<String>("exclude-missing") {
                 report.exclude_missing = em.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
             }
-            if let Some(ea) = matches.get_one::<String>("exclude-ancestral") {
+            if let Some(ea) = matches.opt_one::<String>("exclude-ancestral") {
                 report.exclude_ancestral = ea.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
             }
         } else {
-            let x_variable = matches.get_one::<String>("x-variable");
+            let x_variable = matches.opt_one::<String>("x-variable");
             if let Some(xvar) = x_variable {
                 let inner_x =
                     Variables::new(xvar).parse_one(&variable_data::GOAT_TAXON_VARIABLE_DATA)?;
                 report.x = Some(inner_x);
             }
 
-            let y_variable = matches.get_one::<String>("y-variable");
+            let y_variable = matches.opt_one::<String>("y-variable");
             if let Some(y_var) = y_variable {
                 report.y = Some(y_var.to_string());
             }
         }
 
         // parse size
-        let size = matches.get_one::<usize>("size");
+        let size = matches.opt_one::<usize>("size");
         report.size = size.copied();
 
         // descendents (default) or not?
-        let no_descendents = matches.get_one::<bool>("no-descendents");
+        let no_descendents = matches.opt_one::<bool>("no-descendents");
 
         if let Some(desc) = no_descendents {
             if *desc {
@@ -338,17 +339,17 @@ impl Report {
             }
         }
         // x options
-        let xopts = matches.get_one::<String>("x-opts");
+        let xopts = matches.opt_one::<String>("x-opts");
         if let Some(x_opts) = xopts {
             report.x_opts = Some(Opts::try_from_string(x_opts)?);
         }
         // y options
-        let yopts = matches.get_one::<String>("y-opts");
+        let yopts = matches.opt_one::<String>("y-opts");
         if let Some(y_opts) = yopts {
             report.y_opts = Some(Opts::try_from_string(y_opts)?);
         }
         // category for histogram.
-        let category = matches.get_one::<String>("category");
+        let category = matches.opt_one::<String>("category");
         if let Some(cat) = category {
             // FIXME: is this correct? Looks a bit wrong
 

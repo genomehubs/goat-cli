@@ -22,6 +22,12 @@ impl Error {
         &self.0
     }
 
+    /// Is this error a broken pipe on writing output, e.g. when piping
+    /// `goat-cli` into `head`? This is not a real failure.
+    pub fn is_broken_pipe(&self) -> bool {
+        matches!(&*self.0, ErrorKind::IO(e) if e.kind() == std::io::ErrorKind::BrokenPipe)
+    }
+
     /// Unwrap this error into its underlying type.
     pub fn into_kind(self) -> ErrorKind {
         *self.0
@@ -52,6 +58,8 @@ pub enum ErrorKind {
     Progress(TemplateError),
     // error in report
     Report(String),
+    // the GoaT API reported an error
+    Api(String),
 }
 
 impl From<ClapError> for Error {
@@ -109,6 +117,7 @@ impl fmt::Display for Error {
             ErrorKind::SerdeJSON(err) => write!(f, "serialising JSON error - {}", err),
             ErrorKind::Progress(err) => write!(f, "progress bar error - {}", err),
             ErrorKind::Report(err) => write!(f, "report error - {}", err),
+            ErrorKind::Api(err) => write!(f, "GoaT API error - {}", err),
         }
     }
 }
