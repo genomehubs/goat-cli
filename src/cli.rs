@@ -11,6 +11,7 @@ use std::path::PathBuf;
 
 use clap::{Args, CommandFactory, Parser, Subcommand};
 
+use crate::output::Format;
 use crate::report::report::ReportOptions;
 use crate::utils::url::FieldBuilder;
 use crate::utils::utils::pretty_print_usize;
@@ -27,6 +28,11 @@ const PRINT_EXPRESSION_HELP: &str = "Print all variables in GoaT currently, with
 const PROGRESS_BAR_HELP: &str = "Add a progress bar to large queries, to estimate time left.";
 const NO_DESCENDENTS_HELP: &str =
     "Do not return values for descendents (i.e. a tax_name() call).";
+const SEARCH_FORMAT_HELP: &str =
+    "Output format: tsv, csv, or json (search: GoaT's full JSON response; count: the rows as objects).";
+const TABLE_FORMAT_HELP: &str = "Output format: tsv, csv, or json (the rows as objects).";
+const REPORT_FORMAT_HELP: &str =
+    "Output format: a tsv or csv table, or json (GoaT's full report response).";
 const OPTS_HELP: &str = "Options for the x-axis. Comma-separated: min,max,tickCount,scale,axisTitle.\nScales: linear, sqrt, log10, log2, log, proportion, ordinal.";
 
 /// Ranks for `-R/--ranks` in search and count.
@@ -122,6 +128,10 @@ pub enum TaxonCommand {
     Count(TaxonSearchArgs),
     #[command(about = "Return information relating to a taxon name, e.g. synonyms, authorities.")]
     Lookup(LookupArgs),
+    #[command(
+        about = "Show the full record for taxa: every field with its value and sources, or their names or lineage."
+    )]
+    Record(RecordArgs),
     #[command(about = "Get the sources of data for all taxa input.")]
     Sources(SourcesArgs),
     #[command(about = "Generate a newick tree from input taxa.")]
@@ -147,6 +157,10 @@ pub enum AssemblyCommand {
     Count(AssemblySearchArgs),
     #[command(about = "Return information relating to a taxon name, e.g. synonyms, authorities.")]
     Lookup(LookupArgs),
+    #[command(
+        about = "Show the full record for assemblies: every field with its value and source, or their identifiers or lineage."
+    )]
+    Record(RecordArgs),
 }
 
 // ── search and count ─────────────────────────────────────────────────────────
@@ -227,6 +241,15 @@ pub struct OutputArgs {
         help = "Print the underlying GoaT UI URL(s). View on the browser!"
     )]
     pub goat_ui_url: bool,
+    #[arg(
+        short = 'F',
+        long,
+        value_enum,
+        value_name = "format",
+        default_value = "tsv",
+        help = SEARCH_FORMAT_HELP
+    )]
+    pub format: Format,
 }
 
 // Field flags for `taxon search` and `taxon count`.
@@ -476,6 +499,58 @@ pub struct LookupArgs {
         help = "The number of results to return."
     )]
     pub size: u64,
+    #[arg(
+        short = 'F',
+        long,
+        value_enum,
+        value_name = "format",
+        default_value = "tsv",
+        help = TABLE_FORMAT_HELP
+    )]
+    pub format: Format,
+}
+
+// ── record ───────────────────────────────────────────────────────────────────
+
+// `goat-cli taxon record` and `goat-cli assembly record`
+#[derive(Args, Debug, Clone, Default)]
+pub struct RecordArgs {
+    #[arg(
+        short = 't',
+        long,
+        value_name = "taxon",
+        required_unless_present = "file",
+        help = "The records to show, comma separated: NCBI taxon IDs or names (taxon record), or assembly accessions (assembly record)."
+    )]
+    pub taxon: Option<String>,
+    #[arg(
+        short = 'f',
+        long,
+        value_name = "file",
+        required_unless_present = "taxon",
+        help = file_help()
+    )]
+    pub file: Option<PathBuf>,
+    #[arg(
+        short = 'n',
+        long,
+        conflicts_with = "lineage",
+        help = "Show names (taxon record) or identifiers (assembly record) instead of fields."
+    )]
+    pub names: bool,
+    #[arg(short = 'l', long, help = "Show the lineage instead of fields.")]
+    pub lineage: bool,
+    #[arg(short = 'u', long, help = "Print the record URL(s).")]
+    pub url: bool,
+    #[arg(
+        short = 'F',
+        long,
+        value_enum,
+        value_name = "format",
+        default_value = "tsv",
+        help = "Output format: a tsv or csv table, or json (the full records)."
+    )]
+    pub format: Format,
 }
 
 // ── reports ──────────────────────────────────────────────────────────────────
@@ -503,6 +578,15 @@ pub struct SourcesArgs {
     pub no_descendents: bool,
     #[arg(short = 'u', long, help = "Print report URL.")]
     pub url: bool,
+    #[arg(
+        short = 'F',
+        long,
+        value_enum,
+        value_name = "format",
+        default_value = "tsv",
+        help = REPORT_FORMAT_HELP
+    )]
+    pub format: Format,
 }
 
 // `goat-cli taxon newick`
@@ -610,6 +694,15 @@ pub struct HistArgs {
     pub x_opts: Option<String>,
     #[arg(short = 'u', long, help = "Print report URL.")]
     pub url: bool,
+    #[arg(
+        short = 'F',
+        long,
+        value_enum,
+        value_name = "format",
+        default_value = "tsv",
+        help = REPORT_FORMAT_HELP
+    )]
+    pub format: Format,
 }
 
 // `goat-cli taxon scatter`
@@ -673,6 +766,15 @@ pub struct ScatterArgs {
     pub y_opts: Option<String>,
     #[arg(short = 'u', long, help = "Print report URL.")]
     pub url: bool,
+    #[arg(
+        short = 'F',
+        long,
+        value_enum,
+        value_name = "format",
+        default_value = "tsv",
+        help = REPORT_FORMAT_HELP
+    )]
+    pub format: Format,
 }
 
 // `goat-cli taxon arc`
@@ -728,6 +830,15 @@ pub struct ArcArgs {
     pub no_descendents: bool,
     #[arg(short = 'u', long, help = "Print report URL.")]
     pub url: bool,
+    #[arg(
+        short = 'F',
+        long,
+        value_enum,
+        value_name = "format",
+        default_value = "tsv",
+        help = REPORT_FORMAT_HELP
+    )]
+    pub format: Format,
 }
 
 impl From<&SourcesArgs> for ReportOptions {
@@ -737,6 +848,7 @@ impl From<&SourcesArgs> for ReportOptions {
             rank: args.rank.clone(),
             no_descendents: args.no_descendents,
             url: args.url,
+            format: args.format,
             ..Default::default()
         }
     }
@@ -768,6 +880,7 @@ impl From<&HistArgs> for ReportOptions {
             no_descendents: args.no_descendents,
             x_opts: args.x_opts.clone(),
             url: args.url,
+            format: args.format,
             ..Default::default()
         }
     }
@@ -786,6 +899,7 @@ impl From<&ScatterArgs> for ReportOptions {
             x_opts: args.x_opts.clone(),
             y_opts: args.y_opts.clone(),
             url: args.url,
+            format: args.format,
             ..Default::default()
         }
     }
@@ -802,6 +916,7 @@ impl From<&ArcArgs> for ReportOptions {
             exclude_ancestral: args.exclude_ancestral.clone(),
             no_descendents: args.no_descendents,
             url: args.url,
+            format: args.format,
             ..Default::default()
         }
     }

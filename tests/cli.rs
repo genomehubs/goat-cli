@@ -215,3 +215,35 @@ fn test_completions_subcommand_parses() {
     }
     assert!(Cli::try_parse_from(["goat-cli", "completions", "tcsh"]).is_err());
 }
+
+#[test]
+fn test_format_defaults_to_tsv_and_parses() {
+    use goat_cli::output::Format;
+    assert_eq!(search_request(&["taxon", "search", "-t", "X"]).output.format, Format::Tsv);
+    assert_eq!(search_request(&["assembly", "count", "-t", "X", "-F", "csv"]).output.format, Format::Csv);
+    let (options, _) = report_options(&["taxon", "hist", "-t", "X", "-x", "genome_size", "--format", "json"]);
+    assert_eq!(options.format, Format::Json);
+    assert!(Cli::try_parse_from(["goat-cli", "taxon", "search", "-t", "X", "-F", "xml"]).is_err());
+    // newick has no table format
+    assert!(Cli::try_parse_from(["goat-cli", "taxon", "newick", "-t", "X", "-F", "csv"]).is_err());
+}
+
+#[test]
+fn test_record_subcommands_parse() {
+    use goat_cli::record::RecordView;
+    match parse(&["taxon", "record", "-t", "Homo sapiens,9598", "--lineage"]).index {
+        Index::Taxon { command: TaxonCommand::Record(args) } => {
+            assert_eq!(args.taxon.as_deref(), Some("Homo sapiens,9598"));
+            assert_eq!(RecordView::from_args(&args), RecordView::Lineage);
+        }
+        other => panic!("{:?}", other),
+    }
+    match parse(&["assembly", "record", "-t", "GCA_000001405.29", "-n", "-F", "json"]).index {
+        Index::Assembly { command: AssemblyCommand::Record(args) } => {
+            assert_eq!(RecordView::from_args(&args), RecordView::Names);
+        }
+        other => panic!("{:?}", other),
+    }
+    assert!(Cli::try_parse_from(["goat-cli", "taxon", "record", "-t", "X", "-n", "-l"]).is_err());
+    assert!(Cli::try_parse_from(["goat-cli", "taxon", "record"]).is_err());
+}

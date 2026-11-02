@@ -5,9 +5,10 @@
 use crate::client::GoatClient;
 use crate::error::{Error, ErrorKind, Result};
 use futures::StreamExt;
-use std::io::{BufWriter, Write};
+use serde_json::json;
 
 use crate::cli::SearchRequest;
+use crate::output::Table;
 use crate::utils::cli_matches::{self, CliAction};
 
 /// How to show a search query to the user; an empty one (no `-t`/`-f`)
@@ -64,17 +65,13 @@ pub async fn count(
         true => {
             // print to console
             let mut outer_count = 0;
-            let mut out = BufWriter::new(std::io::stdout().lock());
-            writeln!(out, "search_query\tcount")?;
+            let mut table = Table::new(&["search_query", "count"]);
             for el in awaited_fetches {
-                let (search_query, count) = match el {
-                    Ok(e) => e,
-                    Err(e) => return Err(e),
-                };
-                writeln!(out, "{}\t{}", query_label(&search_query), count)?;
+                let (search_query, count) = el?;
+                table.push(vec![json!(query_label(&search_query)), json!(count)]);
                 outer_count += count;
             }
-            out.flush()?;
+            table.print(request.output.format)?;
             Ok(Some(outer_count))
         }
         false => {

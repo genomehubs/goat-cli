@@ -1,6 +1,7 @@
 use crate::error::{Error, ErrorKind, Result};
 use crate::utils::url::percent_encode_query_value;
 use crate::utils::variable_data;
+use crate::output::Format;
 use crate::utils::{expression::CLIexpression, field_registry};
 use crate::utils::{tax_ranks::TaxRanks, utils, variables::Variables};
 use crate::{IndexType, TaxType, GOAT_URL, TAXONOMY};
@@ -305,6 +306,8 @@ pub struct ReportOptions {
     pub y_opts: Option<String>,
     /// Only print the URL.
     pub url: bool,
+    /// The output format (not used for newick).
+    pub format: Format,
 }
 
 impl Default for ReportOptions {
@@ -326,6 +329,7 @@ impl Default for ReportOptions {
             x_opts: None,
             y_opts: None,
             url: false,
+            format: Format::Tsv,
         }
     }
 }

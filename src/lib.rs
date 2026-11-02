@@ -26,13 +26,17 @@ pub mod client;
 pub mod count;
 /// The custom error handling
 pub mod error;
+/// Output formats and tables.
+pub mod output;
 /// Query the GoaT lookup API.
 pub mod lookup;
 /// A module to produce a progress
 /// bar.
 pub mod progress;
-/// Query the GoaT record API.
+/// Query the GoaT report API.
 pub mod report;
+/// Query the GoaT record API.
+pub mod record;
 /// Query the GoaT search API.
 pub mod search;
 /// Collection of utility functions
@@ -66,7 +70,7 @@ lazy_static! {
 ///
 /// Each tuple variant can store their respective
 /// [`std::collections::BTreeMap`] databases.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum IndexType {
     /// Taxon search index. The historical main
     /// functionality of goat-cli went through taxon.

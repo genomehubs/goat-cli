@@ -130,6 +130,8 @@ pub fn get_rank_vector(r: &str) -> Vec<String> {
 
 /// If multiple taxa are queried at once, headers will return for every new taxon.
 /// We can suppress this by storing the whole return as a string.
+///
+/// Works for GoaT's TSV and CSV alike.
 pub fn format_tsv_output(awaited_fetches: Vec<Result<String>>) -> Result<()> {
     // return the first failed request's error as is
     let tsvs = awaited_fetches.into_iter().collect::<Result<Vec<String>>>()?;

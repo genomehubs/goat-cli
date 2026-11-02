@@ -1,6 +1,8 @@
 use crate::client::GoatClient;
 use crate::error::{Error, ErrorKind, Result};
+use crate::output::Format;
 use crate::report::report::{Report, ReportOptions, ReportType};
+use crate::report::table::report_table;
 use futures::StreamExt;
 use std::io::Write;
 
@@ -59,8 +61,13 @@ pub async fn fetch_report(
                 )));
             }
 
-            let mut stdout = std::io::stdout();
-            writeln!(stdout, "{}", s)?;
+            if report_type == ReportType::Newick || options.format == Format::Json {
+                let mut stdout = std::io::stdout();
+                writeln!(stdout, "{}", s)?;
+            } else {
+                let response: serde_json::Value = serde_json::from_str(s)?;
+                report_table(report_type, &response)?.print(options.format)?;
+            }
         }
         Err(e) => return Err(e),
     }
