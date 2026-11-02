@@ -55,10 +55,15 @@ pub async fn fetch_report(
             // check the length of the string
             // if it's zero, then we have an error
             if s.is_empty() || s == ";" {
-                return Err(Error::new(ErrorKind::Report(
-                    "no data found. If it was a `taxon newick` call, try increasing the threshold."
-                        .to_string(),
-                )));
+                let hint = match report_type {
+                    ReportType::Newick if options.no_descendents => format!(
+                        " With -n, the taxa are the tips, so they must be at the rank ({}).",
+                        options.rank
+                    ),
+                    ReportType::Newick => " Try increasing the threshold.".to_string(),
+                    _ => String::new(),
+                };
+                return Err(Error::new(ErrorKind::Report(format!("no data found.{}", hint))));
             }
 
             if report_type == ReportType::Newick || options.format == Format::Json {

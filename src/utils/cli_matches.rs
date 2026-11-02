@@ -29,9 +29,22 @@ pub fn process_cli_args(
         Some(s) => url::format_expression(s, index_type)?,
         None => "".to_string(),
     };
-    let tax_rank = match &query.tax_rank {
+    let mut taxon_filters = match &query.tax_rank {
         Some(t) => tax_ranks::TaxRanks::init().parse(t, false)?,
         None => "".to_string(),
+    };
+    // clap ensures --tax-depth comes with -d (tax_tree); the depth is
+    // relative to each taxon
+    if let Some(depth) = query.tax_depth {
+        taxon_filters.push_str(&format!(" AND tax_depth({})", depth));
+    }
+    let sort = match &request.sort.sort_by {
+        Some(field) => url::sort_params(
+            field,
+            &request.sort.sort_order.unwrap_or_default().to_string(),
+            index_type,
+        )?,
+        None => String::new(),
     };
 
     if query.size as usize > *UPPER_CLI_SIZE_LIMIT {
@@ -58,7 +71,7 @@ pub fn process_cli_args(
         query.expression.is_some(),
     )?;
 
-    let url_vector_api = url::make_goat_urls(
+    let mut url_vector_api = url::make_goat_urls(
         api,
         &url_vector,
         &GOAT_URL,
@@ -74,10 +87,13 @@ pub fn process_cli_args(
         request.fields,
         query.variables.as_deref(),
         &expression,
-        &tax_rank,
+        &taxon_filters,
         unique_ids,
         index_type,
     )?;
+    for url in &mut url_vector_api {
+        url.push_str(&sort);
+    }
 
     if request.output.url {
         for (index, url) in url_vector_api.iter().enumerate() {
