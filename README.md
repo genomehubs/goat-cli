@@ -20,7 +20,7 @@ For the full syntax of expressions (`-e`), including `OR`, lists, negation, func
 
 ## Output formats and records
 
-Most commands take `-F/--format tsv|csv|json` (default `tsv`). Reports (`hist`, `scatter`, `arc`, `sources`) print tables, e.g. one row per histogram bin with a column per `-c` category; `-F json` gives GoaT's full response instead, as does `search`.
+Most commands take `-F/--format tsv|csv|json` (default `tsv`). Reports (`hist`, `scatter`, `arc`, `sources`) print tables, e.g. one row per histogram bin with a column per `-c` category; `-F json` gives GoaT's full response instead, as does `search` (with several taxa, one response with all their results).
 
 `goat-cli taxon record -t "Homo sapiens"` (or a taxon ID) shows every field of a record with its value, count, aggregation and sources; `--names` and `--lineage` show its names or lineage instead. `goat-cli assembly record -t GCA_000001405.29` does the same for assemblies.
 

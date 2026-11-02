@@ -35,6 +35,75 @@ fn edge(value: &Value, value_type: &str) -> Value {
     }
 }
 
+/// One axis of a histogram or scatter.
+///
+/// Numeric and date axes have bucket edges, so bin `i` is
+/// `[buckets[i], buckets[i + 1])` and the last count (past the last edge)
+/// has no bin. Keyword axes have one bucket per value, so bin `i` is just
+/// `buckets[i]`, with a trailing `null` bucket.
+struct Axis<'a> {
+    field: &'a str,
+    value_type: &'a str,
+    buckets: &'a [Value],
+    keyword: bool,
+}
+
+impl<'a> Axis<'a> {
+    fn new(field: &'a str, value_type: &'a str, buckets: &'a [Value]) -> Self {
+        let keyword = value_type == "keyword" || buckets.iter().any(Value::is_string);
+        Self {
+            field,
+            value_type,
+            buckets,
+            keyword,
+        }
+    }
+
+    /// The column names: `<field>` for keywords, else `<field>_from` and
+    /// `<field>_to`.
+    fn columns(&self) -> Vec<String> {
+        if self.keyword {
+            vec![self.field.to_string()]
+        } else {
+            vec![format!("{}_from", self.field), format!("{}_to", self.field)]
+        }
+    }
+
+    /// Whether count `i` falls in a real bin (not the open-ended last
+    /// count of a numeric axis, or the `null` bucket of a keyword axis).
+    fn has_bin(&self, i: usize) -> bool {
+        if self.keyword {
+            self.buckets.get(i).map_or(false, |b| !b.is_null())
+        } else {
+            i + 1 < self.buckets.len()
+        }
+    }
+
+    /// The cells for count `i`; open-ended bins have a null edge.
+    fn cells(&self, i: usize) -> Vec<Value> {
+        let edge_at = |j: usize| self.buckets.get(j).map_or(Value::Null, |b| edge(b, self.value_type));
+        if self.keyword {
+            vec![self.buckets.get(i).cloned().unwrap_or(Value::Null)]
+        } else {
+            vec![edge_at(i), edge_at(i + 1)]
+        }
+    }
+
+    /// Error if there are more counts than buckets, which GoaT doesn't send.
+    fn check(&self, counts: usize, what: &str) -> Result<()> {
+        if counts > self.buckets.len() {
+            return Err(unexpected(&format!("{what} (more counts than buckets)")));
+        }
+        Ok(())
+    }
+}
+
+/// Counts outside every bin are always zero; skip them, but keep any that
+/// aren't so no values are lost.
+fn skip(count: &Value, in_bins: bool) -> bool {
+    !in_bins && count.as_u64() == Some(0)
+}
+
 /// The table for a report, other than a newick tree.
 pub fn report_table(report_type: ReportType, response: &Value) -> Result<Table> {
     match report_type {
@@ -58,39 +127,24 @@ pub fn histogram_table(response: &Value) -> Result<Table> {
     let bins = &histogram["histograms"];
     let buckets = array(&bins["buckets"], "histograms.buckets")?;
     let counts = array(&bins["allValues"], "histograms.allValues")?;
-    let value_type = bins["valueType"].as_str().unwrap_or("");
+    let axis = Axis::new(field, bins["valueType"].as_str().unwrap_or(""), buckets);
+    axis.check(counts.len(), "histograms.allValues")?;
     let categories = histogram["cats"]
         .as_array()
         .map(|cats| cats.iter().filter_map(|c| c["key"].as_str()).collect::<Vec<_>>())
         .unwrap_or_default();
 
-    let keyword = value_type == "keyword" || buckets.iter().any(Value::is_string);
-    let from = format!("{field}_from");
-    let to = format!("{field}_to");
-    let mut header: Vec<&str> = if keyword {
-        vec![field, "count"]
-    } else {
-        vec![&from, &to, "count"]
-    };
-    header.extend(categories.iter().copied());
-    let mut table = Table::new(&header);
+    let mut header = axis.columns();
+    header.push("count".to_string());
+    header.extend(categories.iter().map(|c| c.to_string()));
+    let mut table = Table::new(&header.iter().map(String::as_str).collect::<Vec<_>>());
 
     for (i, count) in counts.iter().enumerate() {
-        let next = buckets.get(i + 1);
-        // numeric buckets are edges, so the last count has no bin; it is
-        // always zero, but keep it (open-ended) if not
-        if !keyword && next.is_none() && count.as_u64() == Some(0) {
+        if skip(count, axis.has_bin(i)) {
             continue;
         }
-        let mut row = if keyword {
-            vec![buckets.get(i).cloned().unwrap_or(Value::Null), count.clone()]
-        } else {
-            vec![
-                edge(&buckets[i], value_type),
-                next.map_or(Value::Null, |n| edge(n, value_type)),
-                count.clone(),
-            ]
-        };
+        let mut row = axis.cells(i);
+        row.push(count.clone());
         for category in &categories {
             row.push(bins["byCat"][category].get(i).cloned().unwrap_or(json!(0)));
         }
@@ -100,35 +154,39 @@ pub fn histogram_table(response: &Value) -> Result<Table> {
 }
 
 /// One row per cell of the x/y grid: the x bin, the y bin and the count.
+/// Each axis is a value (keyword) or a `_from`/`_to` range, as in
+/// [`histogram_table`].
 pub fn scatter_table(response: &Value) -> Result<Table> {
     let scatter = body(response, "scatter")?;
     let bins = &scatter["histograms"];
-    let x_field = bins["xLabel"].as_str().unwrap_or("x");
-    let y_field = bins["yLabel"].as_str().unwrap_or("y");
-    let x_type = bins["valueType"].as_str().unwrap_or("");
-    let y_type = bins["yValueType"].as_str().unwrap_or("");
-    let x_buckets = array(&bins["buckets"], "histograms.buckets")?;
-    let y_buckets = array(&bins["yBuckets"], "histograms.yBuckets")?;
+    let x = Axis::new(
+        bins["xLabel"].as_str().unwrap_or("x"),
+        bins["valueType"].as_str().unwrap_or(""),
+        array(&bins["buckets"], "histograms.buckets")?,
+    );
+    let y = Axis::new(
+        bins["yLabel"].as_str().unwrap_or("y"),
+        bins["yValueType"].as_str().unwrap_or(""),
+        array(&bins["yBuckets"], "histograms.yBuckets")?,
+    );
     let grid = array(&bins["allYValues"], "histograms.allYValues")?;
+    x.check(grid.len(), "histograms.allYValues")?;
 
-    let header = [
-        format!("{x_field}_from"),
-        format!("{x_field}_to"),
-        format!("{y_field}_from"),
-        format!("{y_field}_to"),
-        "count".to_string(),
-    ];
+    let mut header = x.columns();
+    header.extend(y.columns());
+    header.push("count".to_string());
     let mut table = Table::new(&header.iter().map(String::as_str).collect::<Vec<_>>());
-    for (i, column) in grid.iter().enumerate().take(x_buckets.len().saturating_sub(1)) {
+    for (i, column) in grid.iter().enumerate() {
         let column = array(column, "histograms.allYValues[]")?;
-        for (j, count) in column.iter().enumerate().take(y_buckets.len().saturating_sub(1)) {
-            table.push(vec![
-                edge(&x_buckets[i], x_type),
-                edge(&x_buckets[i + 1], x_type),
-                edge(&y_buckets[j], y_type),
-                edge(&y_buckets[j + 1], y_type),
-                count.clone(),
-            ]);
+        y.check(column.len(), "histograms.allYValues[]")?;
+        for (j, count) in column.iter().enumerate() {
+            if skip(count, x.has_bin(i) && y.has_bin(j)) {
+                continue;
+            }
+            let mut row = x.cells(i);
+            row.extend(y.cells(j));
+            row.push(count.clone());
+            table.push(row);
         }
     }
     Ok(table)
@@ -232,6 +290,65 @@ mod tests {
             vec![json!(1), json!(2), json!(0.5), json!(1.5), json!(4)],
             vec![json!(2), json!(3), json!(0.5), json!(1.5), json!(6)],
         ]);
+    }
+
+    #[test]
+    fn test_scatter_keyword_axis_is_one_column() {
+        // as GoaT sends it: keyword buckets end with null
+        let response = wrap("scatter", json!({
+            "histograms": {
+                "xLabel": "assembly_level", "yLabel": "assembly_span",
+                "valueType": "keyword", "yValueType": "integer",
+                "buckets": ["scaffold", "chromosome", null], "yBuckets": [10, 20, 30],
+                "allYValues": [[1, 2, 0], [0, 3, 0]]
+            }
+        }));
+        let table = scatter_table(&response).unwrap();
+        assert_eq!(table.header, ["assembly_level", "assembly_span_from", "assembly_span_to", "count"]);
+        assert_eq!(table.rows, vec![
+            vec![json!("scaffold"), json!(10), json!(20), json!(1)],
+            vec![json!("scaffold"), json!(20), json!(30), json!(2)],
+            vec![json!("chromosome"), json!(10), json!(20), json!(0)],
+            vec![json!("chromosome"), json!(20), json!(30), json!(3)],
+        ]);
+    }
+
+    #[test]
+    fn test_open_ended_bins_kept_if_not_zero() {
+        let response = wrap("scatter", json!({
+            "histograms": {
+                "xLabel": "x", "yLabel": "y", "valueType": "integer", "yValueType": "integer",
+                "buckets": [1, 2], "yBuckets": [5, 6],
+                "allYValues": [[1, 0], [0, 7]]
+            }
+        }));
+        let rows = scatter_table(&response).unwrap().rows;
+        assert_eq!(rows, vec![
+            vec![json!(1), json!(2), json!(5), json!(6), json!(1)],
+            vec![json!(2), Value::Null, json!(6), Value::Null, json!(7)],
+        ]);
+
+        let response = wrap("histogram", json!({
+            "field": "f", "histograms": {"buckets": [1, 10], "allValues": [5, 2], "valueType": "integer"}
+        }));
+        assert_eq!(histogram_table(&response).unwrap().rows, vec![
+            vec![json!(1), json!(10), json!(5)],
+            vec![json!(10), Value::Null, json!(2)],
+        ]);
+    }
+
+    #[test]
+    fn test_more_counts_than_buckets_is_an_error() {
+        let response = wrap("histogram", json!({
+            "field": "f", "histograms": {"buckets": [1], "allValues": [5, 2, 1], "valueType": "integer"}
+        }));
+        let err = histogram_table(&response).unwrap_err();
+        assert!(err.to_string().contains("more counts than buckets"), "{}", err);
+
+        let response = wrap("scatter", json!({
+            "histograms": {"buckets": [1, 2], "yBuckets": [1], "allYValues": [[1, 2]]}
+        }));
+        assert!(scatter_table(&response).is_err());
     }
 
     #[test]

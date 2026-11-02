@@ -49,9 +49,19 @@ pub async fn search(request: &SearchRequest, unique_ids: Vec<String>) -> Result<
     Ok(())
 }
 
-/// Print the JSON responses for each taxon as one response, with all of
-/// their results and the total hits.
+/// Print the JSON responses for each taxon as one response.
 fn merge_json(responses: Vec<String>) -> Result<()> {
+    crate::outln!("{}", merged_json(responses)?)?;
+    Ok(())
+}
+
+/// GoaT's JSON response for one taxon, as is; for several, the first
+/// response with the results of all of them and the total hits.
+fn merged_json(mut responses: Vec<String>) -> Result<String> {
+    if responses.len() <= 1 {
+        return Ok(responses.pop().unwrap_or_default());
+    }
+    let mut merged: Value = serde_json::from_str(&responses[0])?;
     let mut hits = 0;
     let mut results = Vec::new();
     for response in &responses {
@@ -61,7 +71,28 @@ fn merge_json(responses: Vec<String>) -> Result<()> {
             results.extend(r);
         }
     }
-    let merged = json!({"status": {"success": true, "hits": hits}, "results": results});
-    crate::outln!("{}", merged)?;
-    Ok(())
+    merged["status"]["hits"] = json!(hits);
+    merged["results"] = Value::Array(results);
+    Ok(merged.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_single_response_is_unchanged() {
+        let response = r#"{"status":{"hits":1,"took":5},"results":[{"id":1}],"fields":["x"],"query":{}}"#;
+        assert_eq!(merged_json(vec![response.to_string()]).unwrap(), response);
+    }
+
+    #[test]
+    fn test_merge_keeps_first_response_and_combines_results() {
+        let a = r#"{"status":{"hits":1,"success":true,"took":5},"results":[{"id":1}],"fields":["x"]}"#;
+        let b = r#"{"status":{"hits":2,"success":true,"took":9},"results":[{"id":2},{"id":3}],"fields":["x"]}"#;
+        let merged: Value = serde_json::from_str(&merged_json(vec![a.into(), b.into()]).unwrap()).unwrap();
+        assert_eq!(merged["status"], json!({"hits": 3, "success": true, "took": 5}));
+        assert_eq!(merged["results"], json!([{"id": 1}, {"id": 2}, {"id": 3}]));
+        assert_eq!(merged["fields"], json!(["x"]));
+    }
 }

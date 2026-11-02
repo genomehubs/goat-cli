@@ -46,7 +46,7 @@ pub async fn record(args: &RecordArgs, index_type: IndexType) -> Result<()> {
     let inputs = taxa_from_input(args.taxon.as_deref(), args.file.as_deref(), false)?;
     let client = GoatClient::new();
 
-    let ids = futures::stream::iter(inputs.iter().map(|input| {
+    let resolved = futures::stream::iter(inputs.iter().map(|input| {
         let client = client.clone();
         async move { resolve_id(&client, input, index_type).await }
     }))
@@ -55,6 +55,28 @@ pub async fn record(args: &RecordArgs, index_type: IndexType) -> Result<()> {
     .await
     .into_iter()
     .collect::<Result<Vec<_>>>()?;
+
+    // names that match no taxon, or several, are reported and skipped
+    let mut found = Vec::new();
+    let mut problems = Vec::new();
+    for (input, resolution) in inputs.iter().zip(resolved) {
+        match resolution {
+            Resolved::Id(id) => found.push((input, id)),
+            Resolved::Problem(message) => problems.push(message),
+        }
+    }
+    if found.is_empty() && !problems.is_empty() {
+        let message = if problems.len() == 1 {
+            problems.remove(0)
+        } else {
+            format!("none of the names could be resolved:\n\t{}", problems.join("\n\t"))
+        };
+        return Err(Error::new(ErrorKind::GenericCli(message)));
+    }
+    for problem in &problems {
+        eprintln!("Skipping: {}", problem);
+    }
+    let (inputs, ids): (Vec<_>, Vec<_>) = found.into_iter().unzip();
 
     let urls = ids.iter().map(|id| record_url(id, index_type)).collect::<Vec<_>>();
     if args.url {
@@ -100,12 +122,21 @@ pub fn record_url(id: &str, index_type: IndexType) -> String {
     )
 }
 
+/// What a name resolved to.
+#[derive(Debug, PartialEq, Eq)]
+enum Resolved {
+    /// The record ID.
+    Id(String),
+    /// Why it couldn't be resolved (no match, or several).
+    Problem(String),
+}
+
 /// The record ID for what the user typed. Assembly records are looked up by
 /// accession as given; taxon names are resolved to an NCBI taxon ID, and
-/// must match exactly one taxon.
-async fn resolve_id(client: &GoatClient, input: &str, index_type: IndexType) -> Result<String> {
+/// must match exactly one taxon. Errors are for failed requests only.
+async fn resolve_id(client: &GoatClient, input: &str, index_type: IndexType) -> Result<Resolved> {
     if index_type == IndexType::Assembly || input.chars().all(|c| c.is_ascii_digit()) {
-        return Ok(input.to_string());
+        return Ok(Resolved::Id(input.to_string()));
     }
     let url = format!(
         "{}search?query={}&result=taxon&taxonomy={}&includeEstimates=true&size=10",
@@ -114,6 +145,11 @@ async fn resolve_id(client: &GoatClient, input: &str, index_type: IndexType) -> 
         *TAXONOMY
     );
     let response = client.get_json(&url).await?;
+    resolve_from_search(input, &response)
+}
+
+/// Resolve `input` from the `/search` response for `tax_name(input)`.
+fn resolve_from_search(input: &str, response: &Value) -> Result<Resolved> {
     let matches = response["results"]
         .as_array()
         .map(|results| results.iter().map(|r| &r["result"]).collect::<Vec<_>>())
@@ -121,13 +157,13 @@ async fn resolve_id(client: &GoatClient, input: &str, index_type: IndexType) -> 
     match matches.as_slice() {
         [only] => only["taxon_id"]
             .as_str()
-            .map(String::from)
+            .map(|id| Resolved::Id(id.to_string()))
             .ok_or_else(|| Error::new(ErrorKind::Api(format!("no taxon_id for \"{}\"", input)))),
-        [] => Err(Error::new(ErrorKind::GenericCli(format!(
+        [] => Ok(Resolved::Problem(format!(
             "no taxon found named \"{}\". Try `goat-cli taxon lookup -t \"{}\"`.",
             input, input
-        )))),
-        several => Err(Error::new(ErrorKind::GenericCli(format!(
+        ))),
+        several => Ok(Resolved::Problem(format!(
             "\"{}\" matches several taxa; use a taxon ID instead: {}.",
             input,
             several
@@ -140,7 +176,7 @@ async fn resolve_id(client: &GoatClient, input: &str, index_type: IndexType) -> 
                 ))
                 .collect::<Vec<_>>()
                 .join(", ")
-        )))),
+        ))),
     }
 }
 
@@ -311,6 +347,21 @@ mod tests {
         assert_eq!(fields.rows[0][7], json!(["INSDC"]));
         let names = record_table(&[record], RecordView::Names, IndexType::Assembly).unwrap();
         assert_eq!(names.rows[0][2], json!("GCF_000001405.40"));
+    }
+
+    #[test]
+    fn test_resolve_from_search() {
+        let one = json!({"results": [{"result": {"taxon_id": "9606"}}]});
+        assert_eq!(resolve_from_search("Homo sapiens", &one).unwrap(), Resolved::Id("9606".into()));
+
+        let none = json!({"results": []});
+        assert!(matches!(resolve_from_search("Homo sapien", &none).unwrap(), Resolved::Problem(m) if m.contains("no taxon found")));
+
+        let several = json!({"results": [
+            {"result": {"taxon_id": "3497", "taxon_rank": "genus", "scientific_name": "Morus"}},
+            {"result": {"taxon_id": "37577", "taxon_rank": "genus", "scientific_name": "Morus"}}
+        ]});
+        assert!(matches!(resolve_from_search("Morus", &several).unwrap(), Resolved::Problem(m) if m.contains("3497 (genus Morus), 37577")));
     }
 
     #[test]
