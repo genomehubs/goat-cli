@@ -133,8 +133,10 @@ or a server error for trees), although `/search` handles it correctly.
 - Taxa at higher ranks (e.g. genera, or `tax_rank(class)`) usually have no
   directly measured values, only estimates, so without `-i/--include-estimates`
   queries for them return nothing.
-- The API also supports `tax_depth(n)` (descendants exactly `n` levels below
-  the taxon; needs `-i`), which `goat-cli` does not expose yet.
+- `tax_depth(n)` (descendants exactly `n` levels below the taxon) is exposed
+  as `-d --tax-depth <n>`. It takes a single number; ranges such as
+  `tax_depth(<=2)` give a server error. Like any query, levels above species
+  need `-i` to return anything.
 - `collate(...)`, `variable.metadata = ...` paths and newline separated batch
   queries appear in the API source, but did not return meaningful results
   when tested, so `goat-cli` does not offer them.

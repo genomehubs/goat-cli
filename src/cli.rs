@@ -28,6 +28,10 @@ const PRINT_EXPRESSION_HELP: &str = "Print all variables in GoaT currently, with
 const PROGRESS_BAR_HELP: &str = "Add a progress bar to large queries, to estimate time left.";
 const NO_DESCENDENTS_HELP: &str =
     "Do not return values for descendents (i.e. a tax_name() call).";
+const NEWICK_NO_DESCENDENTS_HELP: &str =
+    "Use only the given taxa as tips, rather than all their descendents at --rank. The taxa must be at --rank.";
+const TAX_DEPTH_HELP: &str = "With -d, only return taxa exactly <depth> levels below each taxon (1: its children). Taxa above species only have estimated values, so add -i for those.";
+const SORT_BY_HELP: &str = "Sort the results by a field (e.g. genome_size), or by scientific_name, taxon_id, taxon_rank or (assembly) assembly_id. With several taxa, each taxon's results are sorted separately.";
 const SEARCH_FORMAT_HELP: &str =
     "Output format: tsv, csv, or json (search: GoaT's full JSON response; count: the rows as objects).";
 const TABLE_FORMAT_HELP: &str = "Output format: tsv, csv, or json (the rows as objects).";
@@ -121,7 +125,7 @@ pub fn write_completions(shell: clap_complete::Shell, out: &mut impl std::io::Wr
 #[derive(Subcommand, Debug)]
 pub enum TaxonCommand {
     #[command(about = "Query metadata for any taxon across the tree of life by taxon index.")]
-    Search(TaxonSearchArgs),
+    Search(TaxonSearchCommandArgs),
     #[command(
         about = "Return the count of results for any taxon across the tree of life by taxon index."
     )]
@@ -150,7 +154,7 @@ pub enum TaxonCommand {
 #[derive(Subcommand, Debug)]
 pub enum AssemblyCommand {
     #[command(about = "Query metadata for any taxon across the tree of life by assembly index.")]
-    Search(AssemblySearchArgs),
+    Search(AssemblySearchCommandArgs),
     #[command(
         about = "Return the count of results for any taxon across the tree of life by assembly index."
     )]
@@ -220,6 +224,40 @@ pub struct QueryArgs {
     pub descendents: bool,
     #[arg(short = 'l', long, conflicts_with = "descendents", help = LINEAGE_HELP)]
     pub lineage: bool,
+    #[arg(long, value_name = "depth", requires = "descendents", help = TAX_DEPTH_HELP)]
+    pub tax_depth: Option<u32>,
+}
+
+// The sort order for `--sort-order`.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, clap::ValueEnum)]
+pub enum SortOrder {
+    #[default]
+    Asc,
+    Desc,
+}
+
+impl std::fmt::Display for SortOrder {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            SortOrder::Asc => "asc",
+            SortOrder::Desc => "desc",
+        })
+    }
+}
+
+// Sorting, for `search` only (it doesn't change a count).
+#[derive(Args, Debug, Clone, Default)]
+pub struct SortArgs {
+    #[arg(long, value_name = "field", help = SORT_BY_HELP)]
+    pub sort_by: Option<String>,
+    #[arg(
+        long,
+        value_enum,
+        value_name = "order",
+        requires = "sort_by",
+        help = "Sort ascending (the default) or descending. Needs --sort-by."
+    )]
+    pub sort_order: Option<SortOrder>,
 }
 
 // Output options shared by `search` and `count` in both indexes.
@@ -387,6 +425,42 @@ pub struct AssemblySearchArgs {
     pub output: OutputArgs,
 }
 
+// `goat-cli taxon search`: the `count` arguments, plus sorting.
+#[derive(Args, Debug, Clone, Default)]
+pub struct TaxonSearchCommandArgs {
+    #[command(flatten)]
+    pub search: TaxonSearchArgs,
+    #[command(flatten)]
+    pub sort: SortArgs,
+}
+
+// `goat-cli assembly search`: the `count` arguments, plus sorting.
+#[derive(Args, Debug, Clone, Default)]
+pub struct AssemblySearchCommandArgs {
+    #[command(flatten)]
+    pub search: AssemblySearchArgs,
+    #[command(flatten)]
+    pub sort: SortArgs,
+}
+
+impl From<&TaxonSearchCommandArgs> for SearchRequest {
+    fn from(args: &TaxonSearchCommandArgs) -> Self {
+        Self {
+            sort: args.sort.clone(),
+            ..Self::from(&args.search)
+        }
+    }
+}
+
+impl From<&AssemblySearchCommandArgs> for SearchRequest {
+    fn from(args: &AssemblySearchCommandArgs) -> Self {
+        Self {
+            sort: args.sort.clone(),
+            ..Self::from(&args.search)
+        }
+    }
+}
+
 /// Everything `search` and `count` need, from either index's arguments.
 #[derive(Debug, Clone)]
 pub struct SearchRequest {
@@ -402,6 +476,8 @@ pub struct SearchRequest {
     pub include_raw_values: bool,
     /// The fields selected by flags.
     pub fields: FieldBuilder,
+    /// How to sort the results (`search` only).
+    pub sort: SortArgs,
 }
 
 impl From<&TaxonSearchArgs> for SearchRequest {
@@ -439,6 +515,7 @@ impl From<&TaxonSearchArgs> for SearchRequest {
             include_estimates: f.include_estimates,
             include_raw_values: f.raw,
             fields,
+            sort: SortArgs::default(),
         }
     }
 }
@@ -464,6 +541,7 @@ impl From<&AssemblySearchArgs> for SearchRequest {
             include_estimates: f.include_estimates,
             include_raw_values: false,
             fields,
+            sort: SortArgs::default(),
         }
     }
 }
@@ -626,7 +704,7 @@ pub struct NewickArgs {
         help = "The rank of the results to return."
     )]
     pub rank: String,
-    #[arg(short = 'n', long, help = NO_DESCENDENTS_HELP)]
+    #[arg(short = 'n', long, help = NEWICK_NO_DESCENDENTS_HELP)]
     pub no_descendents: bool,
     #[arg(short = 'u', long, help = "Print report URL.")]
     pub url: bool,

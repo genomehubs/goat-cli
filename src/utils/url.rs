@@ -411,6 +411,34 @@ pub fn build_query(taxon: &str, tax_tree: &str, tax_rank: &str, expression: &str
         .join(" OR ")
 }
 
+/// The `sortBy`/`sortOrder` URL parameters (with a leading `&`) for
+/// `--sort-by`/`--sort-order`.
+///
+/// GoaT ignores a field it doesn't know, so the field is checked here: it
+/// must be a field of the index (synonyms are resolved) or one of the
+/// record's own fields.
+pub fn sort_params(sort_by: &str, order: &str, index_type: IndexType) -> Result<String> {
+    let builtin: &[&str] = match index_type {
+        IndexType::Taxon => &["scientific_name", "taxon_id", "taxon_rank"],
+        IndexType::Assembly => &["scientific_name", "taxon_id", "assembly_id"],
+    };
+    let field = sort_by.trim();
+    let field = if builtin.contains(&field) {
+        field.to_string()
+    } else {
+        let data = match index_type {
+            IndexType::Taxon => &*GOAT_TAXON_VARIABLE_DATA,
+            IndexType::Assembly => &*GOAT_ASSEMBLY_VARIABLE_DATA,
+        };
+        Variables::new(field).parse_one(data)?
+    };
+    Ok(format!(
+        "&sortBy={}&sortOrder={}",
+        percent_encode_query_value(&field),
+        order
+    ))
+}
+
 /// The function which creats the GoaT API URLs
 /// which are then used as GET requests.
 pub fn make_goat_urls(

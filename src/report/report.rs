@@ -477,8 +477,12 @@ impl Report {
                     1 => self.search[0].clone(),
                     _ => self.search.join(","),
                 };
-                let x_value =
-                    format!("tax_rank({}) AND tax_tree({})", self.rank, csqs);
+                // tax_tree: every descendent at the rank is a tip;
+                // tax_name (-n): only the given taxa are
+                let x_value = format!(
+                    "tax_rank({}) AND {}({})",
+                    self.rank, self.taxon_type, csqs
+                );
                 let qp = format!(
                     "result=taxon&report={}&x={}&treeThreshold={}&includeEstimates=true&taxonomy={}&queryId=goat_cli_{}",
                     self.report_type,

@@ -24,6 +24,18 @@ Most commands take `-F/--format tsv|csv|json` (default `tsv`). Reports (`hist`, 
 
 `goat-cli taxon record -t "Homo sapiens"` (or a taxon ID) shows every field of a record with its value, count, aggregation and sources; `--names` and `--lineage` show its names or lineage instead. `goat-cli assembly record -t GCA_000001405.29` does the same for assemblies.
 
+## Sorting and depth
+
+`search` can sort its results with `--sort-by <field>` (any field, or `scientific_name`, `taxon_id`, `taxon_rank`, or `assembly_id` for assemblies) and `--sort-order asc|desc`, e.g. the largest primate genomes:
+
+```bash
+goat-cli taxon search -t Primates -d --tax-rank species -i -G --sort-by genome_size --sort-order desc --size 10
+```
+
+`--tax-depth <n>` (with `-d`) returns only taxa exactly `n` levels below each taxon, e.g. the subfamilies of Hominidae with `-t Hominidae -d -i --tax-depth 1`.
+
+`taxon newick -n` builds a tree with only the given taxa as tips (they must be at `--rank`), rather than all their descendants.
+
 ## Shell completions
 
 `goat-cli completions <shell>` prints a completion script for `bash`, `zsh`, `fish`, `elvish` or `powershell`, completing subcommands, flags and their values. For example:

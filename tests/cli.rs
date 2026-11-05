@@ -17,12 +17,10 @@ fn parse(args: &[&str]) -> Cli {
 /// The `search`/`count` request for `args`.
 fn search_request(args: &[&str]) -> SearchRequest {
     match parse(args).index {
-        Index::Taxon { command: TaxonCommand::Search(a) | TaxonCommand::Count(a) } => {
-            SearchRequest::from(&a)
-        }
-        Index::Assembly { command: AssemblyCommand::Search(a) | AssemblyCommand::Count(a) } => {
-            SearchRequest::from(&a)
-        }
+        Index::Taxon { command: TaxonCommand::Search(a) } => SearchRequest::from(&a),
+        Index::Taxon { command: TaxonCommand::Count(a) } => SearchRequest::from(&a),
+        Index::Assembly { command: AssemblyCommand::Search(a) } => SearchRequest::from(&a),
+        Index::Assembly { command: AssemblyCommand::Count(a) } => SearchRequest::from(&a),
         other => panic!("not a search or count: {:?}", other),
     }
 }
@@ -246,4 +244,50 @@ fn test_record_subcommands_parse() {
     }
     assert!(Cli::try_parse_from(["goat-cli", "taxon", "record", "-t", "X", "-n", "-l"]).is_err());
     assert!(Cli::try_parse_from(["goat-cli", "taxon", "record"]).is_err());
+}
+
+#[test]
+fn test_tax_depth_adds_filter_and_needs_descendents() {
+    let urls = search_urls(&["taxon", "search", "-t", "Hominidae", "-d", "--tax-depth", "2"]);
+    assert_eq!(query_param(&urls[0]), "tax_tree(Hominidae) AND tax_depth(2)");
+    let urls = search_urls(&["taxon", "count", "-t", "Hominidae", "-d", "--tax-depth", "1", "--tax-rank", "genus"]);
+    assert_eq!(query_param(&urls[0]), "tax_tree(Hominidae) AND tax_rank(genus) AND tax_depth(1)");
+    assert!(Cli::try_parse_from(["goat-cli", "taxon", "search", "-t", "X", "--tax-depth", "2"]).is_err());
+    assert!(Cli::try_parse_from(["goat-cli", "taxon", "search", "-t", "X", "-d", "--tax-depth", "-1"]).is_err());
+}
+
+#[test]
+fn test_sort_params() {
+    let urls = search_urls(&["taxon", "search", "-t", "Primates", "-d", "--sort-by", "genome_size", "--sort-order", "desc"]);
+    assert!(urls[0].ends_with("&sortBy=genome_size&sortOrder=desc"), "{}", urls[0]);
+    // ascending by default; built-in fields are allowed
+    let urls = search_urls(&["assembly", "search", "-t", "Primates", "--sort-by", "assembly_id"]);
+    assert!(urls[0].ends_with("&sortBy=assembly_id&sortOrder=asc"), "{}", urls[0]);
+    // no sort unless asked
+    assert!(!search_urls(&["taxon", "search", "-t", "Primates"])[0].contains("sortBy"));
+}
+
+#[test]
+fn test_sort_field_is_checked_and_search_only() {
+    let request = search_request(&["taxon", "search", "-t", "X", "--sort-by", "genome_sise"]);
+    let err = process_cli_args(&request, "search", generate_unique_ids(1)).err().unwrap();
+    assert!(err.to_string().contains("genome_size"), "{}", err);
+    // taxon_rank isn't an assembly field
+    let request = search_request(&["assembly", "search", "-t", "X", "--sort-by", "taxon_rank"]);
+    assert!(process_cli_args(&request, "search", generate_unique_ids(1)).is_err());
+    // --sort-order needs --sort-by; count has neither
+    assert!(Cli::try_parse_from(["goat-cli", "taxon", "search", "-t", "X", "--sort-order", "desc"]).is_err());
+    assert!(Cli::try_parse_from(["goat-cli", "taxon", "count", "-t", "X", "--sort-by", "genome_size"]).is_err());
+}
+
+#[test]
+fn test_newick_no_descendents_uses_tax_name() {
+    let url = |args: &[&str]| {
+        let (options, report_type) = report_options(args);
+        Report::new(&options, report_type).unwrap().make_url(vec!["id".into()]).unwrap()
+    };
+    let tree = url(&["taxon", "newick", "-t", "Homo sapiens,Mus musculus"]);
+    assert!(tree.contains("tax_tree%28Homo"), "{}", tree);
+    let tips = url(&["taxon", "newick", "-t", "Homo sapiens,Mus musculus", "-n"]);
+    assert!(tips.contains("tax_name%28Homo"), "{}", tips);
 }
