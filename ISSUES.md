@@ -179,6 +179,18 @@ and `taxon search`/`taxon record` by name work.
 
 ---
 
+## 7. `field:direct` / `:ancestor` / `:descendant` in `fields` are ignored
+
+[`fields=haploid_number,haploid_number:direct,haploid_number:ancestor,haploid_number:descendant`](https://goat.genomehubs.org/api/v2/search?query=tax_name%28Arabidopsis%20thaliana%29&result=taxon&taxonomy=ncbi&fields=haploid_number%2Chaploid_number%3Adirect%2Chaploid_number%3Aancestor%2Chaploid_number%3Adescendant)
+returns only `haploid_number`, in TSV and JSON alike (checked 2026-11-11).
+The same suffixes do work in `query` (e.g. `genome_size:direct > 1e9`).
+
+**`goat-cli`:** `--toggle-direct` sends these fields, so it currently adds
+no columns. `-T/--tidy` shows each value's `aggregation_source`
+(`direct`, `ancestor` or `descendant`) instead.
+
+---
+
 ## Not bugs
 
 Things that looked like API problems during testing, but aren't:
