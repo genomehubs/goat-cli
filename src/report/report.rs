@@ -588,13 +588,23 @@ impl Report {
                     ))
                 })?;
 
-                // Without a taxon, x is used directly; with a taxon it is scoped to that clade.
-                let x_value = if self.search.is_empty() {
-                    x_filter.to_string()
+                // With a taxon, both x and y are scoped to it, so the
+                // proportion is of the taxon's records. GoaT applies y as
+                // given, so an unscoped y (or none, which GoaT takes as all
+                // taxa at the rank) would be the whole tree of life.
+                let scope = if self.search.is_empty() {
+                    None
                 } else {
-                    let taxon_type = self.taxon_type;
-                    let taxa = self.search.join(",");
-                    format!("{}({}) AND {}", taxon_type, taxa, x_filter)
+                    Some(format!("{}({})", self.taxon_type, self.search.join(",")))
+                };
+                let x_value = match &scope {
+                    Some(scope) => format!("{} AND {}", scope, x_filter),
+                    None => x_filter.to_string(),
+                };
+                let y_value = match (&scope, &self.y) {
+                    (Some(scope), Some(y)) => Some(format!("{} AND {}", scope, y)),
+                    (Some(scope), None) => Some(scope.clone()),
+                    (None, y) => y.clone(),
                 };
 
                 let base = format!("{}report", *GOAT_URL);
@@ -607,8 +617,8 @@ impl Report {
                     percent_encode_query_value(&x_value),
                     unique_ids[0],
                 );
-                if let Some(y_filter) = &self.y {
-                    qp.push_str(&format!("&y={}", percent_encode_query_value(y_filter)));
+                if let Some(y_value) = &y_value {
+                    qp.push_str(&format!("&y={}", percent_encode_query_value(y_value)));
                 }
                 for (i, field) in self.exclude_missing.iter().enumerate() {
                     qp.push_str(&format!(
@@ -731,6 +741,35 @@ mod tests {
         let url = r.make_url(vec!["arc_id".into()]).unwrap();
         assert!(url.contains("assembly_span"));
         assert!(url.contains("&y="));
+    }
+
+    /// The decoded value of URL parameter `name`.
+    fn param(url: &str, name: &str) -> Option<String> {
+        let parsed = url::Url::parse(url).unwrap();
+        parsed.query_pairs().find(|(k, _)| k == name).map(|(_, v)| v.into_owned())
+    }
+
+    #[test]
+    fn test_arc_taxon_scopes_x_and_y() {
+        let mut r = base_report(ReportType::Arc);
+        r.search = vec!["Magnoliopsida".into()];
+        r.x = Some("assembly_level >= chromosome".into());
+        let url = r.make_url(vec!["id".into()]).unwrap();
+        assert_eq!(param(&url, "x").unwrap(), "tax_tree(Magnoliopsida) AND assembly_level >= chromosome");
+        // no -y: the denominator is the taxon
+        assert_eq!(param(&url, "y").unwrap(), "tax_tree(Magnoliopsida)");
+
+        r.y = Some("assembly_span".into());
+        let url = r.make_url(vec!["id".into()]).unwrap();
+        assert_eq!(param(&url, "y").unwrap(), "tax_tree(Magnoliopsida) AND assembly_span");
+
+        // without a taxon, x and y are sent as given
+        r.search = vec![];
+        let url = r.make_url(vec!["id".into()]).unwrap();
+        assert_eq!(param(&url, "x").unwrap(), "assembly_level >= chromosome");
+        assert_eq!(param(&url, "y").unwrap(), "assembly_span");
+        r.y = None;
+        assert_eq!(param(&r.make_url(vec!["id".into()]).unwrap(), "y"), None);
     }
 
     // ── Newick URL ───────────────────────────────────────────────────────────
