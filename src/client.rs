@@ -1,6 +1,6 @@
 //! A shared HTTP client for all GoaT API requests.
 //!
-//! [`GoatClient`] wraps [`reqwest::Client`] so the underlying connection pool
+//! [`GoatClient`](crate::client::GoatClient) wraps [`reqwest::Client`] so the underlying connection pool
 //! is created once and reused across all concurrent requests instead of being
 //! rebuilt on every call. Clone it freely — the inner client is
 //! reference-counted.

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["RecordView"],"fn":["record","record_table","record_url"]};

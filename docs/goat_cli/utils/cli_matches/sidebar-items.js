@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["process_cli_args","Take CLI arguments and parse them. Return a tuple of:"]]};
+window.SIDEBAR_ITEMS = {"enum":["CliAction"],"fn":["process_cli_args"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["get_all_fields","init","is_dynamic_field","is_dynamic_field_any","prepare"]};

@@ -6,7 +6,7 @@
 //! was regenerated, without requiring a binary rebuild.
 //!
 //! The registry is only loaded when an expression or variable list names a
-//! field the static data does not know (see [`prepare`]), and the field
+//! field the static data does not know (see [`prepare`](crate::utils::field_registry::prepare)), and the field
 //! names are cached on disk for a day, so most runs make no request for it.
 //!
 //! # Fallback behaviour

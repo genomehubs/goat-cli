@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["lookup","Main entry point for `goat-cli lookup`."],["process_assembly_results","The assembly counterpart to the above function."],["process_taxon_results","As the taxon and assembly return JSON’s are in different structures, they have to be parsed differently."]],"mod":[["lookup","The inner structs used in lookup."]]};
+window.SIDEBAR_ITEMS = {"enum":["LookupAction"],"fn":["lookup"],"mod":["lookup"]};

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["search","Execute the `search` subcommand from `goat-cli`. Print a TSV."]]};
+window.SIDEBAR_ITEMS = {"fn":["search"]};
