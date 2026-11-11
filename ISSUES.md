@@ -130,6 +130,55 @@ work around the server behaviour.
 
 ---
 
+## 5. Organelle assembly spans are keywords, so they have no values and can't be compared
+
+`mitochondrion_assembly_span` and `plastid_assembly_span` (lengths in bases)
+have `type: keyword` and no `summary` in `/resultFields`, in both the taxon
+and assembly indexes. As a result (checked 2026-11-11):
+
+- `/search` returns no value for them, only a count:
+  [`fields=mitochondrion_assembly_span,mitochondrion_gc_percent`](https://goat.genomehubs.org/api/v2/search?query=tax_name%28Vicia%20lathyroides%29&result=taxon&taxonomy=ncbi&fields=mitochondrion_assembly_span%2Cmitochondrion_gc_percent)
+  gives `{"sp_count": 1}` for the span, but `"value": 45` for the GC%.
+  The raw value is there (`includeRawValues=true`), as the string `"371553"`.
+- A numeric comparison
+  [returns HTTP 500](https://goat.genomehubs.org/api/v2/count?query=tax_tree%28Magnoliopsida%29%20AND%20mitochondrion_assembly_span%20%3E%201000000&result=taxon&taxonomy=ncbi)
+  for taxa, and a `response should NOT have a body` error for
+  [assemblies](https://goat.genomehubs.org/api/v2/count?query=tax_tree%28Magnoliopsida%29%20AND%20mitochondrion_assembly_span%20%3E%201000000&result=assembly&taxonomy=ncbi).
+  Presence
+  ([`... AND mitochondrion_assembly_span`](https://goat.genomehubs.org/api/v2/count?query=tax_tree%28Magnoliopsida%29%20AND%20mitochondrion_assembly_span&result=taxon&taxonomy=ncbi))
+  works, counting 678.
+
+The corresponding `*_gc_percent` fields are `float` with a `median` summary,
+and work. In 2022 the spans could be filtered numerically (the `goat-cli`
+wiki's tutorial did so).
+
+**Likely cause:** the field type in the GoaT field configuration; they
+should presumably be `long` like `assembly_span`.
+
+**`goat-cli`:** `-m`/`-p` print an empty span column; `-r` shows the raw
+values.
+
+---
+
+## 6. `/lookup` finds nothing for some well-known names
+
+[`lookup?searchTerm=Arabidopsis%20thaliana`](https://goat.genomehubs.org/api/v2/lookup?searchTerm=Arabidopsis%20thaliana&size=10&result=taxon&taxonomy=ncbi)
+returns 0 hits and no suggestions, as do `Arabidopsis` and
+`Saccharomyces cerevisiae` (checked 2026-11-11). Their synonyms and common
+names work (`Arabis thaliana`: 2 hits, `thale cress`: 1), as do
+`Arabidopsis lyrata`, `Zea mays` and `Homo sapiens`, and
+[`/search` with `tax_name(Arabidopsis thaliana)`](https://goat.genomehubs.org/api/v2/search?query=tax_name%28Arabidopsis%20thaliana%29&result=taxon&taxonomy=ncbi)
+finds the taxon.
+
+**Possible cause (not verified):** these taxa have many records (e.g. 375
+assemblies for *A. thaliana*), so the lookup index may be built or queried
+differently for them.
+
+**`goat-cli`:** `taxon lookup` reports "No results"; `taxon lookup -t 3702`
+and `taxon search`/`taxon record` by name work.
+
+---
+
 ## Not bugs
 
 Things that looked like API problems during testing, but aren't:
