@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"macro":[["collection","Makes a static [`BTreeMap`] from the input of `GOAT_VARIABLE_DATA`."]],"struct":[["GOAT_ASSEMBLY_VARIABLE_DATA","Automatically generated GoaT variable data from a Bash script in the `/vars` directory."],["GOAT_TAXON_VARIABLE_DATA","Automatically generated GoaT variable data from a Bash script in the `/vars` directory."]]};
+window.SIDEBAR_ITEMS = {"struct":["GOAT_ASSEMBLY_VARIABLE_DATA","GOAT_TAXON_VARIABLE_DATA","GOAT_VARIABLE_SYNONYMS"]};

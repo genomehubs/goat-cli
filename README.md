@@ -18,6 +18,20 @@ Please consult the <b><a href="https://github.com/genomehubs/goat-cli/wiki">wiki
 
 For the full syntax of expressions (`-e`), including `OR`, lists, negation, functions and searching without a taxon, see <b><a href="EXPRESSIONS.md">EXPRESSIONS.md</a></b>.
 
+## Install
+
+Build from source to get everything on this page; the newest features (`--format`, `record`, sorting, `--tax-depth`, completions) are not in a release yet. With [Rust](https://rustup.rs/) installed:
+
+```bash
+cargo install --git https://github.com/genomehubs/goat-cli
+goat-cli --version
+```
+
+Other ways, all older:
+
+- **[Releases](https://github.com/genomehubs/goat-cli/releases/latest)** (0.2.53) have binaries for macOS, Linux and Windows. The Linux binary needs OpenSSL 1.1 (`libssl.so.1.1`), which current distributions no longer ship.
+- **Bioconda** (`conda install -c bioconda goat`) and **crates.io** (`cargo install goat-cli`) are at 0.2.5.
+
 ## Output formats and records
 
 Most commands take `-F/--format tsv|csv|json` (default `tsv`). Reports (`hist`, `scatter`, `arc`, `sources`) print tables, e.g. one row per histogram bin with a column per `-c` category; `-F json` gives GoaT's full response instead, as does `search` (with several taxa, one response with all their results).

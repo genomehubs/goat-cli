@@ -60,7 +60,7 @@ const TAX_RANKS: &[&str; 44] = &[
 // and display the tax ranks
 
 /// The [`TaxRanks`] struct holds the NCBI taxon
-/// ranks defined in the [`TAX_RANKS`] const.
+/// ranks defined in the `TAX_RANKS` const.
 pub struct TaxRanks<'a> {
     pub ranks: &'a [&'a str; 44],
 }

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["fetch_report","CLI entry point to get the Newick file from the GoaT API."]]};
+window.SIDEBAR_ITEMS = {"enum":["ReportAction"],"fn":["fetch_report"]};

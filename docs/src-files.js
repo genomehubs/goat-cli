@@ -1,0 +1,2 @@
+createSrcSidebar('[["goat_cli",["",[["count",[],["mod.rs"]],["lookup",[],["lookup.rs","mod.rs"]],["progress",[],["mod.rs"]],["record",[],["mod.rs"]],["report",[],["fetch.rs","mod.rs","report.rs","table.rs"]],["search",[],["mod.rs"]],["utils",[],["cli_matches.rs","expression.rs","field_registry.rs","mod.rs","tax_ranks.rs","url.rs","utils.rs","variable_data.rs","variables.rs"]]],["cli.rs","client.rs","error.rs","lib.rs","output.rs"]]]]');
+//{"start":19,"fragment_lengths":[417]}

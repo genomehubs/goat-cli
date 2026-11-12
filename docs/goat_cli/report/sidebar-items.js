@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":[["fetch","Fetch the corresponding report from the GoaT API."],["report","Module providing parsing functionality for GoaT reports."]]};
+window.SIDEBAR_ITEMS = {"mod":["fetch","report","table"]};

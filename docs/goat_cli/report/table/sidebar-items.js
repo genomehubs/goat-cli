@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["arc_table","histogram_table","report_table","scatter_table","sources_table"]};

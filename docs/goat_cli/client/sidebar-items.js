@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["MAX_CONCURRENT_REQUESTS"],"fn":["concurrency"],"struct":["GoatClient"]};
