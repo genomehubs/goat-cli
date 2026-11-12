@@ -63,8 +63,8 @@ impl fmt::Display for ReportType {
 /// Argh these are going to be annoying to parse.
 #[derive(Default, Debug)]
 pub struct Opts {
-    min: Option<i32>,
-    max: Option<i32>,
+    min: Option<f64>,
+    max: Option<f64>,
     tick_count: Option<i32>,
     scale: Option<String>,
     axis_title: Option<String>,
@@ -88,8 +88,8 @@ impl Opts {
     /// ```rust,ignore
     /// use goat_cli::report::report::Opts;
     /// let _ = Opts {
-    ///     min: Some(1),
-    ///     max: Some(10),
+    ///     min: Some(1.0),
+    ///     max: Some(10.0),
     ///     tick_count: None,
     ///     scale: None,
     ///     axis_title: None
@@ -127,71 +127,67 @@ impl Opts {
         // create default struct
         let mut opts: Opts = Default::default();
 
-        // parse the string to an integer, giving useful error if
-        // we can't.
+        fn parse_error(e: impl std::fmt::Display) -> Error {
+            Error::new(ErrorKind::Report(format!("in parsing x or y options, {}", e)))
+        }
+        // min and max are numbers, e.g. `1e8`
+        fn parse_number(el: &Option<&str>) -> Result<Option<f64>> {
+            match el {
+                Some(e) => {
+                    let n = e.trim().parse::<f64>().map_err(|err| parse_error(format!("\"{}\": {}", e.trim(), err)))?;
+                    if !n.is_finite() {
+                        return Err(parse_error(format!("\"{}\" is not a finite number", e.trim())));
+                    }
+                    Ok(Some(n))
+                }
+                None => Ok(None),
+            }
+        }
+        // the tick count is a whole number
         fn parse_str_to_int(el: &Option<&str>) -> Result<Option<i32>> {
-            // if we are calling this function, we can safely get
-            // the value out
-            let int_str = el;
-            // bubble up the error here if parsing goes awry
-            let int = match int_str {
-                Some(e) => Some(e.trim().parse::<i32>().map_err(|e| {
-                    let mut error = String::new();
-                    error += "in parsing x or y options, ";
-                    error += &e.to_string();
-                    Error::new(ErrorKind::Report(error))
-                })?),
-                None => None,
-            };
-
-            Ok(int)
+            match el {
+                Some(e) => Ok(Some(e.trim().parse::<i32>().map_err(|err| parse_error(format!("\"{}\": {}", e.trim(), err)))?)),
+                None => Ok(None),
+            }
+        }
+        // a scale, if given, must be one GoaT knows
+        fn check_scale(scale: &Option<String>) -> Result<()> {
+            match scale {
+                Some(scale) if !Opts::SCALE_TYPES.contains(&scale.trim()) => Err(Error::new(ErrorKind::Report(format!(
+                    "Did not recognise scale type supplied. The options are: {}.",
+                    Opts::SCALE_TYPES.join(", ")
+                )))),
+                _ => Ok(()),
+            }
         }
 
         match t.len() {
             0 => return Err(Error::new(ErrorKind::Report("no options found".into()))),
             1 => {
-                opts.min = parse_str_to_int(t[0])?;
+                opts.min = parse_number(t[0])?;
             }
             2 => {
-                opts.min = parse_str_to_int(t[0])?;
-                opts.max = parse_str_to_int(t[1])?;
+                opts.min = parse_number(t[0])?;
+                opts.max = parse_number(t[1])?;
             }
             3 => {
-                opts.min = parse_str_to_int(t[0])?;
-                opts.max = parse_str_to_int(t[1])?;
+                opts.min = parse_number(t[0])?;
+                opts.max = parse_number(t[1])?;
                 opts.tick_count = parse_str_to_int(t[2])?;
             }
             4 => {
-                opts.min = parse_str_to_int(t[0])?;
-                opts.max = parse_str_to_int(t[1])?;
+                opts.min = parse_number(t[0])?;
+                opts.max = parse_number(t[1])?;
                 opts.tick_count = parse_str_to_int(t[2])?;
-                opts.scale = t[3].map(|e| e.to_string());
-                // bail if the scale isn't one we recognise
-                if !Self::SCALE_TYPES
-                    .iter()
-                    .any(|e| **e == *opts.scale.as_deref().unwrap_or(""))
-                {
-                    return Err(Error::new(ErrorKind::Report(format!(
-                        "Did not recognise scale type supplied. The options are: {}.",
-                        Self::SCALE_TYPES.join(", ")
-                    ))));
-                }
+                opts.scale = t[3].map(|e| e.trim().to_string());
+                check_scale(&opts.scale)?;
             }
             5 => {
-                opts.min = parse_str_to_int(t[0])?;
-                opts.max = parse_str_to_int(t[1])?;
+                opts.min = parse_number(t[0])?;
+                opts.max = parse_number(t[1])?;
                 opts.tick_count = parse_str_to_int(t[2])?;
-                opts.scale = t[3].map(|e| e.to_string());
-                // bail if the scale isn't one we recognise
-                if !Self::SCALE_TYPES
-                    .iter()
-                    .any(|e| **e == *opts.scale.as_deref().unwrap_or(""))
-                {
-                    return Err(Error::new(ErrorKind::Report(format!(
-                        "Did not recognise scale type supplied. The options are: {}.",
-                        Self::SCALE_TYPES.join(", ")
-                    ))));
-                }
+                opts.scale = t[3].map(|e| e.trim().to_string());
+                check_scale(&opts.scale)?;
                 opts.axis_title = t[4].map(|e| e.to_string());
             }
             _ => {
@@ -588,13 +584,23 @@ impl Report {
                     ))
                 })?;
 
-                // Without a taxon, x is used directly; with a taxon it is scoped to that clade.
-                let x_value = if self.search.is_empty() {
-                    x_filter.to_string()
+                // With a taxon, both x and y are scoped to it, so the
+                // proportion is of the taxon's records. GoaT applies y as
+                // given, so an unscoped y (or none, which GoaT takes as all
+                // taxa at the rank) would be the whole tree of life.
+                let scope = if self.search.is_empty() {
+                    None
                 } else {
-                    let taxon_type = self.taxon_type;
-                    let taxa = self.search.join(",");
-                    format!("{}({}) AND {}", taxon_type, taxa, x_filter)
+                    Some(format!("{}({})", self.taxon_type, self.search.join(",")))
+                };
+                let x_value = match &scope {
+                    Some(scope) => format!("{} AND {}", scope, x_filter),
+                    None => x_filter.to_string(),
+                };
+                let y_value = match (&scope, &self.y) {
+                    (Some(scope), Some(y)) => Some(format!("{} AND {}", scope, y)),
+                    (Some(scope), None) => Some(scope.clone()),
+                    (None, y) => y.clone(),
                 };
 
                 let base = format!("{}report", *GOAT_URL);
@@ -607,8 +613,8 @@ impl Report {
                     percent_encode_query_value(&x_value),
                     unique_ids[0],
                 );
-                if let Some(y_filter) = &self.y {
-                    qp.push_str(&format!("&y={}", percent_encode_query_value(y_filter)));
+                if let Some(y_value) = &y_value {
+                    qp.push_str(&format!("&y={}", percent_encode_query_value(y_value)));
                 }
                 for (i, field) in self.exclude_missing.iter().enumerate() {
                     qp.push_str(&format!(
@@ -731,6 +737,35 @@ mod tests {
         let url = r.make_url(vec!["arc_id".into()]).unwrap();
         assert!(url.contains("assembly_span"));
         assert!(url.contains("&y="));
+    }
+
+    /// The decoded value of URL parameter `name`.
+    fn param(url: &str, name: &str) -> Option<String> {
+        let parsed = url::Url::parse(url).unwrap();
+        parsed.query_pairs().find(|(k, _)| k == name).map(|(_, v)| v.into_owned())
+    }
+
+    #[test]
+    fn test_arc_taxon_scopes_x_and_y() {
+        let mut r = base_report(ReportType::Arc);
+        r.search = vec!["Magnoliopsida".into()];
+        r.x = Some("assembly_level >= chromosome".into());
+        let url = r.make_url(vec!["id".into()]).unwrap();
+        assert_eq!(param(&url, "x").unwrap(), "tax_tree(Magnoliopsida) AND assembly_level >= chromosome");
+        // no -y: the denominator is the taxon
+        assert_eq!(param(&url, "y").unwrap(), "tax_tree(Magnoliopsida)");
+
+        r.y = Some("assembly_span".into());
+        let url = r.make_url(vec!["id".into()]).unwrap();
+        assert_eq!(param(&url, "y").unwrap(), "tax_tree(Magnoliopsida) AND assembly_span");
+
+        // without a taxon, x and y are sent as given
+        r.search = vec![];
+        let url = r.make_url(vec!["id".into()]).unwrap();
+        assert_eq!(param(&url, "x").unwrap(), "assembly_level >= chromosome");
+        assert_eq!(param(&url, "y").unwrap(), "assembly_span");
+        r.y = None;
+        assert_eq!(param(&r.make_url(vec!["id".into()]).unwrap(), "y"), None);
     }
 
     // ── Newick URL ───────────────────────────────────────────────────────────
@@ -878,6 +913,24 @@ mod tests {
     fn test_opts_non_integer_min_returns_err() {
         let result = Opts::try_from_string("notanumber,100");
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_opts_take_large_and_scientific_numbers() {
+        // genome sizes don't fit in an i32, and are easier written as 1e8
+        let opts = Opts::try_from_string("1e8,1e10,5").unwrap();
+        assert_eq!(opts.to_string(), "100000000,10000000000,5,,");
+        assert_eq!(Opts::try_from_string("0.5,2.5").unwrap().to_string(), "0.5,2.5,,,");
+        assert!(Opts::try_from_string("inf,1").is_err());
+        // the tick count is still a whole number
+        assert!(Opts::try_from_string("1,10,2.5").is_err());
+    }
+
+    #[test]
+    fn test_opts_scale_may_be_blank_before_a_title() {
+        let opts = Opts::try_from_string(",,5,,Genome size").unwrap();
+        assert_eq!(opts.to_string(), ",,5,,Genome size");
+        assert_eq!(Opts::try_from_string(",,,log10").unwrap().to_string(), ",,,log10,");
     }
 
     #[test]

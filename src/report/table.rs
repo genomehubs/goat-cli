@@ -129,14 +129,23 @@ pub fn histogram_table(response: &Value) -> Result<Table> {
     let counts = array(&bins["allValues"], "histograms.allValues")?;
     let axis = Axis::new(field, bins["valueType"].as_str().unwrap_or(""), buckets);
     axis.check(counts.len(), "histograms.allValues")?;
+    // each category has a key (for byCat) and a label: for a rank
+    // category (`-c genus`) the key is a taxon ID and the label its name
     let categories = histogram["cats"]
         .as_array()
-        .map(|cats| cats.iter().filter_map(|c| c["key"].as_str()).collect::<Vec<_>>())
+        .map(|cats| {
+            cats.iter()
+                .filter_map(|c| {
+                    let key = c["key"].as_str()?;
+                    Some((key, c["label"].as_str().unwrap_or(key)))
+                })
+                .collect::<Vec<_>>()
+        })
         .unwrap_or_default();
 
     let mut header = axis.columns();
     header.push("count".to_string());
-    header.extend(categories.iter().map(|c| c.to_string()));
+    header.extend(categories.iter().map(|(_, label)| label.to_string()));
     let mut table = Table::new(&header.iter().map(String::as_str).collect::<Vec<_>>());
 
     for (i, count) in counts.iter().enumerate() {
@@ -145,8 +154,8 @@ pub fn histogram_table(response: &Value) -> Result<Table> {
         }
         let mut row = axis.cells(i);
         row.push(count.clone());
-        for category in &categories {
-            row.push(bins["byCat"][category].get(i).cloned().unwrap_or(json!(0)));
+        for (key, _) in &categories {
+            row.push(bins["byCat"][key].get(i).cloned().unwrap_or(json!(0)));
         }
         table.push(row);
     }
@@ -251,6 +260,21 @@ mod tests {
             vec![json!(1), json!(10), json!(5), json!(4), json!(1)],
             vec![json!(10), json!(100), json!(2), json!(1), json!(1)],
         ]);
+    }
+
+    #[test]
+    fn test_rank_categories_are_labelled_by_name() {
+        let response = wrap("histogram", json!({
+            "field": "genome_size",
+            "cats": [{"key": "87301", "label": "Draba"}, {"key": "50460", "label": "Cardamine"}],
+            "histograms": {
+                "buckets": [1, 10], "allValues": [5, 0], "valueType": "integer",
+                "byCat": {"87301": [3, 0], "50460": [2, 0]}
+            }
+        }));
+        let table = histogram_table(&response).unwrap();
+        assert_eq!(table.header, ["genome_size_from", "genome_size_to", "count", "Draba", "Cardamine"]);
+        assert_eq!(table.rows, vec![vec![json!(1), json!(10), json!(5), json!(3), json!(2)]]);
     }
 
     #[test]

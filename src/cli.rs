@@ -876,7 +876,7 @@ pub struct ArcArgs {
         short = 'y',
         long,
         value_name = "y-filter",
-        help = "Filter expression for the denominator (reference population).\nDefaults to all taxa at the given rank."
+        help = "Filter expression for the denominator (reference population).\nDefaults to all taxa at the given rank (within --taxon, if given)."
     )]
     pub y_filter: Option<String>,
     #[arg(
