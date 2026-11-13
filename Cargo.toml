@@ -15,6 +15,7 @@ repository = "https://github.com/genomehubs/goat-cli"
 documentation = "https://genomehubs.github.io/goat-cli/goat_cli/"
 keywords = ["goat", "genome", "tree", "ncbi", "genomics"]
 categories = ["command-line-utilities", "science"]
+exclude = ["docs/", "make_docs.bash"]
 
 [build-dependencies]
 serde_json = "1.0"
