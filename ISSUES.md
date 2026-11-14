@@ -105,28 +105,28 @@ applies filtering that the msearch query doesn't.
 
 ---
 
-## 4. New `first_*`/`latest_*` taxon fields can't be filtered, and break `/search`
+## 4. Removed fields: an unknown bare variable matches everything
 
-Fields added recently (e.g. `first_assembly_date`, `latest_assembly_date`,
-`first_ebp_standard_date`) have `type: date` but no `summary` in
-`/resultFields`.
+*Updated 2026-11-14.* The `first_*`/`latest_*` taxon fields this issue first
+described have changed. `first_assembly_date` now has a `summary`, and
+comparisons on it work
+([`... AND first_assembly_date >= 2010`](https://goat.genomehubs.org/api/v2/count?query=tax_tree%28Mammalia%29%20AND%20tax_rank%28species%29%20AND%20first_assembly_date%20%3E%3D%202010&result=taxon&taxonomy=ncbi&includeEstimates=true)
+counts 1061; requesting it with `assembly_date` no longer gives a 500).
+Eleven others, including `latest_assembly_date`, `total_assemblies` and
+`current_assemblies`, are no longer in `/resultFields`:
 
-- Presence works:
-  [`... AND first_assembly_date`](https://goat.genomehubs.org/api/v2/count?query=tax_tree%28Mammalia%29%20AND%20tax_rank%28species%29%20AND%20first_assembly_date&result=taxon&taxonomy=ncbi&includeEstimates=true)
-  counts 1095.
-- Any comparison matches nothing:
-  [`... AND first_assembly_date >= 2010`](https://goat.genomehubs.org/api/v2/count?query=tax_tree%28Mammalia%29%20AND%20tax_rank%28species%29%20AND%20first_assembly_date%20%3E%3D%202010&result=taxon&taxonomy=ncbi&includeEstimates=true)
-  counts 0.
-- Requesting one together with another date field
-  [returns HTTP 500](https://goat.genomehubs.org/api/v2/search?query=tax_tree%28Hominidae%29&result=taxon&taxonomy=ncbi&includeEstimates=true&size=4&fields=first_assembly_date%2Cassembly_date)
-  (`fields=first_assembly_date,assembly_date`), although
-  [`fields=first_assembly_date`](https://goat.genomehubs.org/api/v2/search?query=tax_tree%28Hominidae%29&result=taxon&taxonomy=ncbi&includeEstimates=true&size=4&fields=first_assembly_date)
-  alone returns 200.
+- A comparison on one fails clearly:
+  [`tax_rank(species) AND total_assemblies > 10`](https://goat.genomehubs.org/api/v2/count?query=tax_rank%28species%29%20AND%20total_assemblies%20%3E%2010&result=taxon&taxonomy=ncbi)
+  gives `"invalid attribute name in total_assemblies > 10"`.
+- But a bare variable that GoaT doesn't know is silently dropped:
+  [`tax_rank(species) AND total_assemblies`](https://goat.genomehubs.org/api/v2/count?query=tax_rank%28species%29%20AND%20total_assemblies&result=taxon&taxonomy=ncbi)
+  counts 102714, the same as `tax_rank(species)` alone, and so does
+  `tax_rank(species) AND not_a_field_at_all`.
 
-**Possible cause (not verified):** the missing `summary` metadata.
-
-**`goat-cli`:** accepts the fields (they're in its field data), but can't
-work around the server behaviour.
+**`goat-cli`:** checks every variable against its field data, and the live
+field list, before sending, so unknown names are an error with a
+suggestion. 0.3.0's built-in field data still has the removed fields;
+refreshing `vars/` fixes that.
 
 ---
 
@@ -188,6 +188,40 @@ The same suffixes do work in `query` (e.g. `genome_size:direct > 1e9`).
 **`goat-cli`:** `--toggle-direct` sends these fields, so it currently adds
 no columns. `-T/--tidy` shows each value's `aggregation_source`
 (`direct`, `ancestor` or `descendant`) instead.
+
+---
+
+## 8. `/count` ignores `tax_lineage()`
+
+[`/count?query=tax_lineage(Homo sapiens)`](https://goat.genomehubs.org/api/v2/count?query=tax_lineage%28Homo%20sapiens%29&result=taxon&taxonomy=ncbi)
+counts 2520502, every taxon in the index, but the same query to
+[`/search`](https://goat.genomehubs.org/api/v2/search?query=tax_lineage%28Homo%20sapiens%29&result=taxon&taxonomy=ncbi&size=0)
+reports 30 hits, the actual lineage (checked 2026-11-12).
+
+**`goat-cli`:** counts lineages (`-l`) with a `/search` of `size=0` and reads
+its hits, so `count -l` and the size warning for `search -l` are right.
+
+---
+
+## 9. A keyword field takes only one comparison
+
+Two comparisons on the same keyword field are not both applied; the second
+is silently ignored (checked 2026-11-14, species rank):
+
+| Query | Count |
+|---|---|
+| `sequencing_status_dtol >= sample_acquired` | 3240 |
+| `sequencing_status_dtol >= sample_acquired AND sequencing_status_dtol < insdc_open` | 3240 |
+| `sequencing_status_dtol < insdc_open AND sequencing_status_dtol >= sample_acquired` | 3572 (= `< insdc_open` alone) |
+| `sequencing_status_dtol = sample_acquired,in_progress,data_generation,in_assembly` | 1889 |
+
+[Example URL](https://goat.genomehubs.org/api/v2/count?query=tax_rank%28species%29%20AND%20sequencing_status_dtol%20%3E%3D%20sample_acquired%20AND%20sequencing_status_dtol%20%3C%20insdc_open&result=taxon&taxonomy=ncbi).
+The same happens with `assembly_level >= scaffold AND assembly_level <
+chromosome`. Numeric ranges (`genome_size >= 1e9 AND genome_size <= 2e9`) are
+fine.
+
+**`goat-cli`:** documents it in EXPRESSIONS.md, with a list of values as the
+workaround. It doesn't yet warn.
 
 ---
 
