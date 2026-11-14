@@ -22,7 +22,7 @@
                 ]
             },
             "sequence": 9,
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "path": "assemblyInfo.assemblyLevel",
             "summary": [
                 "enum"
@@ -55,7 +55,7 @@
                 "scale": "log10"
             },
             "sequence": 11,
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "path": "assemblyStats.totalSequenceLength",
             "summary": [
                 "primary",
@@ -92,7 +92,7 @@
                 }
             },
             "sequence": 2,
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "path": "assemblyInfo.biosample.accession",
             "separator": [
                 ","
@@ -129,7 +129,7 @@
                 "scale": "log10"
             },
             "sequence": 13,
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "path": "assemblyStats.contigN50",
             "summary": [
                 "primary",
@@ -155,7 +155,7 @@
             "display_name": "Last updated",
             "type": "date",
             "sequence": 21,
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "path": "assemblyInfo.releaseDate",
             "summary": [
                 "primary",
@@ -190,7 +190,7 @@
                 "scale": "log10"
             },
             "sequence": 15,
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "path": "assemblyStats.scaffoldN50",
             "summary": [
                 "primary",
@@ -221,7 +221,7 @@
             "type": "long",
             "units": "bases",
             "sequence": 19,
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "path": "assemblyStats.totalNumberOfChromosomes",
             "summary": [
                 "primary",
@@ -254,7 +254,7 @@
             "display_name": "EBP standard criteria",
             "type": "keyword",
             "sequence": 23,
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "path": "processedAssemblyStats.ebpStandardCriteria",
             "separator": [
                 ","
@@ -282,7 +282,7 @@
             ],
             "type": "date",
             "sequence": 22,
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "path": "processedAssemblyStats.ebpStandardDate",
             "summary": [
                 "min",
@@ -303,7 +303,7 @@
             "description": "total length of mitochondrial assembly",
             "type": "keyword",
             "sequence": 31,
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "path": "processedOrganelleInfo.mitochondrion.assemblySpan",
             "key": "mitochondrion_assembly_span",
             "display_name": "mitochondrion span",
@@ -327,7 +327,7 @@
             "type": "2dp",
             "units": "%",
             "sequence": 32,
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "path": "processedOrganelleInfo.mitochondrion.gcPercent",
             "key": "mitochondrion_gc_percent",
             "display_name": "mitochondrion gc percent",
@@ -354,7 +354,7 @@
             "description": "total length of plastid assembly",
             "type": "keyword",
             "sequence": 35,
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "path": "processedOrganelleInfo.plastid.assemblySpan",
             "key": "plastid_assembly_span",
             "display_name": "plastid span",
@@ -378,7 +378,7 @@
             "type": "2dp",
             "units": "%",
             "sequence": 36,
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "path": "processedOrganelleInfo.plastid.gcPercent",
             "key": "plastid_gc_percent",
             "display_name": "plastid gc percent",
@@ -417,7 +417,7 @@
                 "scale": "log10"
             },
             "sequence": 3,
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "path": "annotationInfo.stats.geneCounts.total",
             "summary": [
                 "primary",
@@ -1982,7 +1982,7 @@
             "display_name": "Sample sex",
             "type": "keyword",
             "sequence": 7,
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "path": "assemblyInfo.biosample.attributes.name==sex.value",
             "summary": [
                 "primary",
@@ -2004,7 +2004,7 @@
             "display_name": "Sample location",
             "type": "geo_point",
             "sequence": 32,
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "path": "processedAssemblyInfo.sampleLocation",
             "summary": [
                 "list",
@@ -5918,7 +5918,7 @@
             "name": "odb10_lineage",
             "source": "BUSCOv5",
             "source_url": "https://busco.ezlab.org/",
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "type": "keyword",
             "constraint": {
                 "enum": [
@@ -6016,7 +6016,7 @@
             "type": "1dp",
             "units": "%",
             "sequence": 55,
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "bins": {
                 "count": 10,
                 "max": 100,
@@ -6046,7 +6046,7 @@
             "type": "1dp",
             "units": "%",
             "sequence": 56,
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "bins": {
                 "count": 10,
                 "max": 100,
@@ -6075,7 +6075,7 @@
             "type": "1dp",
             "units": "%",
             "sequence": 52,
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "bins": {
                 "count": 10,
                 "max": 100,
@@ -6100,7 +6100,7 @@
             "display_name": "BUSCO lineage",
             "type": "keyword",
             "sequence": 53,
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "key": "busco_lineage",
             "summary": "list",
             "traverse": false,
@@ -6119,7 +6119,7 @@
             "display_name": "BUSCO string",
             "type": "keyword",
             "sequence": 54,
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "key": "busco_string",
             "summary": "list",
             "traverse": false,
@@ -9654,7 +9654,7 @@
             "group": "taxon",
             "name": "data_generation",
             "source": "Declared Status List - 1000GCh",
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "source_description": "Declared Status List - 1,000 Chilean Genomes - Live spreadsheet - 1K_Chilean _genomes",
             "source_contact": "Dr. Pamela Morales",
             "source_url": "https://1000genomas.cl/",
@@ -9666,7 +9666,7 @@
             "group": "taxon",
             "name": "in_assembly",
             "source": "Declared Status List - 1000GCh",
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "source_description": "Declared Status List - 1,000 Chilean Genomes - Live spreadsheet - 1K_Chilean _genomes",
             "source_contact": "Dr. Pamela Morales",
             "source_url": "https://1000genomas.cl/",
@@ -9951,7 +9951,7 @@
             "sequence": 144,
             "default": "CGP",
             "source": "Declared Target List - CGP",
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "source_description": "Declared Target List - Cetaceans Genomes Project - static spreadsheet",
             "source_contact": "Phillip Morin, Southwest Fisheries Science Center, USA",
             "processed_type": "keyword",
@@ -9962,7 +9962,7 @@
             "group": "taxon",
             "name": "submitted",
             "source": "Declared Status Lists - TOL Portal",
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "source_description": "Declared Status Lists - Tree of Life Portal",
             "source_url": "https://portal.tol.sanger.ac.uk/",
             "separator": [
@@ -9990,7 +9990,7 @@
             "name": "sequencing_status_ebp",
             "source": "INSDC",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "display_group": "sequencing_status",
             "separator": [
                 ";"
@@ -10007,7 +10007,7 @@
             "name": "sequencing_status_25gp",
             "source": "INSDC",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "display_group": "sequencing_status",
             "separator": [
                 ";"
@@ -10024,7 +10024,7 @@
             "name": "sequencing_status_anopheles",
             "source": "INSDC",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "display_group": "sequencing_status",
             "separator": [
                 ";"
@@ -10041,7 +10041,7 @@
             "name": "sequencing_status_bioplatforms",
             "source": "INSDC",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "display_group": "sequencing_status",
             "separator": [
                 ";"
@@ -10058,7 +10058,7 @@
             "name": "sequencing_status_dgb",
             "source": "INSDC",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "display_group": "sequencing_status",
             "separator": [
                 ";"
@@ -10075,7 +10075,7 @@
             "name": "sequencing_status_dnazoo",
             "source": "INSDC",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "display_group": "sequencing_status",
             "separator": [
                 ";"
@@ -10092,7 +10092,7 @@
             "name": "sequencing_status_erga",
             "source": "INSDC",
             "source_url_stub": "https://www.ncbi.nlm.nih.gov/assembly/",
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "display_group": "sequencing_status",
             "separator": [
                 ";"
@@ -10109,51 +10109,17 @@
             "name": "first_assembly_date",
             "display_group": "historic_assemblies",
             "source": "INSDC",
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "description": "The date of the first assembly for the taxon.",
+            "display_level": 2,
+            "display_name": "First assembly date",
+            "summary": [
+                "min"
+            ],
             "type": "date",
             "sequence": 157,
             "processed_type": "date",
             "processed_summary": "date_value",
-            "processed_simple": "value"
-        },
-        "first_assembly_accession": {
-            "group": "taxon",
-            "name": "first_assembly_accession",
-            "display_group": "historic_assemblies",
-            "source": "INSDC",
-            "source_date": "2026-10-02",
-            "description": "The accession number of the first assembly for the taxon.",
-            "type": "keyword",
-            "sequence": 158,
-            "processed_type": "keyword",
-            "processed_summary": "keyword_value.raw",
-            "processed_simple": "value"
-        },
-        "first_assembled_by_ebp_date": {
-            "group": "taxon",
-            "name": "first_assembled_by_ebp_date",
-            "display_group": "historic_assemblies",
-            "source": "INSDC",
-            "source_date": "2026-10-02",
-            "description": "The date of the first assembly for the taxon by an EBP affiliate.",
-            "type": "date",
-            "sequence": 159,
-            "processed_type": "date",
-            "processed_summary": "date_value",
-            "processed_simple": "value"
-        },
-        "first_assembled_by_ebp_accession": {
-            "group": "taxon",
-            "name": "first_assembled_by_ebp_accession",
-            "display_group": "historic_assemblies",
-            "source": "INSDC",
-            "source_date": "2026-10-02",
-            "description": "The accession number of the first assembly for the taxon by an EBP affiliate.",
-            "type": "keyword",
-            "sequence": 160,
-            "processed_type": "keyword",
-            "processed_summary": "keyword_value.raw",
             "processed_simple": "value"
         },
         "first_ebp_standard_date": {
@@ -10161,51 +10127,17 @@
             "name": "first_ebp_standard_date",
             "display_group": "historic_assemblies",
             "source": "INSDC",
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "description": "The date of the first assembly for the taxon to meet the ebp assembly standard.",
+            "display_level": 2,
+            "display_name": "First EBP standard date",
+            "summary": [
+                "min"
+            ],
             "type": "date",
-            "sequence": 161,
+            "sequence": 158,
             "processed_type": "date",
             "processed_summary": "date_value",
-            "processed_simple": "value"
-        },
-        "first_ebp_standard_accession": {
-            "group": "taxon",
-            "name": "first_ebp_standard_accession",
-            "display_group": "historic_assemblies",
-            "source": "INSDC",
-            "source_date": "2026-10-02",
-            "description": "The accession number of the assembly for the taxon to meet the ebp assembly standard.",
-            "type": "keyword",
-            "sequence": 162,
-            "processed_type": "keyword",
-            "processed_summary": "keyword_value.raw",
-            "processed_simple": "value"
-        },
-        "first_ebp_standard_by_ebp_date": {
-            "group": "taxon",
-            "name": "first_ebp_standard_by_ebp_date",
-            "display_group": "historic_assemblies",
-            "source": "INSDC",
-            "source_date": "2026-10-02",
-            "description": "The date of the first assembly by an ebp affiliate for the taxon to meet the ebp assembly standard.",
-            "type": "date",
-            "sequence": 163,
-            "processed_type": "date",
-            "processed_summary": "date_value",
-            "processed_simple": "value"
-        },
-        "first_ebp_standard_by_ebp_accession": {
-            "group": "taxon",
-            "name": "first_ebp_standard_by_ebp_accession",
-            "display_group": "historic_assemblies",
-            "source": "INSDC",
-            "source_date": "2026-10-02",
-            "description": "The accession number of the first assembly by an ebp affiliate for the taxon to meet the ebp assembly standard.",
-            "type": "keyword",
-            "sequence": 164,
-            "processed_type": "keyword",
-            "processed_summary": "keyword_value.raw",
             "processed_simple": "value"
         },
         "first_assembly_in_ranks": {
@@ -10213,79 +10145,37 @@
             "name": "first_assembly_in_ranks",
             "display_group": "historic_assemblies",
             "source": "INSDC",
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "description": "The rank for which this taxon supplied the first assembly.",
+            "display_level": 2,
+            "display_name": "First assembly in ranks",
             "separator": ",",
+            "summary": [
+                "list"
+            ],
             "type": "keyword",
-            "sequence": 165,
+            "sequence": 159,
             "processed_type": "keyword",
             "processed_summary": "keyword_value.raw",
             "processed_simple": "value"
         },
-        "first_metric_in_ranks": {
+        "first_ebp_standard_in_ranks": {
             "group": "taxon",
-            "name": "first_metric_in_ranks",
+            "name": "first_ebp_standard_in_ranks",
             "display_group": "historic_assemblies",
             "source": "INSDC",
-            "source_date": "2026-10-02",
+            "source_date": "2026-11-14",
             "description": "The rank for which this taxon supplied the first assembly to meet the ebp standard.",
+            "display_level": 2,
+            "display_name": "First EBP standard in ranks",
             "separator": ",",
+            "summary": [
+                "list"
+            ],
             "type": "keyword",
-            "sequence": 166,
+            "sequence": 160,
             "processed_type": "keyword",
             "processed_summary": "keyword_value.raw",
-            "processed_simple": "value"
-        },
-        "latest_assembly_date": {
-            "group": "taxon",
-            "name": "latest_assembly_date",
-            "display_group": "historic_assemblies",
-            "source": "INSDC",
-            "source_date": "2026-10-02",
-            "description": "The date of the latest assembly for the taxon.",
-            "type": "date",
-            "sequence": 167,
-            "processed_type": "date",
-            "processed_summary": "date_value",
-            "processed_simple": "value"
-        },
-        "latest_assembly_accession": {
-            "group": "taxon",
-            "name": "latest_assembly_accession",
-            "display_group": "historic_assemblies",
-            "source": "INSDC",
-            "source_date": "2026-10-02",
-            "description": "The accession number of the latest assembly for the taxon.",
-            "type": "keyword",
-            "sequence": 168,
-            "processed_type": "keyword",
-            "processed_summary": "keyword_value.raw",
-            "processed_simple": "value"
-        },
-        "total_assemblies": {
-            "group": "taxon",
-            "name": "total_assemblies",
-            "display_group": "historic_assemblies",
-            "source": "INSDC",
-            "source_date": "2026-10-02",
-            "description": "The total number of assemblies for the taxon.",
-            "type": "short",
-            "sequence": 169,
-            "processed_type": "integer",
-            "processed_summary": "short_value",
-            "processed_simple": "value"
-        },
-        "current_assemblies": {
-            "group": "taxon",
-            "name": "current_assemblies",
-            "display_group": "historic_assemblies",
-            "source": "INSDC",
-            "source_date": "2026-10-02",
-            "description": "The current number of assemblies for the taxon.",
-            "type": "short",
-            "sequence": 170,
-            "processed_type": "integer",
-            "processed_summary": "short_value",
             "processed_simple": "value"
         }
     },
@@ -10323,6 +10213,6 @@
         }
     },
     "hub": "goat",
-    "release": "2026.10.02",
-    "source": "https://github.com/genomehubs/goat-data/tree/2026.10.02"
+    "release": "2026.11.14",
+    "source": "https://github.com/genomehubs/goat-data/tree/2026.11.14"
 }
