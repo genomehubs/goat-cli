@@ -16,21 +16,23 @@ The CLI here builds URLs to query the <b><a href="https://goat.genomehubs.org/ap
 
 Please consult the <b><a href="https://github.com/genomehubs/goat-cli/wiki">wiki</a></b> for more information, tutorials, and examples.
 
-For the full syntax of expressions (`-e`), including `OR`, lists, negation, functions and searching without a taxon, see <b><a href="EXPRESSIONS.md">EXPRESSIONS.md</a></b>.
+For the full syntax of expressions (`-e`), including `OR`, lists, negation, functions and searching without a taxon, see <b><a href="EXPRESSIONS.md">EXPRESSIONS.md</a></b>. It ends with <a href="EXPRESSIONS.md#recipes">recipes</a> for tracking projects and samples through the pipeline, and for finding gaps.
 
 ## Install
 
-Build from source to get everything on this page; the newest features (`--format`, `record`, sorting, `--tax-depth`, completions) are not in a release yet. With [Rust](https://rustup.rs/) installed:
+Download a binary from the **[latest release](https://github.com/genomehubs/goat-cli/releases/latest)** (0.3.0) for Linux, macOS (Intel and Apple silicon) or Windows. It needs nothing else installed. For example, on Linux:
 
 ```bash
-cargo install --git https://github.com/genomehubs/goat-cli
-goat-cli --version
+curl -L https://github.com/genomehubs/goat-cli/releases/download/v0.3.0/goat-cli-x86_64-unknown-linux-gnu.tar.xz | tar xJ
+./goat-cli-x86_64-unknown-linux-gnu/goat-cli --version
 ```
 
-Other ways, all older:
+Or install with:
 
-- **[Releases](https://github.com/genomehubs/goat-cli/releases/latest)** (0.2.53) have binaries for macOS, Linux and Windows. The Linux binary needs OpenSSL 1.1 (`libssl.so.1.1`), which current distributions no longer ship.
-- **Bioconda** (`conda install -c bioconda goat`) and **crates.io** (`cargo install goat-cli`) are at 0.2.5.
+- **Cargo:** `cargo install goat-cli`, or `cargo install --git https://github.com/genomehubs/goat-cli` for unreleased changes.
+- **Bioconda:** `conda install -c bioconda goat`. The executable is `goat-cli`. Bioconda can lag behind releases, so check that `goat-cli --version` says 0.3.0.
+
+See the [changelog](CHANGELOG.md) for what's new.
 
 ## Output formats and records
 

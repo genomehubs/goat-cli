@@ -72,7 +72,12 @@ size over 5 Gb.
 - **Missing values:** `null` matches missing values and `!null` present ones,
   for any type: `genome_size != null`.
 - **Ordered keywords:** keywords with a natural order can use `<`, `>` and
-  friends: `assembly_level >= scaffold`.
+  friends: `assembly_level >= scaffold`. The `sequencing_status*` fields are
+  ordered along the pipeline: `sample_available` < `sample_collected` <
+  `sample_acquired` < `in_progress` < `data_generation` < `in_assembly` <
+  `open` < `insdc_open` < `published`. A keyword field takes only one
+  comparison per expression (see [Known API limitations](#known-api-limitations));
+  for a span of stages, list them.
 - **Fixed lists:** some keywords only take values from a fixed list (e.g.
   `assembly_level`, `sequencing_status*`). `goat-cli` rejects anything else.
   Other keywords list their known values in `--print-expression` (e.g.
@@ -128,8 +133,195 @@ same syntax, and they are checked the same way, except that `OR` is not
 allowed: GoaT's report endpoint gives wrong results for it (inflated counts,
 or a server error for trees), although `/search` handles it correctly.
 
+## Recipes
+
+Questions that come up when tracking genome projects, and the data behind
+them. Each one uses `count`; swap in `search` to list the taxa, adding `-v`
+or field flags for the columns you want. All were checked against the live
+API.
+
+Project fields use the project's acronym from `--print-expression` (e.g.
+`dtol`, `erga-bge`, `vgp`, `asg`). Each project has a
+`sequencing_status_<project>` field, and its stage fields (`long_list`,
+`sample_collected`, `in_progress`, `insdc_open`, `published`, ...) list the
+projects at that stage.
+
+### Projects and samples through the pipeline
+
+1. **Samples a project has collected, but not yet received.**
+
+   ```sh
+   goat-cli taxon count --tax-rank species -e 'sequencing_status_dtol = sample_collected'
+   ```
+
+2. **Samples received, but sequencing not yet started.**
+
+   ```sh
+   goat-cli taxon count --tax-rank species -e 'sequencing_status_dtol = sample_acquired'
+   ```
+
+3. **Everything currently in the pipeline**, from sample received to
+   assembly. List the stages; a range such as `>= sample_acquired AND <
+   insdc_open` doesn't work (see [Known API limitations](#known-api-limitations)).
+
+   ```sh
+   goat-cli taxon count --tax-rank species -e 'sequencing_status_dtol = sample_acquired,in_progress,data_generation,in_assembly'
+   ```
+
+4. **Everything that has reached at least data generation.** A single
+   comparison is fine.
+
+   ```sh
+   goat-cli taxon count --tax-rank species -e 'sequencing_status_dtol >= data_generation'
+   ```
+
+5. **What a project has made public on INSDC**, and what it has published
+   a paper on.
+
+   ```sh
+   goat-cli taxon count --tax-rank species -e 'sequencing_status_dtol >= insdc_open'
+   goat-cli taxon count --tax-rank species -e 'published = dtol'
+   ```
+
+6. **Targets on a project's list that it hasn't started**: on the long
+   list, with no status yet.
+
+   ```sh
+   goat-cli taxon count --tax-rank species -e 'long_list = dtol AND sequencing_status_dtol = null'
+   ```
+
+7. **Species targeted by three or more projects**, where effort may be
+   duplicated. To list the taxa, `-v long_list` shows which projects.
+
+   ```sh
+   goat-cli taxon count --tax-rank species -e 'length(long_list) >= 3'
+   ```
+
+8. **Species that more than one project is sequencing.**
+
+   ```sh
+   goat-cli taxon count --tax-rank species -e 'length(in_progress) > 1'
+   ```
+
+9. **Samples collected by one partner**, e.g. the Natural History Museum.
+   Partner codes are listed under `sample_collected_by` in
+   `--print-expression`.
+
+   ```sh
+   goat-cli taxon count --tax-rank species -e 'sample_collected_by = nhm'
+   ```
+
+10. **A project's progress within a group and a country**: UK insects that
+    have been collected but are still waiting to reach the lab.
+
+    ```sh
+    goat-cli taxon count -t Insecta -d --tax-rank species -e 'sequencing_status_dtol = sample_collected AND country_list = gb'
+    ```
+
+11. **A project's chromosome-level assemblies**, from the assembly index by
+    BioProject (PRJEB40665 is DToL's umbrella project), and those updated
+    since a date.
+
+    ```sh
+    goat-cli assembly count -t Lepidoptera -d -e 'bioproject = PRJEB40665 AND assembly_level = chromosome'
+    goat-cli assembly count -e 'bioproject = PRJEB40665 AND last_updated >= 2026-06'
+    ```
+
+### Gaps and priorities
+
+12. **Threatened species that no project has taken on**: critically
+    endangered or endangered on the IUCN Red List, with no sequencing
+    status. With `assembly_level = null` instead, it gives those with no
+    assembly from anyone.
+
+    ```sh
+    goat-cli taxon count --tax-rank species -e 'redlist_category = cr,en AND sequencing_status = null'
+    ```
+
+13. **Threatened species in the pipeline right now.**
+
+    ```sh
+    goat-cli taxon count --tax-rank species -e 'redlist_category = cr,en AND sequencing_status = sample_collected,sample_acquired,in_progress,data_generation,in_assembly'
+    ```
+
+14. **Species from a country that no project lists**, e.g. Great Britain.
+    Country codes are under `country_list` in `--print-expression`.
+
+    ```sh
+    goat-cli taxon count --tax-rank species -e 'country_list = gb AND long_list = null'
+    ```
+
+15. **Families with no assembled species at all.** Higher ranks need `-i`,
+    since their values are summarised from their descendants.
+
+    ```sh
+    goat-cli taxon count -t Insecta -d --tax-rank family -i -e 'assembly_level = null'
+    ```
+
+16. **Species with a measured chromosome count but no assembly**: targets
+    whose assemblies can be checked against a known karyotype.
+
+    ```sh
+    goat-cli taxon count -t Lepidoptera -d --tax-rank species -e 'chromosome_number:direct AND assembly_level = null'
+    ```
+
+17. **Very large measured genomes (over 10 Gb) that no project has
+    started.**
+
+    ```sh
+    goat-cli taxon count --tax-rank species -e 'genome_size:direct > 1e10 AND sequencing_status = null'
+    ```
+
+### Assembly quality and data
+
+18. **Assemblies worth upgrading**: species whose best assembly is at
+    scaffold level, with contig N50 under 100 kb.
+
+    ```sh
+    goat-cli taxon count --tax-rank species -e 'assembly_level = scaffold AND contig_n50 < 1e5'
+    ```
+
+19. **High-quality assemblies**: chromosome level, with BUSCO completeness
+    of at least 95%.
+
+    ```sh
+    goat-cli assembly count -e 'assembly_level = chromosome AND busco_completeness >= 95'
+    ```
+
+20. **Species assembled for the first time this year**, and those first
+    meeting the EBP reference standard this year.
+
+    ```sh
+    goat-cli taxon count --tax-rank species -e 'first_assembly_date >= 2026'
+    goat-cli taxon count --tax-rank species -e 'first_ebp_standard_date >= 2026'
+    ```
+
+21. **Polyploids with a chromosome-level assembly**, from measured ploidy
+    only.
+
+    ```sh
+    goat-cli taxon count --tax-rank species -e 'ploidy:direct >= 4 AND assembly_level >= chromosome'
+    ```
+
+22. **Genome sizes in a range.** Numeric fields can take two comparisons,
+    unlike keywords.
+
+    ```sh
+    goat-cli taxon count -t Lepidoptera -d --tax-rank species -e 'genome_size >= 1e9 AND genome_size <= 2e9'
+    ```
+
+`taxon arc` takes the same filters, without `OR`, to give proportions
+rather than counts; see the
+[wiki](https://github.com/genomehubs/goat-cli/wiki/5.-Reports-and-trees).
+
 ## Known API limitations
 
+- **A keyword field takes only one comparison.** In
+  `sequencing_status_dtol >= sample_acquired AND sequencing_status_dtol < insdc_open`,
+  GoaT applies only the first comparison, and silently ignores the second.
+  Use a list of values instead
+  (`sequencing_status_dtol = sample_acquired,in_progress,data_generation,in_assembly`).
+  Numeric ranges such as `genome_size >= 1e9 AND genome_size <= 2e9` work.
 - Taxa at higher ranks (e.g. genera, or `tax_rank(class)`) usually have no
   directly measured values, only estimates, so without `-i/--include-estimates`
   queries for them return nothing.
