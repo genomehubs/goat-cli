@@ -71,6 +71,14 @@ pub fn process_cli_args(
         query.expression.is_some(),
     )?;
 
+    // GoaT's /count ignores tax_lineage(), counting every taxon, so a
+    // lineage is counted by a /search of no results, which reports the hits.
+    let (api, url_size) = if api == "count" && query.lineage {
+        ("search", 0)
+    } else {
+        (api, query.size)
+    };
+
     let mut url_vector_api = url::make_goat_urls(
         api,
         &url_vector,
@@ -82,7 +90,7 @@ pub fn process_cli_args(
         "count",
         &index_type.to_string(),
         &TAXONOMY,
-        query.size,
+        url_size,
         &query.ranks,
         request.fields,
         query.variables.as_deref(),

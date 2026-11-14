@@ -97,6 +97,23 @@ fn test_lineage_flag_builds_tax_lineage_query() {
 }
 
 #[test]
+fn test_lineage_is_counted_by_a_search_of_no_results() {
+    // GoaT's /count ignores tax_lineage(), so lineages are counted from a
+    // /search's hits; other counts still use /count
+    let count_urls = |args: &[&str]| match process_cli_args(&search_request(args), "count", generate_unique_ids(1)).unwrap() {
+        CliAction::Continue { size, urls, .. } => (size, urls),
+        CliAction::PrintedAndExit => panic!("unexpected PrintedAndExit"),
+    };
+    let (size, urls) = count_urls(&["taxon", "count", "-t", "Homo sapiens", "-l"]);
+    assert_eq!(size, 50);
+    assert!(urls[0].contains("/search?"), "{}", urls[0]);
+    assert!(urls[0].contains("&size=0&"), "{}", urls[0]);
+    let (_, urls) = count_urls(&["taxon", "count", "-t", "Homo sapiens", "-d"]);
+    assert!(urls[0].contains("/count?"), "{}", urls[0]);
+    assert!(urls[0].contains("&size=50&"), "{}", urls[0]);
+}
+
+#[test]
 fn test_lineage_conflicts_with_descendents() {
     for index in ["taxon", "assembly"] {
         let result = Cli::try_parse_from(["goat-cli", index, "search", "-t", "Mammalia", "-l", "-d"]);

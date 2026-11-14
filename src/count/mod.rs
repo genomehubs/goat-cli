@@ -46,7 +46,11 @@ pub async fn count(
                 let client = client.clone();
                 async move {
                     let v = client.get_json(&path).await?;
-                    let count = v["count"].as_u64().ok_or_else(|| {
+                    // a /search (see process_cli_args) reports its hits instead
+                    let count = v["count"]
+                        .as_u64()
+                        .or_else(|| v["status"]["hits"].as_u64())
+                        .ok_or_else(|| {
                         Error::new(ErrorKind::GenericCli(format!(
                             "Bad count response: {:?}",
                             v

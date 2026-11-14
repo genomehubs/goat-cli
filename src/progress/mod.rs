@@ -64,9 +64,8 @@ pub async fn progress_bar(search: Option<&SearchRequest>, unique_ids: Vec<String
         query_id_vec.push(query_id);
     }
 
-    // we want to wrap this in a loop
-    // and break when sum(progress_x) == sum(progress_total)
-    let bar = indicatif::ProgressBar::new(512);
+    // hidden until GoaT reports a total, so it never shows a made-up length
+    let bar = indicatif::ProgressBar::hidden();
     let bar_style = ("█▓▓▒░░░ ", "magenta");
     bar.set_style(
         indicatif::ProgressStyle::default_bar()
@@ -78,58 +77,64 @@ pub async fn progress_bar(search: Option<&SearchRequest>, unique_ids: Vec<String
     );
     bar.set_prefix("Fetching from GoaT: ");
 
+    // the last (done, total) GoaT reported for each query. GoaT stops
+    // reporting a query once it is finished, which then counts as done.
+    let mut last: Vec<Option<(u64, u64)>> = vec![None; query_id_vec.len()];
     let client = GoatClient::new();
     loop {
-        // main body
         let fetches = futures::stream::iter(query_id_vec.clone().into_iter().map(|path| {
             let client = client.clone();
             async move {
                 let v: Value = client.get_json(&path).await?;
-                match &v["progress"] {
-                    Value::Object(_o) => {
-                        let progress_total = v["progress"]["total"].as_u64();
-                        let progress_x = v["progress"]["x"].as_u64();
-                        Ok(Some((progress_x, progress_total)))
-                    }
-                    _ => Ok(None),
-                }
+                Ok(match (v["progress"]["x"].as_u64(), v["progress"]["total"].as_u64()) {
+                    (Some(x), Some(total)) => Some((x, total)),
+                    _ => None,
+                })
             }
         }))
         .buffered(crate::client::concurrency(concurrent_requests))
-        // complicated. Each u64 can be an option, as some
-        // queries will finish before others
-        // entire tuple is an option, as other progress enums evaluate to None.
-        .collect::<Vec<Result<Option<(Option<u64>, Option<u64>)>>>>();
+        .collect::<Vec<Result<Option<(u64, u64)>>>>()
+        .await;
 
-        let awaited_fetches = fetches.await;
-        // what's going on here?
-        let progress_total: std::result::Result<Vec<_>, _> = awaited_fetches.into_iter().collect();
-
-        let mut progress_x_total = 0;
-        let mut progress_total_total = 0;
-        for el in progress_total? {
-            let x_tot_tup = match el {
-                Some(t) => t,
-                None => (None, None),
-            };
-            progress_x_total += x_tot_tup.0.unwrap_or(0);
-            progress_total_total += x_tot_tup.1.unwrap_or(0);
+        let mut running = false;
+        for (seen, polled) in last.iter_mut().zip(fetches) {
+            match (polled?, *seen) {
+                (Some(now), _) => {
+                    *seen = Some(now);
+                    running = true;
+                }
+                (None, Some((_, total))) => *seen = Some((total, total)),
+                (None, None) => {}
+            }
+        }
+        let (done, mut total) = last
+            .iter()
+            .flatten()
+            .fold((0, 0), |(d, t), (x, n)| (d + x, t + n));
+        // a search's total is all hits; the bar shows those fetched
+        if search.is_some() && total > *UPPER_CLI_SIZE_LIMIT as u64 {
+            total = size_int;
         }
 
-        // special case newick
-        if search.is_some() && progress_total_total > *UPPER_CLI_SIZE_LIMIT as u64 {
-            bar.set_length(size_int);
-        } else {
-            bar.set_length(progress_total_total);
+        if total > 0 {
+            if bar.is_hidden() {
+                bar.set_draw_target(indicatif::ProgressDrawTarget::stderr());
+            }
+            // GoaT's count can run a little past its total
+            bar.set_length(total.max(done));
+            bar.set_position(done);
         }
-
-        bar.set_position(progress_x_total);
-
-        if progress_x_total >= progress_total_total {
+        // GoaT drops a finished search from /progress, but keeps a finished
+        // report there at done == total
+        if !running || (total > 0 && done >= total) {
             break;
         }
 
         sleep(Duration::from_millis(500)).await;
+    }
+    if !bar.is_hidden() {
+        bar.set_position(bar.length().unwrap_or(0));
+        bar.finish();
     }
 
     Ok(())
