@@ -225,6 +225,50 @@ workaround. It doesn't yet warn.
 
 ---
 
+## 10. Results, and counts, only include taxa with a value in the returned fields
+
+`/search` and `/count` only return taxa that have a value for at least one
+of the fields in `fields`, or, without `fields`, one of the defaults
+(`assembly_level`, `assembly_span`, `genome_size`, `chromosome_number`,
+`haploid_number`). This is applied on top of `query`, silently, and to
+`/count` as well, where there are no columns to show (checked 2026-11-16):
+
+| Query (`tax_rank(species) AND ...`) | `fields` | Count |
+|---|---|---|
+| `long_list = dtol` | (none) | [14774](https://goat.genomehubs.org/api/v2/count?query=tax_rank%28species%29%20AND%20long_list%20%3D%20dtol&result=taxon&taxonomy=ncbi) |
+| `long_list = dtol` | `long_list` | [70883](https://goat.genomehubs.org/api/v2/count?query=tax_rank%28species%29%20AND%20long_list%20%3D%20dtol&result=taxon&taxonomy=ncbi&fields=long_list) |
+| `long_list = dtol` | `genome_size` | [4867](https://goat.genomehubs.org/api/v2/count?query=tax_rank%28species%29%20AND%20long_list%20%3D%20dtol&result=taxon&taxonomy=ncbi&fields=genome_size) |
+| `long_list = dtol AND assembly_level = null` | (none) | [6846](https://goat.genomehubs.org/api/v2/count?query=tax_rank%28species%29%20AND%20long_list%20%3D%20dtol%20AND%20assembly_level%20%3D%20null&result=taxon&taxonomy=ncbi) |
+| `long_list = dtol AND assembly_level = null` | `long_list` | [62914](https://goat.genomehubs.org/api/v2/count?query=tax_rank%28species%29%20AND%20long_list%20%3D%20dtol%20AND%20assembly_level%20%3D%20null&result=taxon&taxonomy=ncbi&fields=long_list) |
+
+So "how many DToL target species have no assembly?" is 6846 or 62914
+depending on which columns are requested; 62914 is right. Filters on
+anything outside the default fields (project lists and statuses, Red List
+categories, countries) and `= null` filters are most affected. It also
+explains some other oddities:
+
+- A taxon named with `tax_name()` is returned regardless, so
+  `tax_name(Mesophyllum lichenoides) AND long_list = dtol` counts 1, while
+  the same species is absent from `tax_rank(species) AND long_list = dtol`
+  (it has only an estimated `assembly_span`).
+- A bare variable seems to count as a requested field:
+  `sequencing_status_dtol` alone counts 9539, but
+  `sequencing_status_dtol != null` counts 4923, or 9539 with
+  `fields=sequencing_status_dtol`.
+- Higher ranks without estimates return nothing (see "Not bugs" below):
+  they rarely have direct values for the default fields.
+
+**Suggested fix:** don't filter `/count` by fields; or document the rule and
+apply it to `/search` only; or add every variable named in `query` to the
+fields used for this filter.
+
+**`goat-cli`:** since 0.3.1, goat-cli adds every field named in `-e` to
+`fields` (keeping the defaults when no fields are requested), so
+`count -e 'long_list = dtol'` gives 70883. EXPRESSIONS.md explains what
+remains of the rule.
+
+---
+
 ## Not bugs
 
 Things that looked like API problems during testing, but aren't:

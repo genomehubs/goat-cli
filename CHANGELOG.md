@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.1 (2026-11-16)
 
 ### Changes that may affect scripts
 
@@ -9,6 +9,17 @@
 ### Added
 
 - **`--size` goes up to 100,000** (was 50,000), so a list such as the 62,914 DToL species without an assembly downloads in one search.
+
+### Fields
+
+- **Refreshed from GoaT.** GoaT removed 11 taxon fields, which goat-cli no longer offers: `current_assemblies`, `first_assembled_by_ebp_accession`, `first_assembled_by_ebp_date`, `first_assembly_accession`, `first_ebp_standard_accession`, `first_ebp_standard_by_ebp_accession`, `first_ebp_standard_by_ebp_date`, `first_metric_in_ranks`, `latest_assembly_accession`, `latest_assembly_date` and `total_assemblies`. It added `first_ebp_standard_in_ranks`.
+
+### Docs
+
+- [EXPRESSIONS.md](EXPRESSIONS.md) has a section on [which taxa are returned](EXPRESSIONS.md#which-taxa-are-returned), and the recipes no longer need `-v`.
+- [ISSUES.md](ISSUES.md) adds GoaT issues 8 to 10: `/count` ignores `tax_lineage()`, keyword fields take only the first comparison, and results only include taxa with a value in the requested fields.
+
+**Full diff:** https://github.com/genomehubs/goat-cli/compare/v0.3.0...v0.3.1
 
 ## 0.3.0 (2026-11-14)
 

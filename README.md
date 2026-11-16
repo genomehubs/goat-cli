@@ -20,17 +20,17 @@ For the full syntax of expressions (`-e`), including `OR`, lists, negation, func
 
 ## Install
 
-Download a binary from the **[latest release](https://github.com/genomehubs/goat-cli/releases/latest)** (0.3.0) for Linux, macOS (Intel and Apple silicon) or Windows. It needs nothing else installed. For example, on Linux:
+Download a binary from the **[latest release](https://github.com/genomehubs/goat-cli/releases/latest)** (0.3.1) for Linux, macOS (Intel and Apple silicon) or Windows. It needs nothing else installed. For example, on Linux:
 
 ```bash
-curl -L https://github.com/genomehubs/goat-cli/releases/download/v0.3.0/goat-cli-x86_64-unknown-linux-gnu.tar.xz | tar xJ
+curl -L https://github.com/genomehubs/goat-cli/releases/latest/download/goat-cli-x86_64-unknown-linux-gnu.tar.xz | tar xJ
 ./goat-cli-x86_64-unknown-linux-gnu/goat-cli --version
 ```
 
 Or install with:
 
 - **Cargo:** `cargo install goat-cli`, or `cargo install --git https://github.com/genomehubs/goat-cli` for unreleased changes.
-- **Bioconda:** `conda install -c bioconda goat`. The executable is `goat-cli`. Bioconda can lag behind releases, so check that `goat-cli --version` says 0.3.0.
+- **Bioconda:** `conda install -c bioconda goat`. The executable is `goat-cli`. Bioconda can lag behind releases, so check that `goat-cli --version` says 0.3.1.
 
 See the [changelog](CHANGELOG.md) for what's new.
 
