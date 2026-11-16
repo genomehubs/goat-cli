@@ -141,35 +141,45 @@ flags, those are the default fields (`assembly_level`, `assembly_span`,
 `genome_size`, `chromosome_number`, `haploid_number`), so a taxon with no
 direct value for any of them is left out, whatever the expression says.
 
-That doesn't matter when the expression itself needs one of those values
-(`genome_size > 1e9`). But for a filter on other fields, such as project
-lists, statuses, Red List categories or `= null`, it silently drops most
-taxa. Add the field you filter on with `-v`:
+Since 0.3.1, goat-cli adds the fields an expression filters on to the
+fields it asks for, so every taxon that matches `-e` is returned:
 
 ```sh
-# 14,774: only DToL targets that also have an assembly, genome size or chromosome count
+# 70,883: every DToL target (0.3.0 and older gave 14,774, the targets that
+# also have an assembly, genome size or chromosome count)
 goat-cli taxon count --tax-rank species -e 'long_list = dtol'
-# 70,883: every DToL target
-goat-cli taxon count --tax-rank species -e 'long_list = dtol' -v long_list
 ```
 
-`-v` takes several fields (`-v "long_list,sequencing_status_dtol"`), and a
-taxon is returned if it has any of them, so adding columns never removes
-results. `-i/--include-estimates` also brings taxa back, since nearly every
-taxon has an estimated genome size, but then the columns show estimates too.
+`search` then has a column for each of those fields as well.
 
-The flipside: asking for a field (with `-v` or a field flag) can *add*
-taxa compared with the defaults, because more taxa have a value for it.
-Counts from the same expression with different columns can differ for that
-reason. (Counts in the examples below were checked on 2026-11-16.)
+What remains of the rule:
+
+- A taxon is returned if it has a value in **any** requested field, so
+  asking for more fields (with `-v` or a field flag) can add taxa, and
+  counts of the same expression with different columns can differ.
+  Adding columns never removes results.
+- A filter that only says what a taxon *lacks*, such as
+  `-e 'sequencing_status = null'` on its own, matches taxa with no value in
+  that field, so adding it doesn't help: they are returned only if they
+  have a value in another requested field. Combine it with a positive
+  filter (`long_list = dtol AND sequencing_status = null`) or add the
+  fields that matter with `-v`.
+- `-i/--include-estimates` brings nearly every taxon back, since nearly
+  every taxon has an estimated genome size, but then the columns show
+  estimates too.
+- In 0.3.0 and older, add the field you filter on with `-v`, e.g.
+  `-e 'long_list = dtol' -v long_list`.
+
+(Counts in the examples below were checked on 2026-11-16.)
 
 ## Recipes
 
 Questions that come up when tracking genome projects, and the data behind
 them. Each one uses `count`; swap in `search` (with `--size` large enough)
-to list the taxa. Keep the `-v` field a recipe uses (see
-[Which taxa are returned](#which-taxa-are-returned)); you can add more
-columns to it, e.g. `-v "sequencing_status_dtol,long_list"`. All were
+to list the taxa, and add columns with `-v`, e.g.
+`-v "sequencing_status_dtol,long_list"`. They need goat-cli 0.3.1 or later;
+with 0.3.0, add the field each recipe filters on with `-v` (see
+[Which taxa are returned](#which-taxa-are-returned)). All were
 checked against the live API.
 
 Project fields use the project's acronym from `--print-expression` (e.g.
@@ -183,13 +193,13 @@ projects at that stage.
 1. **Samples a project has collected, but not yet received.**
 
    ```sh
-   goat-cli taxon count --tax-rank species -e 'sequencing_status_dtol = sample_collected' -v sequencing_status_dtol
+   goat-cli taxon count --tax-rank species -e 'sequencing_status_dtol = sample_collected'
    ```
 
 2. **Samples received, but sequencing not yet started.**
 
    ```sh
-   goat-cli taxon count --tax-rank species -e 'sequencing_status_dtol = sample_acquired' -v sequencing_status_dtol
+   goat-cli taxon count --tax-rank species -e 'sequencing_status_dtol = sample_acquired'
    ```
 
 3. **Everything currently in the pipeline**, from sample received to
@@ -197,42 +207,42 @@ projects at that stage.
    insdc_open` doesn't work (see [Known API limitations](#known-api-limitations)).
 
    ```sh
-   goat-cli taxon count --tax-rank species -e 'sequencing_status_dtol = sample_acquired,in_progress,data_generation,in_assembly' -v sequencing_status_dtol
+   goat-cli taxon count --tax-rank species -e 'sequencing_status_dtol = sample_acquired,in_progress,data_generation,in_assembly'
    ```
 
 4. **Everything that has reached at least data generation.** A single
    comparison is fine.
 
    ```sh
-   goat-cli taxon count --tax-rank species -e 'sequencing_status_dtol >= data_generation' -v sequencing_status_dtol
+   goat-cli taxon count --tax-rank species -e 'sequencing_status_dtol >= data_generation'
    ```
 
 5. **What a project has made public on INSDC**, and what it has published
    a paper on.
 
    ```sh
-   goat-cli taxon count --tax-rank species -e 'sequencing_status_dtol >= insdc_open' -v sequencing_status_dtol
-   goat-cli taxon count --tax-rank species -e 'published = dtol' -v published
+   goat-cli taxon count --tax-rank species -e 'sequencing_status_dtol >= insdc_open'
+   goat-cli taxon count --tax-rank species -e 'published = dtol'
    ```
 
 6. **Targets on a project's list that it hasn't started**: on the long
    list, with no status yet.
 
    ```sh
-   goat-cli taxon count --tax-rank species -e 'long_list = dtol AND sequencing_status_dtol = null' -v long_list
+   goat-cli taxon count --tax-rank species -e 'long_list = dtol AND sequencing_status_dtol = null'
    ```
 
 7. **Species targeted by three or more projects**, where effort may be
    duplicated. In a `search`, the `long_list` column shows which projects.
 
    ```sh
-   goat-cli taxon count --tax-rank species -e 'length(long_list) >= 3' -v long_list
+   goat-cli taxon count --tax-rank species -e 'length(long_list) >= 3'
    ```
 
 8. **Species that more than one project is sequencing.**
 
    ```sh
-   goat-cli taxon count --tax-rank species -e 'length(in_progress) > 1' -v in_progress
+   goat-cli taxon count --tax-rank species -e 'length(in_progress) > 1'
    ```
 
 9. **Samples collected by one partner**, e.g. the Natural History Museum.
@@ -240,14 +250,14 @@ projects at that stage.
    `--print-expression`.
 
    ```sh
-   goat-cli taxon count --tax-rank species -e 'sample_collected_by = nhm' -v sample_collected_by
+   goat-cli taxon count --tax-rank species -e 'sample_collected_by = nhm'
    ```
 
 10. **A project's progress within a group and a country**: UK insects that
     have been collected but are still waiting to reach the lab.
 
     ```sh
-    goat-cli taxon count -t Insecta -d --tax-rank species -e 'sequencing_status_dtol = sample_collected AND country_list = gb' -v sequencing_status_dtol
+    goat-cli taxon count -t Insecta -d --tax-rank species -e 'sequencing_status_dtol = sample_collected AND country_list = gb'
     ```
 
 11. **A project's chromosome-level assemblies**, from the assembly index by
@@ -267,20 +277,20 @@ projects at that stage.
     assembly from anyone.
 
     ```sh
-    goat-cli taxon count --tax-rank species -e 'redlist_category = cr,en AND sequencing_status = null' -v redlist_category
+    goat-cli taxon count --tax-rank species -e 'redlist_category = cr,en AND sequencing_status = null'
     ```
 
 13. **Threatened species in the pipeline right now.**
 
     ```sh
-    goat-cli taxon count --tax-rank species -e 'redlist_category = cr,en AND sequencing_status = sample_collected,sample_acquired,in_progress,data_generation,in_assembly' -v redlist_category
+    goat-cli taxon count --tax-rank species -e 'redlist_category = cr,en AND sequencing_status = sample_collected,sample_acquired,in_progress,data_generation,in_assembly'
     ```
 
 14. **Species from a country that no project lists**, e.g. Great Britain.
     Country codes are under `country_list` in `--print-expression`.
 
     ```sh
-    goat-cli taxon count --tax-rank species -e 'country_list = gb AND long_list = null' -v country_list
+    goat-cli taxon count --tax-rank species -e 'country_list = gb AND long_list = null'
     ```
 
 15. **Families with no assembled species at all.** Higher ranks need `-i`,
@@ -324,8 +334,8 @@ projects at that stage.
     meeting the EBP reference standard this year.
 
     ```sh
-    goat-cli taxon count --tax-rank species -e 'first_assembly_date >= 2026' -v first_assembly_date
-    goat-cli taxon count --tax-rank species -e 'first_ebp_standard_date >= 2026' -v first_ebp_standard_date
+    goat-cli taxon count --tax-rank species -e 'first_assembly_date >= 2026'
+    goat-cli taxon count --tax-rank species -e 'first_ebp_standard_date >= 2026'
     ```
 
 21. **Polyploids with a chromosome-level assembly**, from measured ploidy

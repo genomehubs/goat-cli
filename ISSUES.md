@@ -262,8 +262,10 @@ explains some other oddities:
 apply it to `/search` only; or add every variable named in `query` to the
 fields used for this filter.
 
-**`goat-cli`:** EXPRESSIONS.md explains the rule, and its recipes add the
-filtered field with `-v`. goat-cli doesn't yet do this automatically.
+**`goat-cli`:** since 0.3.1, goat-cli adds every field named in `-e` to
+`fields` (keeping the defaults when no fields are requested), so
+`count -e 'long_list = dtol'` gives 70883. EXPRESSIONS.md explains what
+remains of the rule.
 
 ---
 
