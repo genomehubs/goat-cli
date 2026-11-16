@@ -58,7 +58,7 @@ lazy_static! {
 // global size limits on pinging the API
 lazy_static! {
     /// Upper limit for the CLI arg `--size`.
-    pub static ref UPPER_CLI_SIZE_LIMIT: usize = 50000;
+    pub static ref UPPER_CLI_SIZE_LIMIT: usize = 100000;
     /// Upper limit for the number of entries in the file for CLI arg `-f`.
     pub static ref UPPER_CLI_FILE_LIMIT: usize = 500;
 }

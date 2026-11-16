@@ -25,9 +25,9 @@ pub fn process_cli_args(
     let query = &request.query;
     let index_type = request.index_type;
 
-    let expression = match &query.expression {
+    let (expression, expression_fields) = match &query.expression {
         Some(s) => url::format_expression(s, index_type)?,
-        None => "".to_string(),
+        None => (String::new(), Vec::new()),
     };
     let mut taxon_filters = match &query.tax_rank {
         Some(t) => tax_ranks::TaxRanks::init().parse(t, false)?,
@@ -95,6 +95,7 @@ pub fn process_cli_args(
         request.fields,
         query.variables.as_deref(),
         &expression,
+        &expression_fields,
         &taxon_filters,
         unique_ids,
         index_type,

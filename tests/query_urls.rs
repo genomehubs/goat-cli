@@ -59,6 +59,7 @@ fn make_taxon_urls(
         fields,
         None,
         expression,
+        &[],
         "",
         unique_ids,
         IndexType::Taxon,
@@ -94,7 +95,7 @@ fn test_percent_encode_unreserved_chars_pass_through() {
 #[test]
 fn test_expression_spaces_encoded_as_percent20_in_url() {
     let expression =
-        format_expression("genome_size > 1000", IndexType::Taxon).expect("expression parsed");
+        format_expression("genome_size > 1000", IndexType::Taxon).expect("expression parsed").0;
     let urls = make_taxon_urls(
         &[String::from("Mammalia")],
         empty_fields(),
@@ -111,7 +112,7 @@ fn test_expression_spaces_encoded_as_percent20_in_url() {
 #[test]
 fn test_format_expression_taxon_encodes_operator() {
     // format_expression now returns an unencoded string; url builder handles encoding later
-    let exp = format_expression("genome_size > 1000", IndexType::Taxon).expect("expression parsed");
+    let exp = format_expression("genome_size > 1000", IndexType::Taxon).expect("expression parsed").0;
     assert!(exp.contains("genome_size"));
     assert!(exp.contains(">"));
     assert!(exp.contains("1000"));
@@ -134,7 +135,7 @@ fn test_format_expression_rejects_tax_rank_in_expression() {
 #[test]
 fn test_basic_taxon_search_url_generation() {
     let expression =
-        format_expression("genome_size > 1000", IndexType::Taxon).expect("expression parsed");
+        format_expression("genome_size > 1000", IndexType::Taxon).expect("expression parsed").0;
     let urls = make_taxon_urls(
         &[String::from("Mammalia")],
         empty_fields(),
@@ -210,6 +211,7 @@ fn test_include_estimates_true_appears_in_url() {
         empty_fields(),
         None,
         "",
+        &[],
         "",
         vec![String::from("id1")],
         IndexType::Taxon,
@@ -248,6 +250,7 @@ fn test_ranks_parameter_species_appears_in_url() {
         empty_fields(),
         None,
         "",
+        &[],
         "",
         vec![String::from("id1")],
         IndexType::Taxon,
@@ -286,6 +289,7 @@ fn test_assembly_index_type_result_field() {
         empty_fields(),
         None,
         "",
+        &[],
         "",
         vec![String::from("id1")],
         IndexType::Assembly,
@@ -313,6 +317,7 @@ fn test_tax_tree_query_type() {
         empty_fields(),
         None,
         "",
+        &[],
         "",
         vec![String::from("id1")],
         IndexType::Taxon,
@@ -402,6 +407,7 @@ fn test_variables_parameter_appears_in_fields() {
         empty_fields(),
         Some("genome_size"), // variables
         "",
+        &[],
         "",
         vec![String::from("id1")],
         IndexType::Taxon,
@@ -430,6 +436,7 @@ fn test_invalid_variable_returns_err() {
         empty_fields(),
         Some("not_a_real_variable_xyz"),
         "",
+        &[],
         "",
         vec![String::from("id1")],
         IndexType::Taxon,
@@ -457,7 +464,7 @@ fn test_build_query_taxon_only() {
 #[test]
 fn test_build_query_repeats_taxon_and_rank_in_each_or_branch() {
     let expression = format_expression("genome_size > 1e9 OR c_value > 5", IndexType::Taxon)
-        .expect("expression parsed");
+        .expect("expression parsed").0;
     assert_eq!(
         build_query("Mammalia", "tree", " AND tax_rank(species)", &expression),
         "tax_tree(Mammalia) AND tax_rank(species) AND genome_size > 1e9 \
