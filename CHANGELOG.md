@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Changes that may affect scripts
+
+- **`search` and `count` include every taxon that matches `-e`.** GoaT only returns taxa with a value in one of the requested fields, or in its default ones (assembly level and span, genome size, chromosome and haploid numbers) if none are requested. So `count -e 'long_list = dtol'` gave 14,774, the DToL targets that already have one of those values, rather than all 70,883. goat-cli now adds the fields an expression filters on to the request, so the count is 70,883 and `search` has a `long_list` column. Counts that filter on other fields will go up, and searches may have extra columns. Filters only on the default fields are unchanged.
+
+### Added
+
+- **`--size` goes up to 100,000** (was 50,000), so a list such as the 62,914 DToL species without an assembly downloads in one search.
+
 ## 0.3.0 (2026-11-14)
 
 The first release since 0.2.53 (February 2025), and a large one: the CLI has been rebuilt on clap's derive API, the expression engine rewritten to match what the GoaT API accepts, and the report commands now print tables. Binaries no longer need OpenSSL.

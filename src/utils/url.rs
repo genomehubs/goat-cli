@@ -62,7 +62,10 @@ fn format_names(flag: bool) -> String {
 }
 
 /// Format an expression put into the `-e` flag on the CLI.
-pub fn format_expression(exp: &str, index_type: IndexType) -> Result<String> {
+///
+/// Returns the expression and the fields it filters on (see
+/// [`CLIexpression::parse_with_fields`]).
+pub fn format_expression(exp: &str, index_type: IndexType) -> Result<(String, Vec<String>)> {
     // Pull any live fields from the dynamic registry (empty if not yet initialised).
     let dynamic_fields = field_registry::get_all_fields(index_type);
     let extra = if dynamic_fields.is_empty() {
@@ -71,11 +74,69 @@ pub fn format_expression(exp: &str, index_type: IndexType) -> Result<String> {
         Some(&dynamic_fields)
     };
     let mut new_exp = CLIexpression::new(exp);
-    let parsed_string = match index_type {
-        IndexType::Taxon => new_exp.parse(&GOAT_TAXON_VARIABLE_DATA, extra)?,
-        IndexType::Assembly => new_exp.parse(&GOAT_ASSEMBLY_VARIABLE_DATA, extra)?,
+    match index_type {
+        IndexType::Taxon => new_exp.parse_with_fields(&GOAT_TAXON_VARIABLE_DATA, extra),
+        IndexType::Assembly => new_exp.parse_with_fields(&GOAT_ASSEMBLY_VARIABLE_DATA, extra),
+    }
+}
+
+/// The fields GoaT returns when `fields` is not given.
+fn default_fields(index_type: IndexType) -> &'static [&'static str] {
+    match index_type {
+        IndexType::Taxon => &[
+            "assembly_level",
+            "assembly_span",
+            "genome_size",
+            "chromosome_number",
+            "haploid_number",
+        ],
+        IndexType::Assembly => &[
+            "contig_count",
+            "scaffold_count",
+            "chromosome_count",
+            "gc_percent",
+            "gene_count",
+            "assembly_level",
+            "assembly_span",
+            "contig_n50",
+            "scaffold_n50",
+            "busco_completeness",
+        ],
+    }
+}
+
+/// Add the fields an expression filters on to the requested `fields`.
+///
+/// GoaT's `/search` and `/count` only include taxa with a value in at least
+/// one requested field, or, when none are requested, in one of
+/// [`default_fields`]. So `long_list = dtol` alone misses every DToL target
+/// without an assembly, genome size or karyotype. Requesting the filtered
+/// fields too brings them back. With no fields requested, the defaults are
+/// kept, so the usual columns are still there.
+pub fn add_expression_fields(
+    fields: String,
+    expression_fields: &[String],
+    index_type: IndexType,
+) -> String {
+    let defaults = default_fields(index_type);
+    let mut list: Vec<String> = if fields.is_empty() {
+        // the defaults are already returned, so nothing need be added
+        if expression_fields
+            .iter()
+            .all(|f| defaults.contains(&f.as_str()))
+        {
+            return fields;
+        }
+        defaults.iter().map(|f| f.to_string()).collect()
+    } else {
+        fields.split(',').map(str::to_string).collect()
     };
-    Ok(parsed_string)
+    for field in expression_fields {
+        if !list.contains(field) {
+            list.push(field.clone());
+        }
+    }
+    list.join(",")
 }
 
 /// Boolean struct containing all of the CLI flag information
@@ -457,6 +518,7 @@ pub fn make_goat_urls(
     fields: FieldBuilder,
     variables: Option<&str>,
     expression: &str,
+    expression_fields: &[String],
     tax_rank: &str,
     unique_ids: Vec<String>,
     index_type: IndexType,
@@ -480,6 +542,7 @@ pub fn make_goat_urls(
     let field_builder_string = fields.build_fields_string();
     // and combine
     let fields_string = combine_variable_string(variables_field_string, field_builder_string);
+    let fields_string = add_expression_fields(fields_string, expression_fields, index_type);
 
     let names_string = format_names(fields.taxon_names);
 

@@ -294,6 +294,19 @@ impl<'a> CLIexpression<'a> {
         reference_data: &BTreeMap<&'static str, Variable<'static>>,
         extra_fields: Option<&HashSet<String>>,
     ) -> Result<String> {
+        self.parse_with_fields(reference_data, extra_fields)
+            .map(|(expression, _)| expression)
+    }
+
+    /// As [`CLIexpression::parse`], also returning the fields the clauses
+    /// filter on, in order and without repeats. Functions and `:subset`s
+    /// are removed, and identifiers such as `taxon_id` are left out, so
+    /// these can be requested as `fields`.
+    pub fn parse_with_fields(
+        &mut self,
+        reference_data: &BTreeMap<&'static str, Variable<'static>>,
+        extra_fields: Option<&HashSet<String>>,
+    ) -> Result<(String, Vec<String>)> {
         let input = self.inner.trim();
         if input.is_empty() {
             return Err(expression_error("the expression is empty.".to_string()));
@@ -310,14 +323,21 @@ impl<'a> CLIexpression<'a> {
         }
 
         let mut groups = Vec::new();
+        let mut fields: Vec<String> = Vec::new();
         for group in OR_SPLIT.split(input) {
-            let clauses = AND_SPLIT
-                .split(strip_outer_parens(group.trim()))
-                .map(|clause| parse_clause(clause, reference_data, extra_fields))
-                .collect::<Result<Vec<_>>>()?;
+            let mut clauses = Vec::new();
+            for clause in AND_SPLIT.split(strip_outer_parens(group.trim())) {
+                let (clause, field) = parse_clause(clause, reference_data, extra_fields)?;
+                if let Some(field) = field {
+                    if !fields.contains(&field) {
+                        fields.push(field);
+                    }
+                }
+                clauses.push(clause);
+            }
             groups.push(clauses.join(" AND "));
         }
-        Ok(format!(" AND {}", groups.join(" OR ")))
+        Ok((format!(" AND {}", groups.join(" OR ")), fields))
     }
 
     /// Whether any clause names a field that `reference_data` does not know,
@@ -362,12 +382,13 @@ fn strip_outer_parens(group: &str) -> &str {
     inner.trim()
 }
 
-/// Validate a single clause, returning it in canonical form.
+/// Validate a single clause, returning it in canonical form, and the field
+/// it filters on (`None` for identifiers such as `taxon_id`).
 fn parse_clause(
     clause: &str,
     reference_data: &BTreeMap<&'static str, Variable<'static>>,
     extra_fields: Option<&HashSet<String>>,
-) -> Result<String> {
+) -> Result<(String, Option<String>)> {
     // quotes are not needed by the API, even for values containing spaces
     let clause = clause.replace(['"', '\''], "");
     let clause = clause.trim();
@@ -398,11 +419,11 @@ fn parse_clause(
                 "\"{clause}\" is not a valid clause. Expected <field> <operator> <value>, e.g. \"long_list = dtol\", or a bare field name."
             )));
         }
-        let (lhs, _) = resolve_lhs(clause, reference_data, extra_fields)?;
-        return Ok(lhs);
+        let (lhs, _, field) = resolve_lhs(clause, reference_data, extra_fields)?;
+        return Ok((lhs, field));
     };
 
-    let (lhs, type_of) = resolve_lhs(&caps["lhs"], reference_data, extra_fields)?;
+    let (lhs, type_of, field) = resolve_lhs(&caps["lhs"], reference_data, extra_fields)?;
     let rhs = caps["rhs"].trim();
     if rhs.is_empty() {
         return Err(expression_error(format!("missing value in \"{clause}\".")));
@@ -411,18 +432,19 @@ fn parse_clause(
         type_of.check(rhs, &lhs)?;
     }
     let values = rhs.split(',').map(str::trim).collect::<Vec<_>>().join(",");
-    Ok(format!("{} {} {}", lhs, &caps["op"], values))
+    Ok((format!("{} {} {}", lhs, &caps["op"], values), field))
 }
 
 /// Validate the left hand side of a clause: a field, optionally with a
 /// `:subset` and/or wrapped in a summary function. Returns the canonical
-/// form, and the type to check values against (`None` for fields only known
-/// from the live registry, and identifiers such as `taxon_id`).
+/// form, the type to check values against (`None` for fields only known
+/// from the live registry, and identifiers such as `taxon_id`), and the
+/// bare field name (`None` for identifiers).
 fn resolve_lhs<'d>(
     lhs: &str,
     reference_data: &'d BTreeMap<&'static str, Variable<'static>>,
     extra_fields: Option<&HashSet<String>>,
-) -> Result<(String, Option<&'d TypeOf<'static>>)> {
+) -> Result<(String, Option<&'d TypeOf<'static>>, Option<String>)> {
     let lhs = lhs.trim().to_lowercase();
     let (function, field) = match FUNCTION.captures(&lhs) {
         Some(caps) => (Some(caps["func"].to_string()), caps["field"].to_string()),
@@ -457,10 +479,15 @@ fn resolve_lhs<'d>(
     }
 
     let is_dynamic = extra_fields.map_or(false, |fields| fields.contains(name));
-    let (name, type_of) = match canonical_field(name, reference_data) {
-        Some(canonical) => (canonical.to_string(), Some(&reference_data[canonical].type_of)),
+    let (name, type_of, bare) = match canonical_field(name, reference_data) {
+        Some(canonical) => (
+            canonical.to_string(),
+            Some(&reference_data[canonical].type_of),
+            Some(canonical.to_string()),
+        ),
+        None if is_dynamic => (name.to_string(), None, Some(name.to_string())),
         // identifiers are matched by the API, e.g. taxon_id = 9606
-        None if is_dynamic || name.ends_with("_id") => (name.to_string(), None),
+        None if name.ends_with("_id") => (name.to_string(), None, None),
         None => {
             let possibilities = reference_data
                 .keys()
@@ -488,7 +515,7 @@ fn resolve_lhs<'d>(
         Some(f) => format!("{f}({field})"),
         None => field,
     };
-    Ok((lhs, type_of))
+    Ok((lhs, type_of, bare))
 }
 
 #[cfg(test)]

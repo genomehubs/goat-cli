@@ -308,3 +308,48 @@ fn test_newick_no_descendents_uses_tax_name() {
     let tips = url(&["taxon", "newick", "-t", "Homo sapiens,Mus musculus", "-n"]);
     assert!(tips.contains("tax_name%28Homo"), "{}", tips);
 }
+
+#[test]
+fn test_filtered_fields_are_requested() {
+    // GoaT only returns taxa with a value in a requested field (or a default
+    // one), so the fields an expression filters on are added to `fields`
+    let search_url = |args: &[&str]| match process_cli_args(&search_request(args), "search", generate_unique_ids(1)).unwrap() {
+        CliAction::Continue { urls, .. } => urls[0].clone(),
+        CliAction::PrintedAndExit => panic!("unexpected PrintedAndExit"),
+    };
+    let fields = |url: &str| {
+        url.split('&')
+            .find_map(|p| p.strip_prefix("fields="))
+            .map(|f| f.replace("%2C", ","))
+    };
+    // no fields asked for: the defaults are kept, the filtered field added
+    let url = search_url(&["taxon", "search", "-e", "long_list = dtol AND assembly_level = null"]);
+    assert_eq!(
+        fields(&url).as_deref(),
+        Some("assembly_level,assembly_span,genome_size,chromosome_number,haploid_number,long_list")
+    );
+    // functions, subsets, repeats and identifiers
+    let url = search_url(&[
+        "taxon", "search", "-v", "c_value", "-e",
+        "length(long_list) > 1 AND max(genome_size:direct) > 1e9 OR long_list = vgp AND taxon_id = 9606",
+    ]);
+    assert_eq!(fields(&url).as_deref(), Some("c_value,long_list,genome_size"));
+    // filtering only on default fields leaves `fields` out, as before
+    let url = search_url(&["taxon", "search", "-e", "genome_size > 1e9"]);
+    assert_eq!(fields(&url), None);
+    let url = search_url(&["assembly", "search", "-t", "Insecta", "-d", "-e", "contig_n50 > 1e7"]);
+    assert_eq!(fields(&url), None);
+}
+
+#[test]
+fn test_size_limit() {
+    let run = |size: &str| {
+        process_cli_args(
+            &search_request(&["taxon", "search", "-e", "long_list = dtol", "--size", size]),
+            "search",
+            generate_unique_ids(1),
+        )
+    };
+    assert!(run("100000").is_ok());
+    assert!(run("100001").is_err());
+}
