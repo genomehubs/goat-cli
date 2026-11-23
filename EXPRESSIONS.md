@@ -133,12 +133,54 @@ same syntax, and they are checked the same way, except that `OR` is not
 allowed: GoaT's report endpoint gives wrong results for it (inflated counts,
 or a server error for trees), although `/search` handles it correctly.
 
+## Which taxa are returned
+
+GoaT returns only taxa that have a value for **at least one of the fields
+being returned**, and this applies to counts too. Without `-v` or field
+flags, those are the default fields (`assembly_level`, `assembly_span`,
+`genome_size`, `chromosome_number`, `haploid_number`), so a taxon with no
+direct value for any of them is left out, whatever the expression says.
+
+Since 0.3.1, goat-cli adds the fields an expression filters on to the
+fields it asks for, so every taxon that matches `-e` is returned:
+
+```sh
+# 70,883: every DToL target (0.3.0 and older gave 14,774, the targets that
+# also have an assembly, genome size or chromosome count)
+goat-cli taxon count --tax-rank species -e 'long_list = dtol'
+```
+
+`search` then has a column for each of those fields as well.
+
+What remains of the rule:
+
+- A taxon is returned if it has a value in **any** requested field, so
+  asking for more fields (with `-v` or a field flag) can add taxa, and
+  counts of the same expression with different columns can differ.
+  Adding columns never removes results.
+- A filter that only says what a taxon *lacks*, such as
+  `-e 'sequencing_status = null'` on its own, matches taxa with no value in
+  that field, so adding it doesn't help: they are returned only if they
+  have a value in another requested field. Combine it with a positive
+  filter (`long_list = dtol AND sequencing_status = null`) or add the
+  fields that matter with `-v`.
+- `-i/--include-estimates` brings nearly every taxon back, since nearly
+  every taxon has an estimated genome size, but then the columns show
+  estimates too.
+- In 0.3.0 and older, add the field you filter on with `-v`, e.g.
+  `-e 'long_list = dtol' -v long_list`.
+
+(Counts in the examples below were checked on 2026-11-16.)
+
 ## Recipes
 
 Questions that come up when tracking genome projects, and the data behind
-them. Each one uses `count`; swap in `search` to list the taxa, adding `-v`
-or field flags for the columns you want. All were checked against the live
-API.
+them. Each one uses `count`; swap in `search` (with `--size` large enough)
+to list the taxa, and add columns with `-v`, e.g.
+`-v "sequencing_status_dtol,long_list"`. They need goat-cli 0.3.1 or later;
+with 0.3.0, add the field each recipe filters on with `-v` (see
+[Which taxa are returned](#which-taxa-are-returned)). All were
+checked against the live API.
 
 Project fields use the project's acronym from `--print-expression` (e.g.
 `dtol`, `erga-bge`, `vgp`, `asg`). Each project has a
@@ -191,7 +233,7 @@ projects at that stage.
    ```
 
 7. **Species targeted by three or more projects**, where effort may be
-   duplicated. To list the taxa, `-v long_list` shows which projects.
+   duplicated. In a `search`, the `long_list` column shows which projects.
 
    ```sh
    goat-cli taxon count --tax-rank species -e 'length(long_list) >= 3'
@@ -322,6 +364,8 @@ rather than counts; see the
   Use a list of values instead
   (`sequencing_status_dtol = sample_acquired,in_progress,data_generation,in_assembly`).
   Numeric ranges such as `genome_size >= 1e9 AND genome_size <= 2e9` work.
+- Results and counts only include taxa with a value in the returned fields;
+  see [Which taxa are returned](#which-taxa-are-returned).
 - Taxa at higher ranks (e.g. genera, or `tax_rank(class)`) usually have no
   directly measured values, only estimates, so without `-i/--include-estimates`
   queries for them return nothing.
